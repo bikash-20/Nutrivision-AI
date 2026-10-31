@@ -105,11 +105,12 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
             backgroundPosition: 'center center',
             backgroundRepeat: 'no-repeat',
             transform: 'scale(1.02)', // Prevents mobile viewport elastic bounce gaps
-            filter: 'brightness(0.92) contrast(1.04)',
+            filter: 'brightness(1.0) contrast(1.02) saturate(1.05)',
+            opacity: 1,
           }}
         />
 
-        {/* Cinematic Vignette & Radial Light Overlay */}
+        {/* Minimal soft ambient vignette — food photo stays pin-sharp, bright, and vibrant */}
         <div
           aria-hidden="true"
           style={{
@@ -117,9 +118,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
             inset: 0,
             zIndex: 1,
             background:
-              'radial-gradient(ellipse 90% 80% at 20% 20%, rgba(201, 98, 45, 0.22) 0%, transparent 65%), linear-gradient(180deg, rgba(16, 11, 9, 0.60) 0%, rgba(16, 11, 9, 0.74) 45%, rgba(16, 11, 9, 0.92) 100%)',
-            backdropFilter: 'blur(3px)',
-            WebkitBackdropFilter: 'blur(3px)',
+              'linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.05) 30%, rgba(0, 0, 0, 0.05) 70%, rgba(0, 0, 0, 0.38) 100%)',
             pointerEvents: 'none',
           }}
         />
@@ -479,12 +478,19 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
           <div
             style={{
               fontSize: 11.5,
-              color: 'rgba(249, 242, 228, 0.60)',
+              color: '#F9F2E4',
               display: 'flex',
               alignItems: 'center',
               gap: 6,
               flexWrap: 'wrap',
               justifyContent: 'center',
+              padding: '6px 14px',
+              borderRadius: 999,
+              background: 'rgba(20, 14, 11, 0.65)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)',
             }}
           >
             <Sparkles size={12} color="#FFB899" />
