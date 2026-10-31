@@ -9,14 +9,9 @@
 
 import type { AuthSession, GoogleAuthResponse } from '../types/schemas';
 import * as storage from './storage';
+import { getApiBase } from './config';
 
 const SESSION_KEY = 'auth';
-
-const API_BASE: string = (
-  typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE
-    ? import.meta.env.VITE_API_BASE
-    : 'http://localhost:8000'
-).replace(/\/+$/, '');
 
 /** Returns the persisted session, or null if not signed in. */
 export function getSession(): AuthSession | null {
@@ -36,8 +31,10 @@ export async function loginWithGoogle(idToken: string): Promise<AuthSession> {
   const timeoutId = setTimeout(() => controller.abort(), 45_000);
 
   try {
-    const resp = await fetch(`${API_BASE}/api/auth/google`, {
+    const apiBase = getApiBase();
+    const resp = await fetch(`${apiBase}/api/auth/google`, {
       method: 'POST',
+      cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',

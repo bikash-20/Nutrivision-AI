@@ -460,4 +460,47 @@ flowchart TD
    ```
 
 ---
+
+## 9. Multi-Device Google OAuth & Admin Telemetry Synchronization
+
+NutriVision AI enforces robust, multi-device authentication and live admin telemetry across serverless frontends (Vercel) and containerized backends (Render):
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor ExternalUser as External Device / Friend
+    participant Vercel as Vercel Frontend (Vite)
+    participant Rewrite as Vercel Proxy Rewrite (/api/*)
+    participant Render as FastAPI Backend (Render)
+    participant Postgres as Neon PostgreSQL (nv_users)
+    actor Admin as bikashtalukder040@gmail.com (Admin)
+
+    ExternalUser->>Vercel: Clicks Google Sign-In (Token Received)
+    Vercel->>Rewrite: POST /api/auth/google (via getApiBase() relative path)
+    Rewrite->>Render: Proxies to https://cloud-camp-hackathon.onrender.com/api/auth/google
+    Render->>Render: Verifies ID token against Google OAuth2 tokeninfo
+    Render->>Postgres: Upserts user into nv_users & updates last_active
+    Render-->>Vercel: Returns AuthSession + JWT Token
+    Admin->>Vercel: Opens Admin Dashboard / Registered Users
+    Vercel->>Render: GET /api/admin/users (cache: 'no-store')
+    Render->>Postgres: _sync_users_from_db_unlocked() queries nv_users
+    Render-->>Admin: Returns all registered users across all devices in real-time
+```
+
+### Architectural Guarantees
+1. **Dynamic `getApiBase()` Resolution**:
+   - In browser on production (`cloud-camp-hackathon.vercel.app` or custom domains), falls back to relative `""` so requests route through `vercel.json` rewrites (`/api/*` $\to$ `https://cloud-camp-hackathon.onrender.com/api/*`).
+   - Prevents external devices from failing by attempting to hit `http://localhost:8000`.
+   - In local development (`localhost` / `127.0.0.1`), routes directly to `http://localhost:8000`.
+2. **Guaranteed Admin Permissions**:
+   - `DEFAULT_ADMIN_EMAILS = {"bikashtalukder040@gmail.com"}` is unconditionally assigned the `admin` role upon sign-in.
+3. **Multi-Worker Database Synchronization**:
+   - `_sync_users_from_db_unlocked()` synchronizes all registered users and meal records from `nv_users` into in-memory state on every admin telemetry query.
+   - Eliminates multi-process cache divergence across Uvicorn workers and container restarts.
+4. **Cache Invalidation & Real-Time Polling**:
+   - Admin routes specify `Cache-Control: no-cache, no-store, must-revalidate`.
+   - `AdminUsersView` auto-polls every 15 seconds and includes a manual **Refresh** button with live spinning feedback.
+
+---
 *Created and maintained by the NutriVision AI Engineering Team.*
+

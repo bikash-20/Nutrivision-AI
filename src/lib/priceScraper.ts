@@ -18,8 +18,9 @@ export interface LivePriceResult {
   source: string;
 }
 
+import { getApiBase } from './config';
+
 const SCRAPER_TIMEOUT_MS = 3000;
-const API_BASE = (import.meta.env.VITE_API_BASE ?? 'http://localhost:8000').replace(/\/+$/, '');
 
 // In-memory cache to keep demo snappy and prevent duplicate hits
 const priceCache = new Map<string, LivePriceResult>();
@@ -81,8 +82,10 @@ export async function fetchLivePrice(
     if (itemNameBn) params.append('name_bn', itemNameBn);
     if (options?.forceLive) params.append('live_demo', 'true');
 
-    const res = await fetch(`${API_BASE}/api/market/price?${params.toString()}`, {
+    const apiBase = getApiBase();
+    const res = await fetch(`${apiBase}/api/market/price?${params.toString()}`, {
       signal: controller.signal,
+      cache: 'no-store',
       headers: { Accept: 'application/json' },
     });
 

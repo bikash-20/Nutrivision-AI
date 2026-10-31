@@ -36,13 +36,17 @@ GOOGLE_TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo"
 DEFAULT_JWT_SECRET = "nutrivision-secure-jwt-secret-key-prod-v1"
 
 
+DEFAULT_ADMIN_EMAILS = {"bikashtalukder040@gmail.com"}
+
+
 def _jwt_secret() -> bytes:
     return os.environ.get("JWT_SECRET", DEFAULT_JWT_SECRET).encode("utf-8")
 
 
 def _admin_emails() -> set[str]:
     raw = os.environ.get("ADMIN_EMAILS", "")
-    return {e.strip().lower() for e in raw.split(",") if e.strip()}
+    configured = {e.strip().lower() for e in raw.split(",") if e.strip()}
+    return configured | DEFAULT_ADMIN_EMAILS
 
 
 def _b64url_encode(data: bytes) -> str:

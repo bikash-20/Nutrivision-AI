@@ -439,20 +439,86 @@ class State:
             "error": self.init_error if not self.is_healthy else None,
         }
 
+    def _sync_users_from_db_unlocked(self) -> None:
+        """Synchronize users and meals from PostgreSQL so multi-worker and multi-device updates appear immediately."""
+        if self.storage_type != "postgres" or not self.is_healthy or not self.postgres_store:
+            return
+        try:
+            with self.postgres_store._get_conn() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT email, name, avatar_url, role, joined_date, last_active, profile_json FROM nv_users"
+                    )
+                    rows = cur.fetchall()
+                    db_emails = set()
+                    for email, name, avatar_url, role, joined_date, last_active, profile_json in rows:
+                        clean = email.lower().strip()
+                        db_emails.add(clean)
+                        assigned_role: Role = "admin" if clean == "bikashtalukder040@gmail.com" else role
+                        if clean not in self.users:
+                            udata = UserData(
+                                email=clean,
+                                name=name,
+                                avatar_url=avatar_url,
+                                role=assigned_role,
+                                joined_date=joined_date,
+                                last_active=last_active,
+                            )
+                            if profile_json:
+                                try:
+                                    udata.profile = UserProfile.model_validate(profile_json)
+                                except Exception:
+                                    pass
+                            self.users[clean] = udata
+                        else:
+                            u = self.users[clean]
+                            u.last_active = last_active or u.last_active
+                            if name and (not u.name or u.name == clean.split("@")[0]):
+                                u.name = name
+                            if avatar_url and not u.avatar_url:
+                                u.avatar_url = avatar_url
+                            if assigned_role == "admin" or (role and u.role != role):
+                                u.role = assigned_role
+                            if profile_json and (not u.profile or not u.profile.name):
+                                try:
+                                    u.profile = UserProfile.model_validate(profile_json)
+                                except Exception:
+                                    pass
+
+                    for clean in db_emails:
+                        if clean in self.users and len(self.users[clean].meals.items) == 0:
+                            cur.execute(
+                                "SELECT meal_json FROM nv_meals WHERE user_email = %s ORDER BY date DESC",
+                                (clean,),
+                            )
+                            for (mjson,) in cur.fetchall():
+                                try:
+                                    self.users[clean].meals.items.append(MealEntry.model_validate(mjson))
+                                except Exception:
+                                    pass
+        except Exception as exc:
+            log.warning("Could not sync users from PostgreSQL: %s", exc)
+
     def has_user(self, email: str) -> bool:
+        clean = email.lower().strip()
         with self._lock:
-            return email.lower().strip() in self.users
+            if clean not in self.users:
+                self._sync_users_from_db_unlocked()
+            return clean in self.users
 
     def get_user(self, email: str) -> UserData | None:
+        clean = email.lower().strip()
         with self._lock:
-            return self.users.get(email.lower().strip())
+            if clean not in self.users:
+                self._sync_users_from_db_unlocked()
+            return self.users.get(clean)
 
     # ── Persistence ──────────────────────────────────────────────────────
 
     def load(self) -> None:
         """Load state from PostgreSQL if configured, otherwise from disk."""
         admin_emails_raw = os.environ.get("ADMIN_EMAILS", "")
-        admin_emails = {e.strip().lower() for e in admin_emails_raw.split(",") if e.strip()}
+        admin_emails = {e.strip().lower() for e in admin_emails_raw.split(",") if e.strip()} | {"bikashtalukder040@gmail.com"}
 
         # 1. PostgreSQL branch
         if self.storage_type == "postgres":
@@ -697,6 +763,7 @@ class State:
         role: Role = "user",
     ) -> UserData:
         clean_email = email.lower().strip()
+        effective_role: Role = "admin" if clean_email == "bikashtalukder040@gmail.com" or role == "admin" else "user"
         now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
         def op() -> UserData:
@@ -705,7 +772,7 @@ class State:
                     email=clean_email,
                     name=name,
                     avatar_url=avatar_url,
-                    role=role,
+                    role=effective_role,
                     joined_date=now,
                     last_active=now,
                 )
@@ -717,7 +784,7 @@ class State:
                     user.profile.name = name
                 if avatar_url:
                     user.avatar_url = avatar_url
-                if role == "admin":
+                if effective_role == "admin":
                     user.role = "admin"
             return self.users[clean_email]
 
@@ -951,6 +1018,7 @@ class State:
 
     def get_admin_metrics(self) -> AdminMetrics:
         with self._lock:
+            self._sync_users_from_db_unlocked()
             all_users_list = list(self.users.values())
             all_meals: list[MealEntry] = []
             for u in all_users_list:
@@ -1059,6 +1127,7 @@ class State:
         order: str = "desc",
     ) -> list[AdminUserSummary]:
         with self._lock:
+            self._sync_users_from_db_unlocked()
             all_users = list(self.users.values())
             if search:
                 q = search.lower().strip()
@@ -1102,6 +1171,7 @@ class State:
     def get_admin_user_detail(self, email: str) -> AdminUserDetail | None:
         clean = email.lower().strip()
         with self._lock:
+            self._sync_users_from_db_unlocked()
             u = self.users.get(clean)
             if not u:
                 return None
@@ -1123,6 +1193,7 @@ class State:
 
     def get_popular_foods(self, date_range: str = "7d") -> list[PopularFoodItem]:
         with self._lock:
+            self._sync_users_from_db_unlocked()
             now = datetime.now(timezone.utc)
             cutoff_ts = 0.0
             today_str = now.strftime("%Y-%m-%d")
@@ -1186,6 +1257,7 @@ class State:
 
     def get_review_queue(self, status: str = "all") -> list[ReviewQueueItem]:
         with self._lock:
+            self._sync_users_from_db_unlocked()
             items: list[ReviewQueueItem] = []
             for u in self.users.values():
                 for m in u.meals.items:

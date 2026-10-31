@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
 from app.api.auth import require_admin_user
 from app.models.schemas import (
@@ -31,15 +31,19 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 @router.get("/metrics", response_model=AdminMetrics)
 def get_admin_metrics(
+    response: Response,
     current_user: AuthSession = Depends(require_admin_user),
     state: State = Depends(get_state),
 ) -> AdminMetrics:
     """Return aggregated platform metrics. Requires admin privileges."""
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
     return state.get_admin_metrics()
 
 
 @router.get("/users", response_model=list[AdminUserSummary])
 def list_admin_users(
+    response: Response,
     search: str | None = Query(None, description="Search by email or name"),
     sort_by: str = Query("lastActive", alias="sortBy", description="Field to sort by"),
     order: str = Query("desc", description="Sort direction ('asc' or 'desc')"),
@@ -47,16 +51,21 @@ def list_admin_users(
     state: State = Depends(get_state),
 ) -> list[AdminUserSummary]:
     """Return searchable, sortable list of all registered platform users."""
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
     return state.list_admin_users(search=search, sort_by=sort_by, order=order)
 
 
 @router.get("/users/{email}", response_model=AdminUserDetail)
 def get_admin_user_detail(
     email: str,
+    response: Response,
     current_user: AuthSession = Depends(require_admin_user),
     state: State = Depends(get_state),
 ) -> AdminUserDetail:
     """Return comprehensive user detail including profile and recent logged meals."""
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
     detail = state.get_admin_user_detail(email)
     if not detail:
         raise HTTPException(

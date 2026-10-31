@@ -32,24 +32,14 @@ import type {
 import * as storage from './storage';
 import { MOCK_NUTRITION_DB } from '../mocks/fixtures';
 import { buildContributions, mealTotals, getDynamicTargets } from './personalize';
+import { getApiBase } from './config';
 
 // ── Backend wiring ──────────────────────────────────────────────────────
 
 /**
- * Base URL of the FastAPI backend. Set on Vercel as
- * `VITE_API_BASE=https://cloud-camp-hackathon.onrender.com` or defaults to
- * relative `/api` on production (proxied to Render via vercel.json rewrite)
- * or `http://localhost:8000` in local dev.
+ * Base URL of the FastAPI backend. Resolved dynamically using `getApiBase()`.
  */
-const API_BASE: string = (
-  typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE
-    ? import.meta.env.VITE_API_BASE
-    : typeof window !== 'undefined' &&
-        window.location.hostname !== 'localhost' &&
-        window.location.hostname !== '127.0.0.1'
-      ? ''
-      : 'http://localhost:8000'
-).replace(/\/+$/, '');
+export const API_BASE: string = getApiBase();
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -65,7 +55,9 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     ? { Authorization: `Bearer ${session.token}` }
     : {};
 
-  const resp = await fetch(`${API_BASE}${path}`, {
+  const apiBase = getApiBase();
+  const resp = await fetch(`${apiBase}${path}`, {
+    cache: 'no-store',
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -633,7 +625,7 @@ export async function getStorageHealth(): Promise<StorageHealthInfo> {
   } catch (err) {
     if (err instanceof ApiError && err.status === 503) {
       try {
-        const resp = await fetch(`${API_BASE}/api/health`);
+        const resp = await fetch(`${getApiBase()}/api/health`, { cache: 'no-store' });
         return await resp.json();
       } catch {
         // Fallback

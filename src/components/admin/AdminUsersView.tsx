@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, UserCheck, Shield, Zap, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, UserCheck, Shield, Zap, X, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { getAdminUsers, getAdminUserDetail } from '../../lib/api';
 import type { AdminUserDetail, AdminUserSummary } from '../../types/schemas';
 import { useLanguage } from '../../i18n/LanguageContext';
@@ -21,8 +21,8 @@ export default function AdminUsersView() {
   const [page, setPage] = useState(1);
   const pageSize = 15;
 
-  const loadUsers = useCallback(() => {
-    setLoading(true);
+  const loadUsers = useCallback((showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     getAdminUsers(search, sortBy, order)
       .then((data) => {
         setUsers(data || []);
@@ -30,11 +30,17 @@ export default function AdminUsersView() {
       .catch((err) => {
         console.error('Failed to load users:', err);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (showSpinner) setLoading(false);
+      });
   }, [search, sortBy, order]);
 
   useEffect(() => {
-    loadUsers();
+    loadUsers(true);
+    const interval = setInterval(() => {
+      loadUsers(false);
+    }, 15000);
+    return () => clearInterval(interval);
   }, [loadUsers]);
 
   // Handle row click for user detail modal
@@ -107,38 +113,71 @@ export default function AdminUsersView() {
           </p>
         </div>
 
-        {/* Search Input */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.10)',
-            borderRadius: 12,
-            padding: '8px 14px',
-            minWidth: 260,
-          }}
-        >
-          <Search size={16} color="rgba(249, 242, 228, 0.45)" />
-          <input
-            type="text"
-            placeholder={isBn ? 'ব্যবহারকারী খুঁজুন...' : 'Search users...'}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Refresh Button */}
+          <button
+            type="button"
+            onClick={() => loadUsers(true)}
+            disabled={loading}
+            aria-label={isBn ? 'তালিকা রিফ্রেশ করুন' : 'Refresh user list'}
+            title={isBn ? 'তালিকা রিফ্রেশ করুন' : 'Refresh user list'}
             style={{
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              borderRadius: 12,
+              padding: '8px 12px',
               color: '#F9F2E4',
-              fontSize: 13,
-              fontFamily: 'Inter',
-              width: '100%',
+              fontSize: 12.5,
+              fontWeight: 500,
+              cursor: loading ? 'default' : 'pointer',
+              transition: 'background 150ms ease',
             }}
-          />
+          >
+            <RefreshCw
+              size={14}
+              style={{
+                animation: loading ? 'spin 1s linear infinite' : 'none',
+              }}
+            />
+            <span>{isBn ? 'রিফ্রেশ' : 'Refresh'}</span>
+          </button>
+
+          {/* Search Input */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.10)',
+              borderRadius: 12,
+              padding: '8px 14px',
+              minWidth: 240,
+            }}
+          >
+            <Search size={16} color="rgba(249, 242, 228, 0.45)" />
+            <input
+              type="text"
+              placeholder={isBn ? 'ব্যবহারকারী খুঁজুন...' : 'Search users...'}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                color: '#F9F2E4',
+                fontSize: 13,
+                fontFamily: 'Inter',
+                width: '100%',
+              }}
+            />
+          </div>
         </div>
       </div>
 
