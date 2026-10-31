@@ -90,7 +90,8 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
           overflowX: 'hidden',
           overflowY: 'auto',
           color: '#F9F2E4',
-          fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+          fontFamily: "'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+          letterSpacing: '-0.01em',
         }}
       >
         {/* Full-viewport Culinary Background Photo (from public/nutrivision-ai.jpeg) */}
@@ -138,19 +139,19 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
             gap: 12,
           }}
         >
-          {/* Brand mark */}
+          {/* Brand mark - High Contrast on White or Dark */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 10,
-              padding: '6px 12px 6px 8px',
+              padding: '7px 14px 7px 10px',
               borderRadius: 999,
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+              background: 'rgba(20, 14, 11, 0.90)',
+              border: '1px solid rgba(255, 255, 255, 0.24)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
             }}
           >
             <img
@@ -163,28 +164,31 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
             />
             <span
               style={{
+                fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
                 fontSize: 16,
                 fontWeight: 700,
-                color: '#F9F2E4',
+                color: '#FFFFFF',
                 letterSpacing: '-0.01em',
+                textShadow: '0 1px 2px rgba(0,0,0,0.4)',
               }}
             >
               {isBn ? 'নিউট্রিভিশন' : 'NutriVision'}
             </span>
             <span
               style={{
-                fontSize: 10,
-                fontWeight: 700,
-                textTransform: 'uppercase',
+                fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                fontSize: 11,
+                fontWeight: 800,
                 letterSpacing: '0.06em',
-                padding: '2px 6px',
+                padding: '3px 8px',
                 borderRadius: 6,
-                background: 'rgba(201, 98, 45, 0.35)',
-                color: '#FFB899',
-                border: '1px solid rgba(201, 98, 45, 0.45)',
+                background: 'linear-gradient(135deg, #E8590C 0%, #C92A2A 100%)',
+                color: '#FFFFFF',
+                border: '1px solid rgba(255, 255, 255, 0.40)',
+                boxShadow: '0 2px 8px rgba(201, 42, 42, 0.55)',
               }}
             >
-              AI
+              {isBn ? 'এআই' : 'AI'}
             </span>
           </div>
 
@@ -224,13 +228,13 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
             style={{
               width: '100%',
               maxWidth: 440,
-              background: 'rgba(26, 18, 14, 0.82)',
-              backdropFilter: 'blur(24px) saturate(190%)',
-              WebkitBackdropFilter: 'blur(24px) saturate(190%)',
+              background: 'rgba(24, 16, 12, 0.85)',
+              backdropFilter: 'blur(28px) saturate(190%)',
+              WebkitBackdropFilter: 'blur(28px) saturate(190%)',
               border: '1px solid rgba(249, 242, 228, 0.18)',
               borderRadius: 26,
               boxShadow:
-                '0 28px 65px -14px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08) inset',
+                '0 28px 65px -14px rgba(0, 0, 0, 0.80), 0 0 0 1px rgba(255, 255, 255, 0.08) inset',
               padding: 'clamp(28px, 6vw, 40px) clamp(20px, 5vw, 32px)',
               display: 'flex',
               flexDirection: 'column',
@@ -247,37 +251,65 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                   height: 64,
                   borderRadius: 20,
                   background:
-                    'linear-gradient(135deg, rgba(201, 98, 45, 0.95) 0%, rgba(138, 52, 22, 0.95) 100%)',
+                    'linear-gradient(135deg, rgba(217, 72, 15, 0.95) 0%, rgba(154, 43, 14, 0.95) 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: 16,
                   boxShadow:
-                    '0 12px 28px -6px rgba(201, 98, 45, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.25) inset',
+                    '0 12px 28px -6px rgba(217, 72, 15, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.25) inset',
                 }}
               >
                 <LogIn size={30} color="#FFF8F0" strokeWidth={2.3} />
               </div>
 
+              {/* Aesthetic Editorial Brand Title */}
               <h1
                 style={{
-                  fontSize: 'clamp(22px, 3.5vw, 26px)',
+                  fontFamily: isBn
+                    ? "'Hind Siliguri', 'Outfit', sans-serif"
+                    : "'Fraunces', 'Plus Jakarta Sans', Georgia, serif",
+                  fontSize: 'clamp(26px, 4vw, 32px)',
                   fontWeight: 700,
-                  color: '#F9F2E4',
-                  margin: '0 0 8px',
-                  letterSpacing: '-0.02em',
+                  color: '#FFF8F0',
+                  margin: '0 0 10px',
+                  letterSpacing: '-0.025em',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  flexWrap: 'wrap',
                 }}
               >
-                {isBn ? 'নিউট্রিভিশন এআই' : 'NutriVision AI'}
+                <span>{isBn ? 'নিউট্রিভিশন' : 'NutriVision'}</span>
+                <span
+                  style={{
+                    fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                    fontSize: 'clamp(14px, 2.2vw, 17px)',
+                    fontWeight: 800,
+                    letterSpacing: '0.06em',
+                    padding: '3px 11px',
+                    borderRadius: 999,
+                    background: 'linear-gradient(135deg, #E8590C 0%, #C92A2A 100%)',
+                    color: '#FFFFFF',
+                    border: '1px solid rgba(255, 255, 255, 0.35)',
+                    boxShadow: '0 4px 14px rgba(201, 42, 42, 0.50)',
+                    verticalAlign: 'middle',
+                  }}
+                >
+                  {isBn ? 'এআই' : 'AI'}
+                </span>
               </h1>
 
               <p
                 style={{
-                  fontSize: 'clamp(12.5px, 2vw, 13.5px)',
-                  color: 'rgba(249, 242, 228, 0.78)',
+                  fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                  fontSize: 'clamp(13px, 2vw, 14px)',
+                  color: 'rgba(249, 242, 228, 0.82)',
                   margin: 0,
-                  lineHeight: 1.55,
+                  lineHeight: 1.6,
                   maxWidth: 340,
+                  fontWeight: 400,
                 }}
               >
                 {isBn
@@ -302,11 +334,12 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
             >
               <div
                 style={{
+                  fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
                   fontSize: 11,
                   fontWeight: 700,
                   color: 'rgba(249, 242, 228, 0.65)',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
+                  letterSpacing: '0.12em',
                 }}
               >
                 {isBn ? 'গুগল অ্যাকাউন্ট দিয়ে সাইন ইন' : 'Sign in with Google'}
@@ -334,6 +367,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                     fontSize: 12,
                     lineHeight: 1.45,
                     textAlign: 'center',
+                    fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
                   }}
                 >
                   {isBn
@@ -361,6 +395,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                       border: '1px solid rgba(201, 98, 45, 0.30)',
                       width: '100%',
                       textAlign: 'center',
+                      fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -410,6 +445,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                       border: '1px solid rgba(239, 68, 68, 0.40)',
                       width: '100%',
                       textAlign: 'left',
+                      fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
                     }}
                   >
                     <AlertCircle size={16} color="#F87171" style={{ flexShrink: 0, marginTop: 2 }} />
@@ -443,6 +479,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                 gap: 8,
                 padding: '4px 8px',
                 textAlign: 'center',
+                fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
               }}
             >
               <ShieldCheck size={14} color="rgba(249, 242, 228, 0.65)" />
@@ -473,6 +510,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
             alignItems: 'center',
             justifyContent: 'center',
             textAlign: 'center',
+            fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
           }}
         >
           <div
