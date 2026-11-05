@@ -1,4 +1,6 @@
 # NutriVision AI
+<img width="1280" height="807" alt="image" src="https://github.com/user-attachments/assets/7fc967c6-fd04-434e-859b-7a3eeb1a8987" />
+
 
 > *Snap a meal. Know your body. Shop smart.*
 
