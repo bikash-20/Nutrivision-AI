@@ -35,6 +35,7 @@ const Pill = memo(function Pill({
     <LocalizedContent>
       <motion.button
         type="button"
+        className="profile-option-pill"
         onClick={onClick}
         aria-pressed={!!active}
         aria-label={ariaLabel}

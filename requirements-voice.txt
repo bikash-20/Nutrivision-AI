@@ -1,0 +1,6 @@
+# Optional large model runtimes for app/local_voice.py.
+# Install only in a dedicated local voice environment.
+faster-whisper>=1.1,<2.0
+qwen-tts>=0.1.0
+piper-tts>=1.2,<2.0
+soundfile>=0.12,<1.0

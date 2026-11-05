@@ -20,7 +20,7 @@ Built for **Cloud Camp Hackathon** by [bikash-20](https://github.com/bikash-20).
 - Live reactive updates via `meal-history-updated` event
 
 ### Results & Review
-- **Multi-Tier Vision Cascade:** Groq Vision (Tier 1 fast LPU) → Google Gemini 2.0 Flash (Tier 2 high accuracy) → OpenRouter (Tier 3 free cascade) → Gemini 1.5 Fallback (Tier 4) → Hugging Face (Tier 5)
+- **Local-first vision:** an installed Ollama vision model analyzes photos on-device. For signed-in accounts, the existing hosted vision cascade is an online fallback; a local-only session never uploads photos.
 - Direct 1-tap `[ 🛒 Add to Grocery / বাজারে যোগ ]` button next to Share button for instant grocery addition
 - Confidence scores with color-coded badges (high/medium/low)
 - Sortable food items (by confidence, calories, name, portion size)
@@ -39,20 +39,13 @@ Built for **Cloud Camp Hackathon** by [bikash-20](https://github.com/bikash-20).
 - SHAP-style explainability strip with per-item contributions
 - Share nutrition summary to clipboard
 
-### Multi-Agent Voice AI Assistant (`CoachScreen.tsx` & `/api/coach/*`)
-- **Single-Pass Dual-Channel Response:** Delivers a complete, formatted clinical analysis alongside an ultra-concise spoken summary (`voice_summary`, <60 words, clean of Markdown, LaTeX, and emojis) generated in a single LLM pass.
-- **Dual Personas & Voice Routing:**
-  - **Dr. Susmit (পুষ্টি বিজ্ঞানী / Nutrition Biochemist):** Evidence-based biochemical analysis of glycemic load ($GL$), cooking oil absorption, and clinical macronutrient partitioning per BIRDEM/ADA guidelines. Voiced by ElevenLabs premade voice `JBFqnCBsd6RMkjVDRZzb` (George).
-  - **Farhan Ahmed (আচরণ ও অভ্যাস কোচ / Habit Coach):** Empathetic behavioral coaching based on CBT habit science, lifestyle pacing, and guilt-free dawat/feast recovery. Voiced by ElevenLabs premade voice `JBFqnCBsd6RMkjVDRZzb` (George).
-- **3-Tier Speech Synthesis Cascade (`tts_service.py`):**
-  - **Tier 1 (ElevenLabs Premade Low-Latency TTS):** Auto-selects `eleven_flash_v2_5` (~75ms TTFA) for English and `eleven_multilingual_v2` for Bengali Unicode script (`\u0980-\u09FF`). Strictly ignores legacy library voice IDs (`21m00Tcm4TlvDq8ikWAM`) to eliminate Free Tier 402 errors, with automatic in-flight retry.
-  - **Tier 2 (Server-Side Neural TTS via `edge-tts`):** Zero-key neural MP3 synthesis matching persona and language (`en-US-AndrewNeural`/`bn-BD-PradeepNeural` for Dr. Susmit; `en-US-BrianNeural`/`bn-BD-PradeepNeural` for Farhan) executed in a thread-isolated event loop.
-  - **Tier 3 (Browser Client Fallback):** Seamless client-side `window.speechSynthesis`.
-- **On-Demand `🔊 Listen` Button:** Generates or replays speech on demand with message-level caching and `tts_diagnostic` observability.
-- **In-Memory LRU Cache:** Thread-safe 128-entry in-memory audio cache for zero-latency responses on frequent prompts.
-- **Hands-Free Speech-to-Text (STT):** Live microphone input using browser Web Speech API with an instant `[বাং / EN]` language toggle pill directly beside the microphone.
-- **Live Database Grounding:** Seamlessly compiles user's clinical profile, today's logged meals, and active grocery list from PostgreSQL into context.
-- **Transparent Vercel Edge Proxy:** All `/api/*` requests proxied directly to Render backend via `vercel.json` rewrites. See [AI Coach API Guide](docs/api/coach.md) for full details.
+### AI Coach, settings, and voice
+- Text chat and uploaded meal images use a compatible local Ollama model first. Follow-up chat retains the image context.
+- The Settings screen discovers installed Ollama models, reports text/vision capability and loaded state, and supports a preferred model plus automatic fallback to another compatible installed model.
+- Signed-in users may use hosted AI while online if local inference fails. The explicit local-only session never sends chat, profile, or photo data to the hosted API.
+- Microphone input is recorded in the browser and transcribed by the optional local Whisper service. Speech playback uses the selected local Piper or Qwen3-TTS engine; there is no silent browser/hosted fallback.
+- Models and voice runtimes are not bundled with the web app. English and Bengali Whisper transcription are configured; Qwen3-TTS currently rejects Bengali and other unsupported languages with an explicit error. Piper language support depends on the installed voice model.
+- Locally installed fine-tuned models are discovered through Ollama's standard model APIs, so adding a model does not require changing the app pipeline.
 
 ### Nutrients & Analysis
 - Editable health goals: prediabetic-friendly, high-protein, budget-aware, Mediterranean
@@ -74,8 +67,9 @@ Built for **Cloud Camp Hackathon** by [bikash-20](https://github.com/bikash-20).
 - Share list to clipboard
 
 ### Data Persistence
-- localStorage save/load for profile, meal history, and grocery data
+- Browser localStorage for profile, meal history, grocery data, and AI settings
 - Meals auto-saved after each analysis
+- Offline writes stay on the current device; they are not automatically synchronized to an account or another device
 - Today's summary card on home screen
 - Recent meals section (last 3 logged)
 
@@ -119,6 +113,29 @@ npm run dev
 ```
 
 Opens at [http://localhost:5173](http://localhost:5173) with hot reload.
+
+### Offline and local AI setup
+
+The app's service worker precaches the production HTML, JavaScript, CSS, and bundled fonts for later offline launches. The first visit/install still needs a network connection. Select **Continue offline** on the login screen to create a local-only session; profile, meals, nutrition lookup, and grocery edits use this browser's storage. Google sign-in, live prices, hosted AI, and cross-device sync need internet. Offline changes are not queued for later upload.
+
+Install and start [Ollama](https://ollama.com/) separately, download at least one chat model (and a vision-capable model for photos), then open **Settings** in the app and refresh the model list. For example, `ollama pull gemma3:4b` installs a vision-capable model. The default Ollama URL is `http://localhost:11434`; browser CORS/local-network permissions may need to allow the app's origin. Only installed models appear in Settings; the app does not download model weights.
+
+The optional voice server requires large model files and packages. It loads only local paths and has Hugging Face offline mode enabled; it does not fetch models at request time:
+
+```bash
+python -m venv .venv-voice
+source .venv-voice/bin/activate
+pip install -r requirements.txt -r requirements-voice.txt
+export WHISPER_MODEL_PATH=/absolute/path/to/whisper-ct2-model
+export QWEN3_TTS_MODEL_PATH=/absolute/path/to/Qwen3-TTS-VoiceDesign-model
+export PIPER_VOICE_PATH=/absolute/path/to/en_US-lessac-medium.onnx
+# Optional when the matching file is not alongside the .onnx voice:
+export PIPER_CONFIG_PATH=/absolute/path/to/en_US-lessac-medium.onnx.json
+export NUTRIVISION_CORS_ORIGINS=http://localhost:5173,https://your-app.example
+uvicorn app.local_voice:app --host 127.0.0.1 --port 5005
+```
+
+In Settings, choose Piper or Qwen3-TTS as the speech engine and test which configured local models are ready. The default Whisper and TTS endpoints use this local service on port `5005`. Download model weights and place them on disk beforehand. Qwen3-TTS's supported languages do not include Bengali; Piper language support depends on the selected voice. The app reports unavailable engines instead of silently substituting another speech service. Keep the service bound to loopback and add only trusted app origins to its CORS allowlist.
 
 ### Type Check
 

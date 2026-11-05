@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { LogIn, ShieldCheck, AlertCircle, RefreshCw, Sparkles } from 'lucide-react';
-import { loginWithGoogle } from '../../lib/auth';
+import { continueOffline, loginWithGoogle } from '../../lib/auth';
 import { initGoogleAuth } from '../../lib/googleAuth';
 import type { AuthSession } from '../../types/schemas';
 import LanguageToggle from '../../i18n/LanguageToggle';
@@ -24,11 +24,23 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
   const reduceMotion = useReducedMotion();
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [online, setOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine);
   const googleBtnContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOnline = () => setOnline(true);
+    const handleOffline = () => setOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Initialize Google Identity Services
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID) return;
+    if (!GOOGLE_CLIENT_ID || !online) return;
 
     let mounted = true;
     const btnWidth =
@@ -74,7 +86,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
     return () => {
       mounted = false;
     };
-  }, [isBn, onSignedIn]);
+  }, [isBn, online, onSignedIn]);
 
   return (
     <LocalizedContent>
@@ -346,7 +358,21 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
               </div>
 
               {/* Official GSI Button Mount */}
-              {GOOGLE_CLIENT_ID ? (
+              {!online ? (
+                <div
+                  role="status"
+                  style={{
+                    color: 'rgba(249, 242, 228, 0.8)',
+                    fontSize: 12,
+                    lineHeight: 1.5,
+                    textAlign: 'center',
+                  }}
+                >
+                  {isBn
+                    ? 'গুগল সাইন-ইনের জন্য ইন্টারনেট প্রয়োজন। অফলাইনে চালিয়ে যেতে নিচের বোতাম ব্যবহার করুন।'
+                    : 'Google sign-in needs internet. Use the button below to continue offline.'}
+                </div>
+              ) : GOOGLE_CLIENT_ID ? (
                 <div
                   ref={googleBtnContainerRef}
                   style={{
@@ -469,6 +495,23 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                 )}
               </AnimatePresence>
             </div>
+
+            <button
+              type="button"
+              onClick={() => onSignedIn(continueOffline())}
+              style={{
+                width: '100%',
+                minHeight: 44,
+                borderRadius: 12,
+                border: '1px solid rgba(249, 242, 228, 0.3)',
+                background: 'rgba(249, 242, 228, 0.12)',
+                color: '#FFF8F0',
+                font: '600 14px Inter, system-ui, sans-serif',
+                cursor: 'pointer',
+              }}
+            >
+              {isBn ? 'অফলাইনে চালিয়ে যান' : 'Continue offline'}
+            </button>
 
             {/* Security Trust Badge */}
             <div

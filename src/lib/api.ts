@@ -12,6 +12,7 @@ import type {
   AdminUserDetail,
   AdminUserSummary,
   AnalyzeResult,
+  AuthSession,
   CoachChatRequest,
   CoachChatResponse,
   CoachTTSRequest,
@@ -40,6 +41,74 @@ import { getApiBase } from './config';
  * Base URL of the FastAPI backend. Resolved dynamically using `getApiBase()`.
  */
 export const API_BASE: string = getApiBase();
+
+function isLocalOnlySession(): boolean {
+  return Boolean(storage.load<AuthSession>('auth')?.localOnly);
+}
+
+function deviceKey(key: string): string {
+  const email = storage.load<AuthSession>('auth')?.email ?? 'anonymous';
+  return `${key}:${email.toLowerCase()}`;
+}
+
+function useLocalFallback(error: unknown): boolean {
+  if (isLocalOnlySession() || (typeof navigator !== 'undefined' && !navigator.onLine)) return true;
+  return error instanceof TypeError || (error instanceof ApiError && error.status >= 500);
+}
+
+function localMeals(): MealEntry[] {
+  return storage.load<MealEntry[]>(deviceKey('meals')) ?? [];
+}
+
+function saveLocalMeals(meals: MealEntry[]): void {
+  storage.save(deviceKey('meals'), meals);
+}
+
+function localGroceryList(budget = 500): GroceryList {
+  return storage.load<GroceryList>(deviceKey('grocery')) ?? { budget, groups: [] };
+}
+
+function saveLocalGroceryList(list: GroceryList): void {
+  storage.save(deviceKey('grocery'), list);
+  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('grocery-updated'));
+}
+
+function localGroceryItem(category: string, name: string, price: number): GroceryItem {
+  const list = localGroceryList();
+  const group = list.groups.find((item) => item.category === category);
+  const item: GroceryItem = {
+    id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name,
+    category,
+    price,
+    checked: false,
+  };
+  if (group) group.items.push(item);
+  else list.groups.push({ category, items: [item] });
+  saveLocalGroceryList(list);
+  return item;
+}
+
+function localTodaySummary(): TodaySummary {
+  const today = new Date();
+  const profile = storage.load<UserProfile>(deviceKey('profile'));
+  const meals = localMeals().filter((meal) => new Date(meal.date).toDateString() === today.toDateString());
+  return meals.reduce<TodaySummary>((summary, meal) => ({
+    mealsLogged: summary.mealsLogged + 1,
+    totalKcal: summary.totalKcal + meal.totals.kcal,
+    totalProtein: summary.totalProtein + meal.totals.protein,
+    totalCarbs: summary.totalCarbs + meal.totals.carbs,
+    totalFat: summary.totalFat + meal.totals.fat,
+    dailyKcalTarget: summary.dailyKcalTarget,
+  }), {
+    mealsLogged: 0,
+    totalKcal: 0,
+    totalProtein: 0,
+    totalCarbs: 0,
+    totalFat: 0,
+    dailyKcalTarget: profile?.dailyKcalTarget ?? 2000,
+  });
+}
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -144,6 +213,20 @@ export async function resolveNutrition(
   items: DetectedItem[],
   profile?: UserProfile,
 ): Promise<ResolveNutritionResult> {
+  if (isLocalOnlySession()) {
+    const resolved: ResolvedItem[] = items.map((item) => {
+      const descriptor = MOCK_NUTRITION_DB[item.name] ?? null;
+      return {
+        ...item,
+        descriptor,
+        nutrition: descriptor ? { ...descriptor } : null,
+        source: descriptor ? 'cache' : 'estimated',
+        partial: descriptor == null,
+      };
+    });
+    const totals = mealTotals(resolved);
+    return { resolved, contributions: buildContributions(resolved, totals, profile) };
+  }
   try {
     return await apiFetch<ResolveNutritionResult>('/api/nutrition/resolve', {
       method: 'POST',
@@ -170,21 +253,56 @@ export async function resolveNutrition(
 // ── Profile ─────────────────────────────────────────────────────────────
 
 export async function getProfile(): Promise<UserProfile> {
-  return apiFetch<UserProfile>('/api/profile');
+  const key = deviceKey('profile');
+  if (isLocalOnlySession()) return storage.load<UserProfile>(key) ?? DEFAULT_PROFILE;
+  try {
+    const profile = await apiFetch<UserProfile>('/api/profile');
+    storage.save(key, profile);
+    return profile;
+  } catch (error) {
+    if (!useLocalFallback(error)) throw error;
+    const profile = storage.load<UserProfile>(key) ?? DEFAULT_PROFILE;
+    storage.save(key, profile);
+    return profile;
+  }
 }
 
 export async function updateProfile(p: UserProfile): Promise<UserProfile> {
-  return apiFetch<UserProfile>('/api/profile', {
-    method: 'PUT',
-    body: JSON.stringify(p),
-  });
+  if (isLocalOnlySession()) {
+    storage.save(deviceKey('profile'), p);
+    return p;
+  }
+  try {
+    const updated = await apiFetch<UserProfile>('/api/profile', {
+      method: 'PUT',
+      body: JSON.stringify(p),
+    });
+    storage.save(deviceKey('profile'), updated);
+    return updated;
+  } catch (error) {
+    if (!useLocalFallback(error)) throw error;
+    storage.save(deviceKey('profile'), p);
+    return p;
+  }
 }
 
 // ── Grocery list ────────────────────────────────────────────────────────
 
 export async function getGroceryList(profile: UserProfile): Promise<GroceryList> {
   const budget = profile.budget ?? 500;
-  return apiFetch<GroceryList>(`/api/grocery?budget=${encodeURIComponent(budget)}`);
+  if (isLocalOnlySession()) {
+    const list = localGroceryList(budget);
+    list.budget = budget;
+    return list;
+  }
+  try {
+    const list = await apiFetch<GroceryList>(`/api/grocery?budget=${encodeURIComponent(budget)}`);
+    storage.save(deviceKey('grocery'), list);
+    return list;
+  } catch (error) {
+    if (!useLocalFallback(error)) throw error;
+    return localGroceryList(budget);
+  }
 }
 
 export async function addGroceryItem(
@@ -192,10 +310,15 @@ export async function addGroceryItem(
   name: string,
   price: number,
 ): Promise<GroceryItem> {
-  const item = await apiFetch<GroceryItem>('/api/grocery/items', {
-    method: 'POST',
-    body: JSON.stringify({ category, name, price }),
-  });
+  const item = isLocalOnlySession()
+    ? localGroceryItem(category, name, price)
+    : await apiFetch<GroceryItem>('/api/grocery/items', {
+        method: 'POST',
+        body: JSON.stringify({ category, name, price }),
+      }).catch((error: unknown) => {
+        if (!useLocalFallback(error)) throw error;
+        return localGroceryItem(category, name, price);
+      });
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('grocery-updated', { detail: item }));
   }
@@ -212,6 +335,7 @@ export async function addGroceryItemsBatch(
   if (items.length === 0) return [];
 
   try {
+    if (isLocalOnlySession()) return items.map((item) => localGroceryItem(item.category || 'Produce', item.name, item.price));
     const payload = items.map((i) => ({
       category: i.category || 'Produce',
       name: i.name,
@@ -225,37 +349,82 @@ export async function addGroceryItemsBatch(
       window.dispatchEvent(new CustomEvent('grocery-updated', { detail: created }));
     }
     return created;
-  } catch {
-    const fallbackResults = await Promise.all(
-      items.map((i) => addGroceryItem(i.category || 'Produce', i.name, i.price)),
-    );
-    return fallbackResults;
+  } catch (error) {
+    if (!useLocalFallback(error)) throw error;
+    return items.map((item) => localGroceryItem(item.category || 'Produce', item.name, item.price));
   }
 }
 
 export async function removeGroceryItem(itemId: string): Promise<void> {
-  await apiFetch<void>(`/api/grocery/items/${encodeURIComponent(itemId)}`, {
-    method: 'DELETE',
-  });
+  if (isLocalOnlySession()) {
+    saveLocalGroceryList(removeLocalGroceryItem(itemId));
+    return;
+  }
+  try {
+    await apiFetch<void>(`/api/grocery/items/${encodeURIComponent(itemId)}`, { method: 'DELETE' });
+  } catch (error) {
+    if (!useLocalFallback(error)) throw error;
+    saveLocalGroceryList(removeLocalGroceryItem(itemId));
+  }
 }
 
 export async function updateGroceryPrice(itemId: string, price: number): Promise<void> {
-  await apiFetch<void>(`/api/grocery/items/${encodeURIComponent(itemId)}/price`, {
-    method: 'PUT',
-    body: JSON.stringify({ price }),
-  });
+  if (!isLocalOnlySession()) {
+    try {
+      await apiFetch<void>(`/api/grocery/items/${encodeURIComponent(itemId)}/price`, {
+        method: 'PUT',
+        body: JSON.stringify({ price }),
+      });
+      return;
+    } catch (error) {
+      if (!useLocalFallback(error)) throw error;
+    }
+  }
+  const list = localGroceryList();
+  for (const group of list.groups) {
+    const item = group.items.find((entry) => entry.id === itemId);
+    if (item) item.price = price;
+  }
+  saveLocalGroceryList(list);
 }
 
 export async function toggleGroceryItem(itemId: string): Promise<GroceryItem> {
-  return apiFetch<GroceryItem>(`/api/grocery/items/${encodeURIComponent(itemId)}/toggle`, {
-    method: 'POST',
-  });
+  if (!isLocalOnlySession()) {
+    try {
+      return await apiFetch<GroceryItem>(`/api/grocery/items/${encodeURIComponent(itemId)}/toggle`, { method: 'POST' });
+    } catch (error) {
+      if (!useLocalFallback(error)) throw error;
+    }
+  }
+  const list = localGroceryList();
+  for (const group of list.groups) {
+    const item = group.items.find((entry) => entry.id === itemId);
+    if (item) {
+      item.checked = !item.checked;
+      saveLocalGroceryList(list);
+      return item;
+    }
+  }
+  throw new ApiError(404, 'Grocery item not found on this device.');
 }
 
 export async function clearGroceryList(): Promise<void> {
-  await apiFetch<void>('/api/grocery', {
-    method: 'DELETE',
-  });
+  if (!isLocalOnlySession()) {
+    try {
+      await apiFetch<void>('/api/grocery', { method: 'DELETE' });
+    } catch (error) {
+      if (!useLocalFallback(error)) throw error;
+    }
+  }
+  saveLocalGroceryList({ ...localGroceryList(), groups: [] });
+}
+
+function removeLocalGroceryItem(itemId: string): GroceryList {
+  const list = localGroceryList();
+  list.groups = list.groups
+    .map((group) => ({ ...group, items: group.items.filter((item) => item.id !== itemId) }))
+    .filter((group) => group.items.length > 0);
+  return list;
 }
 
 // ── Meal history ────────────────────────────────────────────────────────
@@ -280,10 +449,27 @@ export async function saveMeal(entry: Omit<MealEntry, 'id' | 'date'>): Promise<M
       mediter: false,
     },
   };
-  const saved = await apiFetch<MealEntry>('/api/meals', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
+  const saveLocal = () => {
+    const saved: MealEntry = {
+      ...entry,
+      id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      date: new Date().toISOString(),
+    };
+    saveLocalMeals([saved, ...localMeals()]);
+    return saved;
+  };
+  const saved = isLocalOnlySession()
+    ? saveLocal()
+    : await apiFetch<MealEntry>('/api/meals', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }).then((result) => {
+        saveLocalMeals([result, ...localMeals().filter((meal) => meal.id !== result.id)]);
+        return result;
+      }).catch((error: unknown) => {
+        if (!useLocalFallback(error)) throw error;
+        return saveLocal();
+      });
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('meal-history-updated', { detail: saved }));
   }
@@ -292,10 +478,25 @@ export async function saveMeal(entry: Omit<MealEntry, 'id' | 'date'>): Promise<M
 
 /** Update the most recent meal with updated items, totals, or label. */
 export async function updateLatestMeal(updates: Partial<MealEntry>): Promise<MealEntry | null> {
-  const updated = await apiFetch<MealEntry | null>('/api/meals/latest', {
-    method: 'PATCH',
-    body: JSON.stringify(updates),
-  });
+  const updateLocal = () => {
+    const meals = localMeals();
+    if (!meals.length) return null;
+    const updated = { ...meals[0], ...updates };
+    saveLocalMeals([updated, ...meals.slice(1)]);
+    return updated;
+  };
+  const updated = isLocalOnlySession()
+    ? updateLocal()
+    : await apiFetch<MealEntry | null>('/api/meals/latest', {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
+      }).then((result) => {
+        if (result) saveLocalMeals([result, ...localMeals().filter((meal) => meal.id !== result.id)]);
+        return result;
+      }).catch((error: unknown) => {
+        if (!useLocalFallback(error)) throw error;
+        return updateLocal();
+      });
   if (updated && typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('meal-history-updated', { detail: updated }));
   }
@@ -304,11 +505,22 @@ export async function updateLatestMeal(updates: Partial<MealEntry>): Promise<Mea
 
 /** Get full meal history for the authenticated user, most recent first. */
 export async function getMealHistory(): Promise<MealEntry[]> {
-  return apiFetch<MealEntry[]>('/api/meals');
+  if (isLocalOnlySession()) return localMeals();
+  try {
+    const remote = await apiFetch<MealEntry[]>('/api/meals');
+    const merged = [...remote, ...localMeals().filter((local) => !remote.some((meal) => meal.id === local.id))]
+      .sort((a, b) => b.date.localeCompare(a.date));
+    saveLocalMeals(merged);
+    return merged;
+  } catch (error) {
+    if (!useLocalFallback(error)) throw error;
+    return localMeals();
+  }
 }
 
 /** Get meals logged today for the authenticated user. */
 export async function getTodaySummary(): Promise<TodaySummary> {
+  if (isLocalOnlySession()) return localTodaySummary();
   try {
     const raw = await apiFetch<any>('/api/meals/today');
     return {
@@ -320,14 +532,7 @@ export async function getTodaySummary(): Promise<TodaySummary> {
       dailyKcalTarget: Number(raw?.dailyKcalTarget ?? raw?.daily_kcal_target ?? 2000),
     };
   } catch {
-    return {
-      mealsLogged: 0,
-      totalKcal: 0,
-      totalProtein: 0,
-      totalCarbs: 0,
-      totalFat: 0,
-      dailyKcalTarget: 2000,
-    };
+    return localTodaySummary();
   }
 }
 
@@ -369,6 +574,18 @@ export function calculateStreak(days: Set<string>): number {
 
 /** Get aggregated user statistics for the profile screen. */
 export async function getUserStats(): Promise<UserStats> {
+  if (isLocalOnlySession()) {
+    const meals = localMeals();
+    const dates = new Set(meals.map((meal) => meal.date.slice(0, 10)));
+    return {
+      totalMeals: meals.length,
+      totalDaysActive: dates.size,
+      avgDailyKcal: dates.size
+        ? meals.reduce((total, meal) => total + meal.totals.kcal, 0) / dates.size
+        : 0,
+      streakDays: calculateStreak(dates),
+    };
+  }
   try {
     const raw = await apiFetch<any>('/api/meals/stats');
     return {
@@ -378,129 +595,41 @@ export async function getUserStats(): Promise<UserStats> {
       streakDays: Number(raw?.streakDays ?? raw?.streak_days ?? 0),
     };
   } catch {
+    const meals = localMeals();
+    const dates = new Set(meals.map((meal) => meal.date.slice(0, 10)));
     return {
-      totalMeals: 0,
-      totalDaysActive: 0,
-      avgDailyKcal: 0,
-      streakDays: 0,
+      totalMeals: meals.length,
+      totalDaysActive: dates.size,
+      avgDailyKcal: dates.size
+        ? meals.reduce((total, meal) => total + meal.totals.kcal, 0) / dates.size
+        : 0,
+      streakDays: calculateStreak(dates),
     };
   }
 }
 
 /** Delete a meal from history. */
 export async function deleteMeal(mealId: string): Promise<void> {
-  await apiFetch<void>(`/api/meals/${encodeURIComponent(mealId)}`, {
-    method: 'DELETE',
-  });
+  if (!isLocalOnlySession()) {
+    try {
+      await apiFetch<void>(`/api/meals/${encodeURIComponent(mealId)}`, { method: 'DELETE' });
+    } catch (error) {
+      if (!useLocalFallback(error)) throw error;
+    }
+  }
+  saveLocalMeals(localMeals().filter((meal) => meal.id !== mealId));
 }
 
 // ── Multi-Agent AI Coach ────────────────────────────────────────────────
 
 export async function sendCoachChat(req: CoachChatRequest): Promise<CoachChatResponse> {
-  try {
-    return await apiFetch<CoachChatResponse>('/api/coach/chat', {
-      method: 'POST',
-      body: JSON.stringify(req),
-    });
-  } catch {
-    // Offline local fallback
-    const isScientist = req.agent_type === 'scientist';
-    const lastMsg =
-      req.message ||
-      (req.messages && req.messages[req.messages.length - 1]?.content) ||
-      '';
-    const hasBnChars = /[\u0980-\u09FF]/.test(lastMsg);
-    const isBn = req.lang === 'bn' || (hasBnChars && req.lang !== 'en');
-    const cleanMsg = lastMsg.toLowerCase().replace(/[!.,?।]+/g, '').trim();
-    const greetings = [
-      'hello',
-      'hi',
-      'hey',
-      'greetings',
-      'good morning',
-      'good evening',
-      'how are you',
-      'how are you doing',
-      'whats up',
-      "what's up",
-      'হ্যালো',
-      'হাই',
-      'হে',
-      'সালাম',
-      'নমস্কার',
-      'আদাব',
-      'কেমন আছেন',
-      'কেমন আছো',
-      'kemon achen',
-      'kemon acho',
-    ];
-    const isGreeting = greetings.some((g) => cleanMsg === g || cleanMsg.startsWith(g + ' '));
-
-    if (isGreeting) {
-      if (isScientist) {
-        return {
-          reply: isBn
-            ? 'হ্যালো! আজকের খাবারে পুষ্টি বা ক্যালরি নিয়ে কী জানতে চান? 🔬'
-            : 'Hello! What would you like to know about nutrition or calories today? 🔬',
-          citations: ['BIRDEM ক্লিনিক্যাল গাইডলাইন'],
-          suggested_prompts: isBn
-            ? [
-                'এই খাবারের গ্লাইসেমিক লোড কীভাবে কমাব?',
-                'রান্নায় তেল শোষণ কমানোর বৈজ্ঞানিক পদ্ধতি কী?',
-                'বাজেট ফ্রেন্ডলি প্রোটিন উৎস কী কী?',
-              ]
-            : [
-                'How do I lower the glycemic load of this meal?',
-                'How to reduce cooking oil absorption?',
-                'What are budget-friendly protein sources?',
-              ],
-          agent_type: 'scientist',
-        };
-      }
-      return {
-        reply: isBn
-          ? 'হ্যালো! আজকে আপনার ডায়েট ট্র্যাকিং কেমন চলছে? 💚'
-          : 'Hello! How is your diet tracking and wellness journey going today? 💚',
-        citations: ['CBT ও অভ্যাস বিজ্ঞান'],
-        suggested_prompts: isBn
-          ? [
-              'দাওয়াতে অতিরিক্ত খাওয়ার পর কী করব?',
-              'রাতের মিষ্টি বা চায়ের আড্ডার লোভ কীভাবে সামলাব?',
-              'ব্যস্ত দিনে হেলদি ডায়েট ধরে রাখার সহজ রুটিন কী?',
-            ]
-          : [
-              'How to bounce back after a heavy feast?',
-              'How to manage evening sweet cravings?',
-              'Easy routines for healthy habits on busy days?',
-            ],
-        agent_type: req.agent_type === 'behavioral' ? 'behavioral' : 'coach',
-      };
-    }
-
-    if (isScientist) {
-      return {
-        reply: isBn
-          ? '🔬 **বায়োকেমিক্যাল পুষ্টি বিশ্লেষণ (ড. সুস্মিত):**\n\nখাবারের গ্লাইসেমিক লোড নিয়ন্ত্রণে রাখতে পর্যাপ্ত ফাইবার ও প্রোটিন যুক্ত করুন।\n\n[উৎস: BIRDEM ক্লিনিক্যাল গাইডলাইন]'
-          : '🔬 **Nutritional Biochemical Analysis:**\n\nTo optimize glycemic response, buffer carbs with soluble dietary fiber and lean protein.\n\n[Source: BIRDEM Clinical Protocols]',
-        citations: ['BIRDEM ক্লিনিক্যাল গাইডলাইন'],
-        suggested_prompts: isBn
-          ? ['এই খাবারের গ্লাইসেমিক লোড কীভাবে কমাব?', 'বাজেট ফ্রেন্ডলি প্রোটিন উৎস কী কী?']
-          : ['How do I lower the glycemic load of this meal?', 'What are budget-friendly protein sources?'],
-        agent_type: 'scientist',
-      };
-    }
-
-    return {
-      reply: isBn
-        ? '🧠 **আচরণ ও অভ্যাস কোচের বার্তা:**\n\nসুস্থ খাদ্যাভ্যাস গড়ে তোলা একটি ধারাবাহিক প্রক্রিয়া। প্রতিটি ছোট পদক্ষেপই গুরুত্বপূর্ণ! 💚'
-        : '🧠 **Habit Coach Perspective:**\n\nBuilding sustainable nutrition is a daily journey. Every mindful choice counts! 💚',
-      citations: ['CBT ও অভ্যাস বিজ্ঞান'],
-      suggested_prompts: isBn
-        ? ['দাওয়াতে অতিরিক্ত খাওয়ার পর কী করব?', 'ব্যস্ত দিনে হেলদি ডায়েট ধরে রাখার সহজ রুটিন কী?']
-        : ['How to bounce back after a heavy feast?', 'Easy routines for healthy habits on busy days?'],
-      agent_type: req.agent_type === 'behavioral' ? 'behavioral' : 'coach',
-    };
+  if (isLocalOnlySession()) {
+    throw new Error('This is a local-only session. Use an installed local model for AI chat.');
   }
+  return apiFetch<CoachChatResponse>('/api/coach/chat', {
+    method: 'POST',
+    body: JSON.stringify(req),
+  });
 }
 
 /**
@@ -509,48 +638,37 @@ export async function sendCoachChat(req: CoachChatRequest): Promise<CoachChatRes
  * and auto-enriches context from PostgreSQL nv_users, nv_meals, and nv_grocery.
  */
 export async function sendCoachVoiceChat(req: CoachChatRequest): Promise<CoachChatResponse> {
-  try {
-    return await apiFetch<CoachChatResponse>('/api/coach/voice-chat', {
-      method: 'POST',
-      body: JSON.stringify({ ...req, include_audio: true }),
-    });
-  } catch (err) {
-    const diagMsg = err instanceof Error ? err.message : String(err);
-    // Offline local fallback: run standard sendCoachChat and flag use_browser_tts
-    const fallbackResp = await sendCoachChat(req);
-    const plainText = fallbackResp.reply
-      .replace(/\[(?:উৎস|Source):[^\]]+\]/g, '')
-      .replace(/[*#_`>]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-    return {
-      ...fallbackResp,
-      voice_summary: plainText.slice(0, 180),
-      audio_base64: null,
-      use_browser_tts: true,
-      tts_diagnostic: `client_network_fallback: ${diagMsg}`,
-    };
+  if (isLocalOnlySession()) {
+    throw new Error('This is a local-only session. Use the configured local model and voice services.');
   }
+  return apiFetch<CoachChatResponse>('/api/coach/voice-chat', {
+    method: 'POST',
+    body: JSON.stringify({ ...req, include_audio: true }),
+  });
+}
+
+/** Remote-only AI chat. Local-only sessions must use the configured local model. */
+export async function sendCoachRemote(req: CoachChatRequest): Promise<CoachChatResponse> {
+  if (isLocalOnlySession()) {
+    throw new Error('This is a local-only session. Use an installed local model for AI chat.');
+  }
+  return apiFetch<CoachChatResponse>('/api/coach/voice-chat', {
+    method: 'POST',
+    body: JSON.stringify({ ...req, include_audio: false }),
+  });
 }
 
 /**
  * Synthesize speech on-demand for a given text snippet.
  */
 export async function generateCoachTTS(req: CoachTTSRequest): Promise<CoachTTSResponse> {
-  try {
-    return await apiFetch<CoachTTSResponse>('/api/coach/tts', {
-      method: 'POST',
-      body: JSON.stringify(req),
-    });
-  } catch (err) {
-    const diagMsg = err instanceof Error ? err.message : String(err);
-    return {
-      audio_base64: null,
-      audio_mime_type: 'audio/mpeg',
-      use_browser_tts: true,
-      tts_diagnostic: `client_fetch_error: ${diagMsg}`,
-    };
+  if (isLocalOnlySession()) {
+    throw new Error('This is a local-only session. Use the configured local Qwen3-TTS service.');
   }
+  return apiFetch<CoachTTSResponse>('/api/coach/tts', {
+    method: 'POST',
+    body: JSON.stringify(req),
+  });
 }
 
 // ── Aggregate targets (for NutrientsScreen) ─────────────────────────────

@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { generateDietaryPivots, generateDietaryPivotsAsync } from './pivotEngine';
+import { logout } from './auth';
 import type { DetectedItem, UserProfile } from '../types/schemas';
 
 const BASE_PROFILE: UserProfile = {
@@ -67,14 +68,28 @@ describe('Dietary Pivot Engine', () => {
     expect(typeof sodiumPivot?.is_live_price).toBe('boolean');
   });
 
-  it('asynchronously enriches pivots with live price status', async () => {
+  it('marks prices as live only when the price service returns live data', async () => {
+    logout();
+    vi.stubGlobal('navigator', { onLine: true });
     const detected: DetectedItem[] = [
       { name: 'White Rice', name_bn: 'সাদা ভাত', confidence: 95, grams: 260 },
     ];
-    const pivots = await generateDietaryPivotsAsync(detected, BASE_PROFILE, undefined, { forceLive: true });
-    expect(pivots.length).toBeGreaterThan(0);
-    expect(pivots[0].is_live_price).toBe(true);
-    expect(pivots[0].price_source).toContain('Chaldal Live');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({
+      item_name_en: 'test item',
+      price_bdt: 123,
+      unit: '1 kg',
+      is_live_price: true,
+      source: 'Test price service',
+    })));
+    try {
+      const pivots = await generateDietaryPivotsAsync(detected, BASE_PROFILE);
+      expect(pivots.length).toBeGreaterThan(0);
+      expect(pivots[0].is_live_price).toBe(true);
+      expect(pivots[0].price_source).toContain('Test price service');
+    } finally {
+      vi.unstubAllGlobals();
+      logout();
+    }
   });
 
   it('generates high-fiber veggie swap with grocery items when Penne Pasta is detected', () => {
@@ -91,4 +106,3 @@ describe('Dietary Pivot Engine', () => {
     expect(pastaPivot?.grocery_items_to_add.some((g) => g.name.includes('Broccoli'))).toBe(true);
   });
 });
-

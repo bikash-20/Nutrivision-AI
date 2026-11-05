@@ -15,11 +15,4 @@ describe('fetchLivePrice', () => {
     expect(res.price_bdt).toBe(0);
   });
 
-  it('supports simulated demo live pricing', async () => {
-    const res = await fetchLivePrice('Masoor dal', 'মসুর ডাল', { forceLive: true });
-    expect(res.price_bdt).toBeGreaterThan(0);
-    expect(res.is_live_price).toBe(true);
-    expect(res.source).toContain('Chaldal Live');
-  });
 });
-

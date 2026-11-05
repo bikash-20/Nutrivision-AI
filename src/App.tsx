@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { Settings } from 'lucide-react';
 import { T, TABS } from './data';
 import { getProfile, saveMeal, updateLatestMeal, analyzeMeal, resolveNutrition } from './lib/api';
+import { analyzeImageLocally, LocalAIError } from './lib/localAI';
 import { getEffectiveNutrition } from './lib/personalize';
 import { getSession, logout } from './lib/auth';
 import { ThemeProvider } from './theme/ThemeContext';
@@ -16,6 +18,7 @@ import NutrientsScreen from './components/screens/NutrientsScreen';
 import ProfileScreen from './components/screens/ProfileScreen';
 import GroceryScreen from './components/screens/GroceryScreen';
 import CoachScreen from './components/screens/CoachScreen';
+import SettingsScreen from './components/screens/SettingsScreen';
 import PwaInstallBanner from './components/PwaInstallBanner';
 import LoginScreen from './components/auth/LoginScreen';
 import AdminLayout from './components/admin/AdminLayout';
@@ -112,6 +115,7 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
   useTokens();
   const { translate } = useLanguage();
   const [tab, setTab] = useState(0);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [direction, setDirection] = useState(1);
   const [captured, setCaptured] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -134,6 +138,7 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
   }, [session?.email]);
 
   const goToTab = (next: number) => {
+    setSettingsOpen(false);
     if (next === tab) return;
     setDirection(next > tab ? 1 : -1);
     setTab(next);
@@ -151,7 +156,15 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
     let trace: PipelineTrace[] = [];
     try {
       if (!imageDataUrl) throw new Error('A photo is required to analyze a meal');
-      const result = await analyzeMeal(imageDataUrl);
+      let result: import('./types/schemas').AnalyzeResult;
+      try {
+        const local = await analyzeImageLocally(imageDataUrl, profile);
+        result = local.result;
+        setPipelineToast(translate(`Analyzed on-device with ${local.model}`));
+      } catch (localError) {
+        if (session.localOnly || (typeof navigator !== 'undefined' && !navigator.onLine)) throw localError;
+        result = await analyzeMeal(imageDataUrl);
+      }
       setAnalysisResult(result);
       next = result.detected;
       trace = result.pipeline;
@@ -165,7 +178,11 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Meal analysis failed:', err);
-      setAnalysisMessage(translate('Could not analyze this photo. Check your connection and provider setup.'));
+      setAnalysisMessage(
+        err instanceof LocalAIError
+          ? err.message
+          : translate('Could not analyze this photo. Check your connection and provider setup.')
+      );
       setPipelineToast(translate('Analysis unavailable — no sample results shown.'));
     }
     setDetected(next);
@@ -277,13 +294,35 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
         headerRight={
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <LanguageToggle />
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              aria-label={translate('Settings')}
+              title={translate('Settings')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                border: `1px solid ${T.cardBorderSoft}`,
+                background: T.cardBg,
+                color: T.ink,
+                cursor: 'pointer',
+              }}
+            >
+              <Settings size={17} />
+            </button>
             <StepDots active={tab} onChange={goToTab} />
           </div>
         }
         footer={<BottomNav active={tab} onChange={goToTab} />}
       >
         <LocalizedContent>
-        <motion.div
+        {settingsOpen ? (
+          <SettingsScreen onBack={() => setSettingsOpen(false)} />
+        ) : <motion.div
           key={tab}
           custom={direction}
           initial={
@@ -345,8 +384,9 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
             />
           )}
           {tab === 4 && <GroceryScreen profile={profile} />}
-          {tab === 5 && <CoachScreen profile={profile} />}
+          {tab === 5 && <CoachScreen profile={profile} imageContext={capturedImage} localOnly={session.localOnly} />}
         </motion.div>
+        }
         </LocalizedContent>
 
         <AnimatePresence>

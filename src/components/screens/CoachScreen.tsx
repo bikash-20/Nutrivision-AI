@@ -16,9 +16,11 @@ import {
   Loader2,
 } from 'lucide-react';
 import katex from 'katex';
+import 'katex/dist/katex.min.css';
 import { T } from '../../data';
 import { useTokens } from '../../theme/useTokens';
-import { sendCoachVoiceChat, generateCoachTTS } from '../../lib/api';
+import { sendCoachRemote } from '../../lib/api';
+import { chatWithLocalModel, getLocalAISettings, LocalAIError, synthesizeLocally, transcribeLocally } from '../../lib/localAI';
 import { LocalizedContent, useLanguage } from '../../i18n/LanguageContext';
 import type {
   CoachAgentType,
@@ -33,10 +35,13 @@ interface DisplayCoachMessage extends CoachMessage {
   audio_mime_type?: string;
   use_browser_tts?: boolean;
   tts_diagnostic?: string | null;
+  runtime_label?: string;
 }
 
 interface CoachScreenProps {
   profile: UserProfile;
+  imageContext?: string | null;
+  localOnly?: boolean;
 }
 
 /**
@@ -239,7 +244,7 @@ function FormattedMessage({
   );
 }
 
-export default function CoachScreen({ profile }: CoachScreenProps) {
+export default function CoachScreen({ profile, imageContext = null, localOnly = false }: CoachScreenProps) {
   const { theme } = useTokens();
   const isDark = theme === 'dark';
   const { language } = useLanguage();
@@ -249,7 +254,10 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
   const [messages, setMessages] = useState<DisplayCoachMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(imageContext);
+  const [conversationImage, setConversationImage] = useState<string | null>(imageContext);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const [suggestedPrompts, setSuggestedPrompts] = useState<string[]>([]);
   const [citations, setCitations] = useState<string[]>([]);
 
@@ -262,12 +270,20 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
   // Speech-to-Text state
   const [isListening, setIsListening] = useState(false);
   const [speechLang, setSpeechLang] = useState<'bn-BD' | 'en-US'>(() => (isBn ? 'bn-BD' : 'en-US'));
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recognitionRef = useRef<any>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const recordingStreamRef = useRef<MediaStream | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     setSpeechLang(isBn ? 'bn-BD' : 'en-US');
   }, [isBn]);
+
+  useEffect(() => {
+    if (imageContext) {
+      setImagePreview(imageContext);
+      setConversationImage(imageContext);
+    }
+  }, [imageContext]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -275,6 +291,7 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
   const stopAudio = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
+      if (audioRef.current.src.startsWith('blob:')) URL.revokeObjectURL(audioRef.current.src);
       audioRef.current = null;
     }
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -283,31 +300,6 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
     setIsPlayingAudio(false);
     setCurrentPlayingIndex(null);
   }, []);
-
-  const speakWithBrowserTTS = useCallback((text: string, idx?: number) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const clean = text
-      .replace(/\[(?:উৎস|Source):[^\]]+\]/g, '')
-      .replace(/[*#_`>]/g, '')
-      .slice(0, 300);
-    const utterance = new SpeechSynthesisUtterance(clean);
-    utterance.lang = language === 'bn' ? 'bn-BD' : 'en-US';
-    utterance.rate = 1.0;
-    if (idx !== undefined) {
-      setCurrentPlayingIndex(idx);
-      setIsPlayingAudio(true);
-      utterance.onend = () => {
-        setIsPlayingAudio(false);
-        setCurrentPlayingIndex(null);
-      };
-      utterance.onerror = () => {
-        setIsPlayingAudio(false);
-        setCurrentPlayingIndex(null);
-      };
-    }
-    window.speechSynthesis.speak(utterance);
-  }, [language]);
 
   const playAudioForMessage = useCallback(async (idx: number, msg: DisplayCoachMessage) => {
     if (isPlayingAudio && currentPlayingIndex === idx) {
@@ -328,91 +320,58 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
         setCurrentPlayingIndex(null);
       };
       audio.onerror = (e) => {
-        console.warn('Audio playback error, falling back to browser TTS:', e);
+        console.warn('Local audio playback error:', e);
         setIsPlayingAudio(false);
         setCurrentPlayingIndex(null);
-        speakWithBrowserTTS(msg.voice_summary || msg.content, idx);
+        setVoiceError('Saved local audio could not be played.');
       };
       audio.play().catch((err) => {
-        console.warn('audio.play() failed, falling back to browser TTS:', err);
+        console.warn('Saved audio playback failed:', err);
         setIsPlayingAudio(false);
         setCurrentPlayingIndex(null);
-        speakWithBrowserTTS(msg.voice_summary || msg.content, idx);
+        setVoiceError('Saved local audio could not be played.');
       });
       return;
     }
 
-    // 2. Audio not yet loaded: Request ElevenLabs TTS from backend
+    // Audio is synthesized by the selected on-device TTS runtime.
     const textToSynthesize = msg.voice_summary || msg.content;
     if (!textToSynthesize) return;
 
     setFetchingAudioId(idx);
+    setVoiceError(null);
     try {
-      const isBengaliText = /[\u0980-\u09FF]/.test(textToSynthesize) || language === 'bn';
-      const targetPersona = msg.persona || agentType;
-      const res = await generateCoachTTS({
-        text: textToSynthesize,
-        lang: isBengaliText ? 'bn' : 'en',
-        persona: targetPersona,
-      });
-
-      console.info('[AI Coach TTS]', {
-        index: idx,
-        diagnostic: res.tts_diagnostic,
-        useBrowserTTS: res.use_browser_tts,
-        hasAudio: Boolean(res.audio_base64),
-      });
-
-      if (res.audio_base64) {
-        // Cache audio on message in state so subsequent clicks don't re-fetch
-        setMessages((prev) => {
-          const next = [...prev];
-          if (next[idx]) {
-            next[idx] = {
-              ...next[idx],
-              audio_base64: res.audio_base64,
-              audio_mime_type: res.audio_mime_type || 'audio/mpeg',
-              use_browser_tts: false,
-              tts_diagnostic: res.tts_diagnostic,
-            };
-          }
-          return next;
-        });
-
-        const mime = res.audio_mime_type || 'audio/mpeg';
-        const audio = new Audio(`data:${mime};base64,${res.audio_base64}`);
-        audioRef.current = audio;
-        setCurrentPlayingIndex(idx);
-        setIsPlayingAudio(true);
-        audio.onended = () => {
-          setIsPlayingAudio(false);
-          setCurrentPlayingIndex(null);
-        };
-        audio.onerror = () => {
-          setIsPlayingAudio(false);
-          setCurrentPlayingIndex(null);
-          speakWithBrowserTTS(textToSynthesize, idx);
-        };
-        await audio.play();
-      } else {
-        // Audio generation was null (e.g. ElevenLabs error or browser fallback flag)
-        speakWithBrowserTTS(textToSynthesize, idx);
-      }
+      const audioBlob = await synthesizeLocally(textToSynthesize, language === 'bn' ? 'bn-BD' : 'en-US');
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+      setCurrentPlayingIndex(idx);
+      setIsPlayingAudio(true);
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        setIsPlayingAudio(false);
+        setCurrentPlayingIndex(null);
+      };
+      audio.onerror = () => {
+        URL.revokeObjectURL(audioUrl);
+        setIsPlayingAudio(false);
+        setCurrentPlayingIndex(null);
+        setVoiceError('Local audio playback failed.');
+      };
+      await audio.play();
     } catch (err) {
-      console.warn('generateCoachTTS call failed:', err);
-      speakWithBrowserTTS(textToSynthesize, idx);
+      setVoiceError(err instanceof LocalAIError ? err.message : 'The selected local TTS engine could not synthesize speech.');
     } finally {
       setFetchingAudioId(null);
     }
-  }, [isPlayingAudio, currentPlayingIndex, stopAudio, speakWithBrowserTTS, language, agentType]);
+  }, [isPlayingAudio, currentPlayingIndex, stopAudio, language]);
 
   // Cleanup speech/audio on unmount
   useEffect(() => {
     return () => {
       stopAudio();
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
+      recorderRef.current?.stop();
+      recordingStreamRef.current?.getTracks().forEach((track) => track.stop());
     };
   }, [stopAudio]);
 
@@ -424,13 +383,13 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
         role: 'assistant',
         persona: 'scientist',
         content: isBn
-          ? '🔬 **স্বাগতম! আমি ড. সুস্মিত (Dr. Susmit - পুষ্টি বিজ্ঞানী)।**\n\n' +
-            'আপনার প্রোফাইল, আজকের খাদ্যতালিকা ও প্যান্ট্রির তথ্যের ভিত্তিতে গ্লাইসেমিক সূচক (GI/GL), রান্নার তেলের প্রভাব এবং বিপি/ডায়াবেটিসের বৈজ্ঞানিক বিশ্লেষণ জানাতে আমি প্রস্তুত। যেকোনো প্রশ্ন জিজ্ঞাসা করুন!'
-          : '🔬 **Welcome! I am Dr. Susmit (Nutritional Biochemist).**\n\n' +
-            'I provide evidence-based biochemical analysis grounded in your live profile, today\'s logged meals, and pantry items per BIRDEM/ADA clinical protocols. Ask any question via text or voice!',
+          ? '🔬 **স্বাগতম! আমি আপনার পুষ্টি সহায়ক।**\n\n' +
+            'খাবার বা ছবি সম্পর্কে জিজ্ঞাসা করুন। সেট আপ থাকলে এই ডিভাইসের স্থানীয় মডেল উত্তর দেবে; অনলাইনে থাকলে অনুমোদিত হোস্টেড মডেল বিকল্প হিসেবে ব্যবহার হতে পারে।'
+          : '🔬 **Welcome! I am your nutrition assistant.**\n\n' +
+            'Ask about a meal or attach a photo. When configured, a local model answers on this device; a hosted model is used only while online.',
         voice_summary: isBn
-          ? 'স্বাগতম! আমি পুষ্টি বিজ্ঞানী ড. সুস্মিত। আপনার খাদ্যের গ্লাইসেমিক লোড ও পুষ্টির বৈজ্ঞানিক বিশ্লেষণে আমি সাহায্য করব।'
-          : 'Welcome! I am Dr. Susmit. I provide evidence-based biochemical analysis tailored to your daily nutrition and goals.',
+          ? 'স্বাগতম! আমি আপনার পুষ্টি সহায়ক।'
+          : 'Welcome! I am your nutrition assistant.',
       };
       setMessages([welcome]);
       setSuggestedPrompts(
@@ -446,19 +405,21 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
               'What budget-friendly protein meals can I make from my pantry?',
             ]
       );
-      setCitations(isBn ? ['BIRDEM ক্লিনিক্যাল গাইডলাইন', 'INFS খাদ্য ডাটাবেজ'] : ['BIRDEM Clinical Protocols', 'INFS Nutrition DB']);
+      setCitations([]);
+      setChatError(null);
+      setVoiceError(null);
     } else {
       const welcome: DisplayCoachMessage = {
         role: 'assistant',
         persona: 'coach',
         content: isBn
-          ? '🧠 **হ্যালো! আমি ফারহান আহমেদ (আচরণ ও অভ্যাস কোচ)।**\n\n' +
+          ? '🧠 **হ্যালো! আমি আপনার অভ্যাস সহায়ক।**\n\n' +
             'সুস্থ জীবনযাপন কোনো চাপ বা কড়া ডায়েট নয়, বরং ভালো লাগার অভ্যাস। পারিবারিক দাওয়াত, মিষ্টির ক্রেভিং বা রুটিন ধরে রাখার সহজ মনস্তাত্ত্বিক পরামর্শ পেতে আমাকে জানাতে পারেন। কোনো অপরাধবোধ ছাড়াই আমরা এগিয়ে যাব! 💚'
-          : '🧠 **Hello! I am Farhan Ahmed (Behavioral & Habit Coach).**\n\n' +
+          : '🧠 **Hello! I am your habit coach.**\n\n' +
             'Healthy living isn\'t about rigid restrictions or guilt—it\'s about building compassionate, lasting habits. Let\'s navigate family feasts, sweet cravings, and daily routines together! 💚',
         voice_summary: isBn
-          ? 'হ্যালো! আমি আপনার আচরণ ও অভ্যাস কোচ ফারহান আহমেদ। দাওয়াত ও খাদ্যাভ্যাসের মনস্তাত্ত্বিক নির্দেশনায় আমি সাথে আছি।'
-          : 'Hello! I am Farhan Ahmed, your habit coach. Let us build sustainable, guilt-free nutrition habits together.',
+          ? 'হ্যালো! আমি আপনার অভ্যাস সহায়ক।'
+          : 'Hello! I am your habit coach. Let us build sustainable nutrition habits together.',
       };
       setMessages([welcome]);
       setSuggestedPrompts(
@@ -474,7 +435,9 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
               'Easy routines for healthy habits on busy days?',
             ]
       );
-      setCitations(isBn ? ['CBT আচরণ বিজ্ঞান', 'WHO লাইফস্টাইল গাইডলাইন'] : ['CBT Habit Science', 'WHO Lifestyle Protocols']);
+      setCitations([]);
+      setChatError(null);
+      setVoiceError(null);
     }
   }, [agentType, isBn, stopAudio]);
 
@@ -485,91 +448,78 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setChatError(null);
+    e.currentTarget.value = '';
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {
         setImagePreview(reader.result);
+        setConversationImage(reader.result);
       }
     };
     reader.readAsDataURL(file);
   };
 
-  const toggleListening = () => {
+  const toggleListening = async () => {
     if (isListening) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      setIsListening(false);
+      recorderRef.current?.stop();
       return;
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const win = window as any;
-    const SpeechRec = win.SpeechRecognition || win.webkitSpeechRecognition;
-
-    if (!SpeechRec) {
-      alert(
-        isBn
-          ? 'আপনার ব্রাউজারে স্পিচ রিকগনিশন সুবিধা উপলব্ধ নেই। কিবোর্ড দিয়ে লিখুন।'
-          : 'Speech recognition is not supported in this browser. Please type your message.'
-      );
-      return;
-    }
-
+    setVoiceError(null);
     try {
-      const recognition = new SpeechRec();
-      recognition.lang = speechLang;
-      recognition.interimResults = true;
-      recognition.continuous = false;
-
-      recognition.onstart = () => {
-        setIsListening(true);
+      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+        throw new LocalAIError('This browser does not support microphone recording. Type your message instead.');
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordingStreamRef.current = stream;
+      recordingChunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+      recorderRef.current = recorder;
+      recorder.ondataavailable = (event) => {
+        if (event.data.size) recordingChunksRef.current.push(event.data);
       };
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      recognition.onresult = (event: any) => {
-        const transcript = Array.from(event.results)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .map((r: any) => r[0].transcript)
-          .join('');
-        setInput(transcript);
-      };
-
-      recognition.onerror = () => {
+      recorder.onstop = () => {
         setIsListening(false);
+        stream.getTracks().forEach((track) => track.stop());
+        recordingStreamRef.current = null;
+        const recording = new Blob(recordingChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        if (!recording.size) {
+          setVoiceError('No audio was recorded. Try again.');
+          return;
+        }
+        void transcribeLocally(recording, speechLang)
+          .then((transcript) => setInput((current) => [current, transcript].filter(Boolean).join(' ')))
+          .catch((error: unknown) => setVoiceError(error instanceof Error ? error.message : String(error)));
       };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognitionRef.current = recognition;
-      recognition.start();
-    } catch {
+      recorder.start();
+      setIsListening(true);
+    } catch (error) {
+      recordingStreamRef.current?.getTracks().forEach((track) => track.stop());
+      recordingStreamRef.current = null;
       setIsListening(false);
+      setVoiceError(error instanceof Error ? error.message : 'Could not start local microphone recording.');
     }
   };
 
   const handleSendMessage = async (textToSend?: string) => {
+    if (loading) return;
     const content = (textToSend ?? input).trim();
-    if (!content && !imagePreview) return;
-
-    if (isListening && recognitionRef.current) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    }
+    if (!content && !imagePreview && !conversationImage) return;
+    if (isListening) recorderRef.current?.stop();
     stopAudio();
+    setChatError(null);
 
     const userMsg: DisplayCoachMessage = {
       role: 'user',
       content,
-      image_ref: imagePreview,
+      image_ref: imagePreview || conversationImage,
     };
 
     const nextMessages = [...messages, userMsg];
     setMessages(nextMessages);
     setInput('');
     setImagePreview(null);
+    setConversationImage(userMsg.image_ref || null);
     setLoading(true);
 
     try {
@@ -579,17 +529,46 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
         image_ref: m.image_ref,
       }));
 
-      // Dual-channel voice request with database auto-enrichment
-      const res = await sendCoachVoiceChat({
-        message: content,
-        history: historyToSend,
-        messages: nextMessages,
-        agent_type: agentType,
-        persona: agentType,
-        user_profile: profile,
-        lang: language,
-        include_audio: true,
-      });
+      let res: import('../../types/schemas').CoachChatResponse;
+      let runtimeLabel: string;
+      try {
+        const local = await chatWithLocalModel(
+          nextMessages.map((message, index) => ({
+            role: message.role,
+            content: message.content,
+            image: index === nextMessages.length - 1 ? userMsg.image_ref : message.image_ref,
+          })),
+          {
+            systemPrompt: [
+              `You are a practical nutrition and food-image assistant. Reply in ${language === 'bn' ? 'Bengali' : 'English'}.`,
+              'Describe visible image contents carefully. Do not invent details. Nutrition values are estimates, not medical advice.',
+              `The user's profile is ${JSON.stringify(profile)}.`,
+              getLocalAISettings().systemPrompt,
+            ].join(' '),
+            imageContext: userMsg.image_ref,
+          },
+        );
+        runtimeLabel = `On-device · ${local.model}`;
+        res = {
+          reply: local.reply,
+          citations: [],
+          suggested_prompts: [],
+          agent_type: agentType,
+        };
+      } catch (localError) {
+        if (localOnly || (typeof navigator !== 'undefined' && !navigator.onLine)) throw localError;
+        const remote = await sendCoachRemote({
+          message: content,
+          history: historyToSend,
+          messages: nextMessages,
+          agent_type: agentType,
+          persona: agentType,
+          user_profile: profile,
+          lang: language,
+        });
+        runtimeLabel = 'Hosted model · online fallback';
+        res = remote;
+      }
 
       const assistantMsg: DisplayCoachMessage = {
         role: 'assistant',
@@ -600,6 +579,7 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
         audio_mime_type: res.audio_mime_type,
         use_browser_tts: res.use_browser_tts,
         tts_diagnostic: res.tts_diagnostic,
+        runtime_label: runtimeLabel,
       };
 
       console.info('[AI Coach Voice Chat Response]', {
@@ -608,30 +588,13 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
         hasAudio: Boolean(res.audio_base64),
       });
 
-      const newIndex = nextMessages.length;
       setMessages((prev) => [...prev, assistantMsg]);
 
-      if (res.suggested_prompts && res.suggested_prompts.length > 0) {
-        setSuggestedPrompts(res.suggested_prompts);
-      }
-      if (res.citations && res.citations.length > 0) {
-        setCitations(res.citations);
-      }
+      setSuggestedPrompts(res.suggested_prompts ?? []);
+      setCitations(res.citations ?? []);
 
-      // Automatically speak the concise voice summary
-      if (assistantMsg.audio_base64 || assistantMsg.voice_summary) {
-        playAudioForMessage(newIndex, assistantMsg);
-      }
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: isBn
-            ? 'দুঃখিত, এই মুহূর্তে উত্তর তৈরিতে কিছুটা সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।'
-            : 'Sorry, unable to process the request right now. Please try again.',
-        },
-      ]);
+    } catch (error) {
+      setChatError(error instanceof Error ? error.message : (isBn ? 'স্থানীয় AI উত্তর দিতে পারেনি।' : 'The local AI request failed.'));
     } finally {
       setLoading(false);
     }
@@ -654,12 +617,12 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
                   letterSpacing: '-0.02em',
                 }}
               >
-                {isBn ? 'মাল্টি-এজেন্ট ভয়েস এআই কোচ' : 'Multi-Agent Voice AI Coach'}
+                {isBn ? 'পুষ্টি এআই সহায়ক' : 'Nutrition AI assistant'}
               </h2>
               <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: isDark ? 'rgba(249, 242, 228, 0.78)' : T.inkSoft }}>
                 {isBn
-                  ? 'লাইভ ডাটাবেজ সমন্বিত পুষ্টি বিজ্ঞান ও সহানুভূতিশীল আচরণ ভয়েস অ্যাসিস্ট্যান্ট'
-                  : 'Grounded biochemical science and empathetic voice coaching from live database'}
+                  ? 'স্থানীয় AI ব্যবহার করুন; অনলাইনে থাকলে প্রয়োজনে হোস্টেড AI বিকল্প'
+                  : 'Local model first; hosted AI is used only as an online fallback'}
               </p>
             </div>
             <div
@@ -680,7 +643,7 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
             </div>
           </div>
 
-          {/* Database Grounding Badge */}
+          {/* AI privacy and fallback disclosure */}
           <div
             style={{
               padding: '6px 12px',
@@ -698,8 +661,8 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
             <Sparkles size={13} style={{ flexShrink: 0 }} />
             <span>
               {isBn
-                ? 'ডাটাবেজ সমন্বয় সক্রিয়: আপনার স্বাস্থ্য প্রোফাইল, আজকের খাবার ও প্যান্ট্রির তথ্যের সাথে সংযুক্ত'
-                : 'Live DB Grounded: Tailored to your profile, today\'s logged meals & pantry inventory'}
+                ? 'স্থানীয় মডেল থাকলে ছবি ও বার্তা এই ডিভাইসেই প্রক্রিয়াকৃত হয়। অফলাইনে ব্যর্থ হলে কোনো নমুনা AI উত্তর দেখানো হয় না।'
+                : 'When a local model is available, photos and messages stay on this device. Offline failures never show sample AI answers.'}
             </span>
           </div>
 
@@ -736,7 +699,7 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
               }}
             >
               <span>🔬</span>
-              <span>{isBn ? 'ড. সুস্মিত (বিজ্ঞানী)' : 'Dr. Susmit (Scientist)'}</span>
+              <span>{isBn ? 'পুষ্টি সহায়ক' : 'Nutrition assistant'}</span>
             </motion.button>
 
             <motion.button
@@ -828,6 +791,7 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
                     alignItems: 'center',
                     gap: 6,
                     padding: '0 4px',
+                    flexWrap: 'wrap',
                   }}
                 >
                   {isUser ? (
@@ -835,17 +799,20 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
                   ) : agentType === 'scientist' ? (
                     <>
                       <span style={{ fontWeight: 600, color: isDark ? '#E8C49A' : T.primary }}>
-                        🔬 {isBn ? 'ড. সুস্মিত (পুষ্টি বিজ্ঞানী)' : 'Dr. Susmit (Scientist)'}
+                        🔬 {isBn ? 'পুষ্টি সহায়ক' : 'Nutrition assistant'}
                       </span>
-                      <span style={{ opacity: 0.7 }}>• BIRDEM / ADA</span>
+                      <span style={{ opacity: 0.7 }}>• Nutrition assistant</span>
                     </>
                   ) : (
                     <>
                       <span style={{ fontWeight: 600, color: isDark ? '#86EFAC' : '#2E6333' }}>
-                        🧠 {isBn ? 'ফারহান আহমেদ (আচরণ কোচ)' : 'Farhan Ahmed (Habit Coach)'}
+                        🧠 {isBn ? 'অভ্যাস সহায়ক' : 'Habit coach'}
                       </span>
-                      <span style={{ opacity: 0.7 }}>• CBT & Habits</span>
+                      <span style={{ opacity: 0.7 }}>• Habit guidance</span>
                     </>
+                  )}
+                  {!isUser && m.runtime_label && (
+                    <span style={{ fontSize: 10, color: isDark ? '#B8C68A' : '#4E6828' }}>{m.runtime_label}</span>
                   )}
                 </div>
 
@@ -1144,7 +1111,10 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
               </span>
               <button
                 type="button"
-                onClick={() => setImagePreview(null)}
+                onClick={() => {
+                  setImagePreview(null);
+                  setConversationImage(null);
+                }}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -1232,10 +1202,7 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
             onClick={() => {
               const next = speechLang === 'bn-BD' ? 'en-US' : 'bn-BD';
               setSpeechLang(next);
-              if (isListening && recognitionRef.current) {
-                recognitionRef.current.stop();
-                setIsListening(false);
-              }
+              if (isListening) recorderRef.current?.stop();
             }}
             aria-label={`Switch voice language, currently ${speechLang === 'bn-BD' ? 'Bangla' : 'English'}`}
             title={speechLang === 'bn-BD' ? 'ভয়েস ভাষা: বাংলা (ইংরেজিতে পরিবর্তন করতে ট্যাপ করুন)' : 'Voice language: English (Tap to switch to Bangla)'}
@@ -1301,10 +1268,10 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
             type="button"
             whileTap={{ scale: 0.92 }}
             onClick={() => handleSendMessage()}
-            disabled={loading || (!input.trim() && !imagePreview)}
+            disabled={loading || (!input.trim() && !imagePreview && !conversationImage)}
             aria-label="Send message"
             style={{
-              background: !input.trim() && !imagePreview
+              background: !input.trim() && !imagePreview && !conversationImage
                 ? (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(74, 58, 52, 0.25)')
                 : (isDark ? '#D0AE92' : T.primary),
               border: 'none',
@@ -1315,13 +1282,15 @@ export default function CoachScreen({ profile }: CoachScreenProps) {
               alignItems: 'center',
               justifyContent: 'center',
               color: isDark ? '#1F1815' : '#FFFFFF',
-              cursor: !input.trim() && !imagePreview ? 'default' : 'pointer',
+              cursor: !input.trim() && !imagePreview && !conversationImage ? 'default' : 'pointer',
               transition: 'background 180ms ease',
             }}
           >
             <Send size={15} />
           </motion.button>
         </div>
+        {chatError && <div role="alert" style={{ color: T.accentWarn, fontSize: 12, lineHeight: 1.5 }}>{chatError}</div>}
+        {voiceError && <div role="alert" style={{ color: T.accentWarn, fontSize: 12, lineHeight: 1.5 }}>{voiceError}</div>}
       </div>
     </LocalizedContent>
   );

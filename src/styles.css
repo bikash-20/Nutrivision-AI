@@ -546,11 +546,80 @@ p { margin: 0; }
 /* Mobile: allow body scroll, remove phone-frame centering */
 @media (max-width: 767px) {
   :root {
-    --screen-gutter: 20px;
+    --screen-gutter: 18px;
+    --text-xs: 0.875rem;
+    --text-sm: 0.9375rem;
+    --text-base: 1rem;
+    --text-md: 1.125rem;
+    --text-lg: 1.375rem;
   }
 
   body {
     background: linear-gradient(180deg, var(--bg-gradient-mid) 0%, var(--bg-gradient-end) 100%);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .profile-screen {
+    line-height: 1.6;
+  }
+
+  .profile-screen [style*="font-size: 10px"] {
+    font-size: 13px !important;
+  }
+
+  .profile-screen [style*="font-size: 11px"] {
+    font-size: 14px !important;
+  }
+
+  .profile-screen [style*="font-size: 12px"] {
+    font-size: 15px !important;
+  }
+
+  .profile-screen [style*="font-size: 13px"] {
+    font-size: 16px !important;
+  }
+
+  .profile-screen [style*="font-size: 14px"] {
+    font-size: 16px !important;
+  }
+
+  .profile-heading-row {
+    align-items: flex-start !important;
+    flex-direction: column;
+    gap: 12px !important;
+  }
+
+  .profile-heading-actions {
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+
+  .profile-option-pill,
+  .profile-heading-actions button,
+  .profile-screen button[style*="font-size: 11px"] {
+    min-height: 44px !important;
+  }
+
+  .profile-option-pill {
+    padding: 10px 16px !important;
+    font-size: 15px !important;
+  }
+
+  .profile-stepper-button {
+    width: 44px !important;
+    height: 44px !important;
+    flex: 0 0 44px;
+  }
+
+  .nav-tab-label {
+    font-size: 12px !important;
   }
 
   /* Macro donuts: stack vertically on very narrow screens */
@@ -570,7 +639,7 @@ p { margin: 0; }
   }
 
   .profile-heading-row h2 {
-    font-size: 21px !important;
+    font-size: 23px !important;
   }
 
   .profile-heading-actions {
@@ -604,7 +673,7 @@ p { margin: 0; }
   }
 
   .macro-donut > div:last-child {
-    font-size: 11px !important;
+    font-size: 13px !important;
   }
 
   .nav-tab-btn > div:first-child {
@@ -618,7 +687,7 @@ p { margin: 0; }
   }
 
   .nav-tab-label {
-    font-size: 10px !important;
+    font-size: 12px !important;
   }
 
   .capture-quick-actions {

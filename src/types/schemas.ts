@@ -391,6 +391,8 @@ export type Role = 'user' | 'admin';
 export interface AuthSession {
   email: string;
   role: Role;
+  /** True when this browser session is local-only and never uses account APIs. */
+  localOnly?: boolean;
   /** ISO timestamp when the session was created. */
   loginAt: string;
   name?: string | null;

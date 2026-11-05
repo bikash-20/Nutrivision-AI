@@ -363,7 +363,6 @@ export async function generateDietaryPivotsAsync(
   detected: DetectedItem[],
   profile?: UserProfile | null,
   resolvedFactsMap?: Record<string, NutritionFacts>,
-  options?: { forceLive?: boolean }
 ): Promise<DietaryPivot[]> {
   const syncPivots = generateDietaryPivots(detected, profile, resolvedFactsMap);
   if (syncPivots.length === 0) return [];
@@ -376,7 +375,7 @@ export async function generateDietaryPivotsAsync(
       const updatedGroceryItems = await Promise.all(
         pivot.grocery_items_to_add.map(async (gItem) => {
           try {
-            const liveRes = await fetchLivePrice(gItem.name, gItem.name_bn, options);
+            const liveRes = await fetchLivePrice(gItem.name, gItem.name_bn);
             if (liveRes.is_live_price) {
               hasLive = true;
               primarySource = liveRes.source;

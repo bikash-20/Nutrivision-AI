@@ -475,7 +475,7 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
 
   return (
     <LocalizedContent>
-      <div style={{ padding: '20px var(--screen-gutter, 24px) 160px' }}>
+      <div className="profile-screen" style={{ padding: '20px var(--screen-gutter, 24px) 160px' }}>
         {session && (
           <motion.div
             initial={{ opacity: 0, y: 4 }}
@@ -1294,6 +1294,7 @@ function StepperRow({ valueLabel, onDec, onInc, decLabel, incLabel, hint }: Step
         >
           <motion.button
             type="button"
+            className="profile-stepper-button"
             onClick={onDec}
             aria-label={decLabel}
             whileHover={!reduceMotion ? { scale: 1.08 } : {}}
@@ -1349,6 +1350,7 @@ function StepperRow({ valueLabel, onDec, onInc, decLabel, incLabel, hint }: Step
 
           <motion.button
             type="button"
+            className="profile-stepper-button"
             onClick={onInc}
             aria-label={incLabel}
             whileHover={!reduceMotion ? { scale: 1.08 } : {}}

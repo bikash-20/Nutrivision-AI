@@ -8,6 +8,7 @@
  */
 
 import { resolveMarketPrice } from './marketPrices';
+import { getSession } from './auth';
 
 export interface LivePriceResult {
   item_name_en: string;
@@ -31,7 +32,6 @@ const priceCache = new Map<string, LivePriceResult>();
 export async function fetchLivePrice(
   itemNameEn: string,
   itemNameBn?: string,
-  options?: { forceLive?: boolean }
 ): Promise<LivePriceResult> {
   const query = (itemNameEn || itemNameBn || '').trim();
   if (!query) {
@@ -44,7 +44,7 @@ export async function fetchLivePrice(
     };
   }
 
-  const cacheKey = `${query.toLowerCase()}_${options?.forceLive ? 'live' : 'std'}`;
+  const cacheKey = query.toLowerCase();
   if (priceCache.has(cacheKey)) {
     return priceCache.get(cacheKey)!;
   }
@@ -60,17 +60,9 @@ export async function fetchLivePrice(
     source: 'TCB/DAM Benchmark (bd_market_prices.json)',
   };
 
-  if (options?.forceLive) {
-    const liveDemoResult: LivePriceResult = {
-      item_name_en: query,
-      item_name_bn: fallback.name_bn,
-      price_bdt: Math.round(fallback.unitPrice * 1.02),
-      unit: fallback.unitLabel,
-      is_live_price: true,
-      source: 'Chaldal Live (chaldal.com)',
-    };
-    priceCache.set(cacheKey, liveDemoResult);
-    return liveDemoResult;
+  if (getSession()?.localOnly || (typeof navigator !== 'undefined' && !navigator.onLine)) {
+    priceCache.set(cacheKey, fallbackResult);
+    return fallbackResult;
   }
 
   // 2. Wrap live request in strict 3000ms timeout
@@ -80,8 +72,6 @@ export async function fetchLivePrice(
   try {
     const params = new URLSearchParams({ q: query });
     if (itemNameBn) params.append('name_bn', itemNameBn);
-    if (options?.forceLive) params.append('live_demo', 'true');
-
     const apiBase = getApiBase();
     const res = await fetch(`${apiBase}/api/market/price?${params.toString()}`, {
       signal: controller.signal,

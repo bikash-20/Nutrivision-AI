@@ -12,10 +12,28 @@ import * as storage from './storage';
 import { getApiBase } from './config';
 
 const SESSION_KEY = 'auth';
+const OFFLINE_EMAIL = 'offline@local.nutrivision';
 
 /** Returns the persisted session, or null if not signed in. */
 export function getSession(): AuthSession | null {
   return storage.load<AuthSession>(SESSION_KEY);
+}
+
+/** Start an explicitly local-only session when sign-in or connectivity is unavailable. */
+export function continueOffline(): AuthSession {
+  const session: AuthSession = {
+    email: OFFLINE_EMAIL,
+    role: 'user',
+    localOnly: true,
+    loginAt: new Date().toISOString(),
+    name: 'Offline user',
+    token: null,
+  };
+  storage.save(SESSION_KEY, session);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('auth-changed', { detail: session }));
+  }
+  return session;
 }
 
 /**
