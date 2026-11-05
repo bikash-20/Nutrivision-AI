@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Settings } from 'lucide-react';
 import { T, TABS } from './data';
@@ -127,7 +127,16 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
   const [pipelineToast, setPipelineToast] = useState<string | null>(null);
   const [analysisMessage, setAnalysisMessage] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<import('./types/schemas').AnalyzeResult | null>(null);
+  const resultsNavigationTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reduceMotion = useReducedMotion();
+
+  const clearResultsNavigationTimeout = () => {
+    if (resultsNavigationTimeout.current !== null) {
+      clearTimeout(resultsNavigationTimeout.current);
+      resultsNavigationTimeout.current = null;
+    }
+    setPipelineToast(null);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -145,6 +154,7 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
   }, [session?.email, profileRetry]);
 
   const goToTab = (next: number) => {
+    clearResultsNavigationTimeout();
     setSettingsOpen(false);
     if (next === tab) return;
     setDirection(next > tab ? 1 : -1);
@@ -152,6 +162,7 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
   };
 
   const handleCapture = async (imageDataUrl?: string) => {
+    clearResultsNavigationTimeout();
     setCaptured(true);
     setAnalysisMessage(null);
     setAnalysisResult(null);
@@ -236,13 +247,16 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
       });
     }
 
-    setTimeout(() => {
+    setCaptured(false);
+    resultsNavigationTimeout.current = setTimeout(() => {
+      resultsNavigationTimeout.current = null;
       setPipelineToast(null);
       goToTab(1);
     }, 1400);
   };
 
   const handleRetake = () => {
+    clearResultsNavigationTimeout();
     setCaptured(false);
     setCapturedImage(null);
     setDetected([]);
@@ -250,6 +264,12 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
     setAnalysisMessage(null);
     setAnalysisResult(null);
   };
+
+  useEffect(() => () => {
+    if (resultsNavigationTimeout.current !== null) {
+      clearTimeout(resultsNavigationTimeout.current);
+    }
+  }, []);
 
   const handleDetectedChange = (newItems: DetectedItem[]) => {
     setDetected(newItems);
