@@ -1,4 +1,4 @@
-import { useState, useId } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp } from 'lucide-react';
 import { T } from '../data';
@@ -30,6 +30,12 @@ export interface RevenueCurveChartProps {
   title?: string;
   className?: string;
   onCardClick?: () => void;
+}
+
+export function getResponsiveChartFontSize(containerWidth: number): number {
+  if (containerWidth <= 0) return 11;
+  const renderedFontSize = Math.min(13, Math.max(11, containerWidth * 0.018));
+  return (600 / containerWidth) * renderedFontSize;
 }
 
 /**
@@ -76,14 +82,40 @@ export default function RevenueCurveChart({
   const isBn = language === 'bn';
   const gradientId = useId();
   const [activeTooltip, setActiveTooltip] = useState<Point | null>(null);
+  const [chartWidth, setChartWidth] = useState(600);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
 
   // SVG coordinate system
   const VIEW_WIDTH = 600;
   const VIEW_HEIGHT = 220;
-  const MARGIN_LEFT = 52;
+  const axisFontSize = getResponsiveChartFontSize(chartWidth);
+  const MARGIN_LEFT = Math.max(52, Math.ceil(axisFontSize * 2.8 + 8));
   const MARGIN_RIGHT = 24;
   const MARGIN_TOP = 36;
-  const MARGIN_BOTTOM = 36;
+  const MARGIN_BOTTOM = Math.max(36, Math.ceil(axisFontSize * 2));
+  const targetBadgeWidth = axisFontSize * (106 / 9.5);
+  const targetBadgeHeight = axisFontSize * (20 / 9.5);
+
+  useEffect(() => {
+    const container = chartContainerRef.current;
+    if (!container) return;
+
+    const updateWidth = () => {
+      const nextWidth = Math.round(container.getBoundingClientRect().width);
+      setChartWidth((currentWidth) => currentWidth === nextWidth ? currentWidth : nextWidth);
+    };
+
+    updateWidth();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateWidth);
+      return () => window.removeEventListener('resize', updateWidth);
+    }
+
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
 
   const plotWidth = VIEW_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
   const plotHeight = VIEW_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM;
@@ -356,7 +388,7 @@ export default function RevenueCurveChart({
         </div>
 
         {/* SVG Revenue-Style Chart Surface */}
-        <div style={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
+        <div ref={chartContainerRef} style={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
           <svg
             viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
             style={{
@@ -396,10 +428,10 @@ export default function RevenueCurveChart({
                   />
                   <text
                     x={MARGIN_LEFT - 8}
-                    y={yPos + 4}
+                    y={yPos + axisFontSize * 0.38}
                     textAnchor="end"
                     fill={T.inkSoft}
-                    fontSize={10.5}
+                    fontSize={axisFontSize}
                     fontWeight={600}
                     fontFamily="Inter, sans-serif"
                     className="tnum"
@@ -423,21 +455,21 @@ export default function RevenueCurveChart({
             />
 
             {/* Target Flag Badge */}
-            <g transform={`translate(${VIEW_WIDTH - MARGIN_RIGHT - 110}, ${targetY - 14})`}>
+            <g transform={`translate(${VIEW_WIDTH - MARGIN_RIGHT - targetBadgeWidth}, ${targetY - targetBadgeHeight * 0.7})`}>
               <rect
-                width={106}
-                height={20}
-                rx={10}
+                width={targetBadgeWidth}
+                height={targetBadgeHeight}
+                rx={targetBadgeHeight / 2}
                 fill={isDark ? 'rgba(34, 197, 94, 0.20)' : '#DCFCE7'}
                 stroke={isDark ? '#4ADE80' : '#166534'}
                 strokeWidth={1}
               />
               <text
-                x={53}
-                y={13.5}
+                x={targetBadgeWidth / 2}
+                y={targetBadgeHeight * 0.68}
                 textAnchor="middle"
                 fill={isDark ? '#86EFAC' : '#166534'}
-                fontSize={9.5}
+                fontSize={axisFontSize}
                 fontWeight={700}
                 fontFamily="Inter, sans-serif"
               >
@@ -563,10 +595,10 @@ export default function RevenueCurveChart({
                   />
                   <text
                     x={xPos}
-                    y={yBaseline + 18}
-                    textAnchor="middle"
+                    y={yBaseline + axisFontSize * 1.5}
+                    textAnchor={tick.hours === 0 ? 'start' : tick.hours === 15 ? 'end' : 'middle'}
                     fill={T.ink}
-                    fontSize={10.5}
+                    fontSize={axisFontSize}
                     fontWeight={600}
                     fontFamily="Inter, sans-serif"
                   >

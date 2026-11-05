@@ -1,5 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { pointsToCatmullRomBezierPath } from './RevenueCurveChart';
+import { getResponsiveChartFontSize, pointsToCatmullRomBezierPath } from './RevenueCurveChart';
+
+describe('RevenueCurveChart responsive typography', () => {
+  it('keeps axis labels at a readable size on narrow charts', () => {
+    expect(getResponsiveChartFontSize(300) * (300 / 600)).toBeCloseTo(11);
+  });
+
+  it('keeps the normal chart font size on standard-width charts', () => {
+    expect(getResponsiveChartFontSize(600)).toBe(11);
+  });
+
+  it('caps the rendered font size on wider charts', () => {
+    expect(getResponsiveChartFontSize(1200) * (1200 / 600)).toBe(13);
+  });
+
+  it('uses a sensible size before the chart width is measured', () => {
+    expect(getResponsiveChartFontSize(0)).toBe(11);
+  });
+});
 
 describe('RevenueCurveChart Catmull-Rom spline calculations', () => {
   it('handles empty points array gracefully', () => {
@@ -25,4 +43,3 @@ describe('RevenueCurveChart Catmull-Rom spline calculations', () => {
     expect(segmentCount).toBe(3);
   });
 });
-
