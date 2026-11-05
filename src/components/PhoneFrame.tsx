@@ -70,7 +70,7 @@ export default function PhoneFrame({ children, headerRight, footer }: PhoneFrame
             }}
           >
             <img
-              src="/icon-32.png"
+              src="/icon-96.png"
               alt=""
               aria-hidden="true"
               width={24}
@@ -124,7 +124,7 @@ export default function PhoneFrame({ children, headerRight, footer }: PhoneFrame
       <header className="app-desktop-header">
         <div className="app-desktop-brand">
           <img
-            src="/icon-32.png"
+            src="/icon-96.png"
             alt=""
             aria-hidden="true"
             width={28}

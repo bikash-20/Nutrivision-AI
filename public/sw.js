@@ -1,11 +1,15 @@
 // Bump this on every deploy so the SW invalidates old precached assets.
 // Convention: nutrision-v{N} where N increments per push.
-const CACHE_NAME = 'nutrivision-v4';
+const CACHE_NAME = 'nutrivision-v5';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/apple-touch-icon.png',
+  '/favicon.ico',
+  '/icon-192-maskable.png',
   '/icon-192.png',
+  '/icon-512-maskable.png',
   '/icon-512.png',
 ];
 

@@ -155,7 +155,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
             }}
           >
             <img
-              src="/icon-32.png"
+              src="/icon-96.png"
               alt=""
               aria-hidden="true"
               width={26}

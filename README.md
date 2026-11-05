@@ -133,6 +133,15 @@ npm run build
 npm run preview
 ```
 
+### App Icons
+
+The browser, PWA, maskable, and iOS icons are generated from
+`public/NutriVision AI Healthy Food App Icon.png`:
+
+```bash
+python3 scripts/generate-icons.py
+```
+
 ## Project Structure
 
 ```
