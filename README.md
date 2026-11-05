@@ -135,7 +135,7 @@ npm run preview
 
 ### App Icons
 
-The browser, PWA, maskable, and iOS icons are generated from
+The browser, PWA, and iOS icons are generated from
 `public/NutriVision AI Healthy Food App Icon.png`:
 
 ```bash
