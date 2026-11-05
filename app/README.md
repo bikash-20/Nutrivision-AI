@@ -128,9 +128,10 @@ python3 -m pytest app/tests/ -v
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `DATABASE_URL` | Recommended | _None_ | PostgreSQL connection URI (Neon, Supabase, Render). Fails loudly if misconfigured. |
-| `GOOGLE_CLIENT_ID` | Yes (for Auth)| _None_ | Google Cloud OAuth 2.0 Web Client ID. |
-| `JWT_SECRET` | Yes (for Auth)| _None_ | Secret string for HS256 JWT signature generation and verification. |
-| `ADMIN_EMAILS` | No | _Empty_ | Comma-separated list of Google account emails granted administrative privileges. |
+| `GOOGLE_CLIENT_ID` | Yes (for Auth)| _None_ | Google Cloud OAuth 2.0 Web Client ID; the backend rejects tokens issued to a different client. |
+| `JWT_SECRET` | Yes (for Auth)| _None_ | Unique random value with at least 32 characters for HS256 JWT signatures. The backend refuses to start without it. |
+| `ADMIN_EMAILS` | No | Project owner account | Comma-separated additional Google account emails granted administrative privileges. |
+| `CORS_ALLOW_ORIGINS` | No | Local Vite origins and the production Vercel app | Comma-separated additional frontend origins allowed by the backend. Vercel preview URLs must be explicitly listed. |
 | `ELEVENLABS_API_KEY` | Optional | _None_ | ElevenLabs API key for ultra-low latency voice synthesis. |
 | `ELEVENLABS_VOICE_ID_MALE` | Optional | `JBFqnCBsd6RMkjVDRZzb` | Premade Male voice for Dr. Susmit (George). |
 | `ELEVENLABS_VOICE_ID_FEMALE` | Optional | `EXAVITQu4vr4xnSDxMaL` | Premade Female voice for Farhana (Sarah). |

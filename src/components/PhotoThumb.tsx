@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { motion } from 'framer-motion';
 import { ScanLine } from 'lucide-react';
 import { T } from '../data';
 import { LocalizedContent, useLanguage } from '../i18n/LanguageContext';
@@ -18,15 +19,31 @@ interface PhotoThumbProps {
 export default function PhotoThumb({ src, style }: PhotoThumbProps) {
   const { language } = useLanguage();
   const isBn = language === 'bn';
-  const [pulsing, setPulsing] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
-  const onTap = () => {
-    setPulsing(true);
-    setExpanded(true);
-    setTimeout(() => setPulsing(false), 800);
-    setTimeout(() => setExpanded(false), 1400);
-  };
+  useEffect(() => {
+    if (!expanded || !src) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      if (dialog.open) dialog.close();
+      setExpanded(false);
+    };
+    if (!dialog.open) dialog.showModal();
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      window.removeEventListener('keydown', closeOnEscape);
+      if (dialog.open) dialog.close();
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [expanded, src]);
 
   return (
     <LocalizedContent>
@@ -41,53 +58,29 @@ export default function PhotoThumb({ src, style }: PhotoThumbProps) {
         ...style,
       }}
     >
-      <AnimatePresence>
-        {expanded && (
-          <motion.span
-            key="cap"
-            initial={{ opacity: 0, x: 6 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 6 }}
-            transition={{ duration: 0.2 }}
-            style={{
-              fontFamily: 'Inter',
-              fontSize: 10,
-              fontWeight: 600,
-              color: T.ink,
-              background: 'rgba(249, 242, 228, 0.92)',
-              padding: '4px 8px',
-              borderRadius: 8,
-              boxShadow: '0 4px 10px -4px rgba(46, 37, 34, 0.25)',
-            }}
-          >
-            chicken_biryani.jpg
-          </motion.span>
-        )}
-      </AnimatePresence>
-
-      <motion.button
-        type="button"
-        onClick={onTap}
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.92 }}
-        transition={{ type: 'spring', stiffness: 380, damping: 22 }}
-        aria-label={isBn ? 'তোলা ছবিটি দেখুন' : 'View captured photo'}
-        style={{
-          position: 'relative',
-          width: 44,
-          height: 44,
-          borderRadius: '50%',
-          border: 'none',
-          padding: 0,
-          cursor: 'pointer',
-          background:
-            'linear-gradient(160deg, rgba(74, 58, 52, 0.95), rgba(46, 37, 34, 0.98))',
-          boxShadow:
-            '0 6px 14px -4px rgba(46, 37, 34, 0.45), inset 0 1.5px 0 rgba(255, 255, 255, 0.15)',
-          overflow: 'visible',
-        }}
-      >
-        {src ? (
+      {src ? (
+        <motion.button
+          type="button"
+          onClick={() => setExpanded(true)}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.92 }}
+          transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+          aria-label={isBn ? 'তোলা ছবিটি দেখুন' : 'View captured photo'}
+          style={{
+            position: 'relative',
+            width: 44,
+            height: 44,
+            borderRadius: '50%',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+            background:
+              'linear-gradient(160deg, rgba(74, 58, 52, 0.95), rgba(46, 37, 34, 0.98))',
+            boxShadow:
+              '0 6px 14px -4px rgba(46, 37, 34, 0.45), inset 0 1.5px 0 rgba(255, 255, 255, 0.15)',
+            overflow: 'hidden',
+          }}
+        >
           <img
             src={src}
             alt="Captured meal"
@@ -100,46 +93,74 @@ export default function PhotoThumb({ src, style }: PhotoThumbProps) {
               objectFit: 'cover',
             }}
           />
-        ) : (
-          <>
-            <span
-              aria-hidden="true"
+        </motion.button>
+      ) : (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'relative',
+            width: 44,
+            height: 44,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(160deg, rgba(74, 58, 52, 0.95), rgba(46, 37, 34, 0.98))',
+            boxShadow: '0 6px 14px -4px rgba(46, 37, 34, 0.45)',
+            color: T.earth6,
+          }}
+        >
+          <ScanLine size={18} strokeWidth={1.8} />
+        </div>
+      )}
+
+      {expanded && src && typeof document !== 'undefined' && createPortal(
+        <dialog
+          ref={dialogRef}
+          className="photo-preview-dialog"
+          aria-label={isBn ? 'তোলা খাবারের ছবি' : 'Captured meal photo'}
+          onCancel={() => setExpanded(false)}
+          onClose={() => setExpanded(false)}
+          onClick={(event) => {
+            if (event.target === dialogRef.current) setExpanded(false);
+          }}
+        >
+          <div style={{ position: 'relative' }}>
+            <button
+              type="button"
+              onClick={() => setExpanded(false)}
+              aria-label={isBn ? 'ছবি বন্ধ করুন' : 'Close photo'}
               style={{
                 position: 'absolute',
-                inset: 4,
-                borderRadius: '50%',
-                background:
-                  'radial-gradient(circle at 50% 45%, rgba(249, 242, 228, 0.30), transparent 60%)',
-              }}
-            />
-            <span
-              style={{
-                position: 'relative',
+                top: 12,
+                right: 12,
                 zIndex: 1,
-                display: 'inline-flex',
-                color: T.earth6,
+                width: 44,
+                height: 44,
+                border: 'none',
+                borderRadius: '50%',
+                background: 'rgba(46, 37, 34, 0.82)',
+                color: '#FFFFFF',
+                cursor: 'pointer',
               }}
             >
-              <ScanLine size={18} strokeWidth={1.8} />
-            </span>
-          </>
-        )}
-
-        {pulsing && (
-          <motion.span
-            aria-hidden="true"
-            initial={{ scale: 1, opacity: 0.6 }}
-            animate={{ scale: 1.6, opacity: 0 }}
-            transition={{ duration: 0.8 }}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: '50%',
-              border: '2px solid rgba(249, 242, 228, 0.7)',
-            }}
-          />
-        )}
-      </motion.button>
+              ×
+            </button>
+            <img
+              src={src}
+              alt={isBn ? 'তোলা খাবারের ছবি' : 'Captured meal'}
+              style={{
+                display: 'block',
+                maxWidth: 'min(92vw, 960px)',
+                maxHeight: '85dvh',
+                objectFit: 'contain',
+                borderRadius: 12,
+              }}
+            />
+          </div>
+        </dialog>,
+        document.body,
+      )}
     </div>
     </LocalizedContent>
   );

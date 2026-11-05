@@ -16,7 +16,7 @@ from app.services.state import get_state, init_state
 def client(tmp_path, monkeypatch):
     monkeypatch.setenv("STATE_PATH", str(tmp_path / "test_admin_state.json"))
     monkeypatch.setenv("ADMIN_EMAILS", "superadmin@domain.com")
-    monkeypatch.setenv("JWT_SECRET", "admin-test-secret-12345")
+    monkeypatch.setenv("JWT_SECRET", "admin-test-signing-secret-for-nutrivision")
     init_state(tmp_path / "test_admin_state.json")
     app = create_app()
     return TestClient(app)
@@ -25,7 +25,7 @@ def client(tmp_path, monkeypatch):
 def _admin_headers() -> dict[str, str]:
     jwt = create_jwt(
         {"sub": "adm-1", "email": "superadmin@domain.com", "role": "admin", "exp": int(time.time()) + 3600},
-        secret=b"admin-test-secret-12345",
+        secret=b"admin-test-signing-secret-for-nutrivision",
     )
     return {"Authorization": f"Bearer {jwt}"}
 
@@ -38,7 +38,7 @@ def test_admin_metrics_endpoint_unauthenticated_returns_401(client):
 def test_admin_metrics_forbidden_for_regular_user(client):
     user_jwt = create_jwt(
         {"sub": "regular-1", "email": "regular@domain.com", "role": "user", "exp": int(time.time()) + 3600},
-        secret=b"admin-test-secret-12345",
+        secret=b"admin-test-signing-secret-for-nutrivision",
     )
     res = client.get("/api/admin/metrics", headers={"Authorization": f"Bearer {user_jwt}"})
     assert res.status_code == 403

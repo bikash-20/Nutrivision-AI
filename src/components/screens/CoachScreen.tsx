@@ -603,7 +603,7 @@ export default function CoachScreen({ profile, imageContext = null, localOnly = 
   return (
     <LocalizedContent>
       {/* Root Layout Container with guaranteed 160px bottom dock clearance */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 160 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 24 }}>
         {/* Header Title & Persona Switcher */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

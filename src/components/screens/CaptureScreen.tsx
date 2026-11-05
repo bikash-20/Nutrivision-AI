@@ -324,7 +324,7 @@ export default function CaptureScreen({
 
   return (
     <LocalizedContent>
-    <div style={{ padding: '20px var(--screen-gutter, 24px) 160px' }}>
+    <div style={{ padding: '20px var(--screen-gutter, 24px) 24px' }}>
       {/* Hidden elements */}
       <canvas ref={canvasRef} style={{ display: 'none' }} aria-hidden="true" />
       <input

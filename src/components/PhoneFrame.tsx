@@ -12,20 +12,33 @@ interface PhoneFrameProps {
 /**
  * Responsive phone frame for the demo.
  *
- * - Mobile (<768px): fills the viewport like a native app — no bezel, no shadow
- * - Desktop (≥768px): centered phone mockup with bezel + 3D tilt entrance
+ * - Mobile (≤820px): fills the viewport like a native app
+ * - Desktop (>820px): full-width workspace shell
  */
 export default function PhoneFrame({ children, headerRight, footer }: PhoneFrameProps) {
   const { language } = useLanguage();
   const isBn = language === 'bn';
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return typeof window.matchMedia === 'function'
+      ? window.matchMedia('(max-width: 820px)').matches
+      : window.innerWidth <= 820;
+  });
 
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)');
+    if (typeof window.matchMedia !== 'function') {
+      setIsMobile(window.innerWidth <= 820);
+      return;
+    }
+    const mq = window.matchMedia('(max-width: 820px)');
     setIsMobile(mq.matches);
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', handler);
+      return () => mq.removeEventListener('change', handler);
+    }
+    mq.addListener(handler);
+    return () => mq.removeListener(handler);
   }, []);
 
   // ── Mobile: full-screen native-app feel ──────────────────────────────
@@ -93,6 +106,7 @@ export default function PhoneFrame({ children, headerRight, footer }: PhoneFrame
 
         {/* Screen content */}
         <div
+          className="app-mobile-content"
           style={{
             position: 'relative',
             zIndex: 2,

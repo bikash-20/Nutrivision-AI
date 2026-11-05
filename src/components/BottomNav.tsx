@@ -76,9 +76,9 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          height: 72,
+          minHeight: 84,
           borderRadius: 28,
-          padding: '6px 8px',
+          padding: '5px 6px',
           boxShadow: isDark
             ? '0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255,255,255,0.08)'
             : '0 8px 32px rgba(46, 37, 34, 0.10), inset 0 1px 0 rgba(255,255,255,0.55)',
@@ -104,6 +104,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
               style={{
                 position: 'relative',
                 flex: 1,
+                width: 0,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -114,7 +115,8 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                 cursor: 'pointer',
                 padding: '2px 0',
                 fontFamily: 'inherit',
-                minHeight: 56,
+                minHeight: 68,
+                minWidth: 0,
                 zIndex: 1,
               }}
             >

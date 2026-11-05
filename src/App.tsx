@@ -113,7 +113,7 @@ function AppShell() {
  */
 function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () => void }) {
   useTokens();
-  const { translate } = useLanguage();
+  const { language, translate } = useLanguage();
   const [tab, setTab] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [direction, setDirection] = useState(1);
@@ -121,6 +121,8 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [detected, setDetected] = useState<DetectedItem[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileLoadFailed, setProfileLoadFailed] = useState(false);
+  const [profileRetry, setProfileRetry] = useState(0);
   const [pipeline, setPipeline] = useState<PipelineTrace[]>([]);
   const [pipelineToast, setPipelineToast] = useState<string | null>(null);
   const [analysisMessage, setAnalysisMessage] = useState<string | null>(null);
@@ -129,13 +131,18 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
 
   useEffect(() => {
     let cancelled = false;
+    setProfile(null);
+    setProfileLoadFailed(false);
     getProfile().then((p) => {
       if (!cancelled) setProfile(p);
+    }).catch((error: unknown) => {
+      console.error('Profile load failed:', error);
+      if (!cancelled) setProfileLoadFailed(true);
     });
     return () => {
       cancelled = true;
     };
-  }, [session?.email]);
+  }, [session?.email, profileRetry]);
 
   const goToTab = (next: number) => {
     setSettingsOpen(false);
@@ -275,14 +282,45 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
         style={{
           minHeight: '100vh',
           display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
           alignItems: 'center',
           justifyContent: 'center',
+          padding: 24,
           color: T.inkSoft,
           fontFamily: 'Inter',
-          fontSize: 12,
+          fontSize: 16,
+          textAlign: 'center',
         }}
       >
-        {useLanguage().language === 'bn' ? 'প্রোফাইল লোড হচ্ছে…' : 'Loading profile…'}
+        {profileLoadFailed ? (
+          <>
+            <p role="alert" style={{ margin: 0 }}>
+              {language === 'bn'
+                ? 'প্রোফাইল লোড করা যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।'
+                : 'Could not load your profile. Check your connection and try again.'}
+            </p>
+            <button
+              type="button"
+              onClick={() => setProfileRetry((attempt) => attempt + 1)}
+              style={{
+                minHeight: 44,
+                padding: '10px 18px',
+                border: 'none',
+                borderRadius: 12,
+                background: T.primary,
+                color: '#FFFFFF',
+                font: 'inherit',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              {language === 'bn' ? 'আবার চেষ্টা করুন' : 'Retry'}
+            </button>
+          </>
+        ) : (
+          language === 'bn' ? 'প্রোফাইল লোড হচ্ছে…' : 'Loading profile…'
+        )}
       </div>
     );
   }
@@ -333,7 +371,6 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
           style={{
-            paddingBottom: 160,
             position: 'relative',
             zIndex: 1,
           }}

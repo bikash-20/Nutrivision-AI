@@ -497,7 +497,7 @@ export default function ResultsScreen({
 
   return (
     <LocalizedContent>
-    <div style={{ padding: '12px 16px 160px', position: 'relative' }}>
+    <div style={{ padding: '12px 16px 24px', position: 'relative' }}>
       <div
         style={{
           position: 'sticky',

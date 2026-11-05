@@ -24,6 +24,7 @@ from fastapi.testclient import TestClient
 # picks up the path at first instantiation. (Each test below re-runs the
 # `lifespan` hook, which calls `init_state()` again — idempotent.)
 os.environ.setdefault("STATE_PATH", "/tmp/nv-test-state.json")
+os.environ.setdefault("JWT_SECRET", "test-only-signing-secret-for-nutrivision-tests-32chars")
 
 
 @pytest.fixture

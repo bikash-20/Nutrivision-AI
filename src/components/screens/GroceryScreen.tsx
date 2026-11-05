@@ -224,7 +224,7 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
 
   return (
     <LocalizedContent>
-    <div style={{ padding: '20px var(--screen-gutter, 24px) 160px' }}>
+    <div style={{ padding: '20px var(--screen-gutter, 24px) 24px' }}>
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}

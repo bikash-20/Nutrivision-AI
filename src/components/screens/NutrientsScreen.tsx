@@ -848,7 +848,7 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
 
   return (
     <LocalizedContent>
-    <div style={{ padding: '20px var(--screen-gutter, 24px) 160px' }}>
+    <div style={{ padding: '20px var(--screen-gutter, 24px) 24px' }}>
       {detected.length === 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}

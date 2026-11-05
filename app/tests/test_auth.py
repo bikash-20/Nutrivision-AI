@@ -19,7 +19,8 @@ def client(tmp_path, monkeypatch):
     state_mod._state = None
     monkeypatch.setenv("STATE_PATH", str(tmp_path / "test_state.json"))
     monkeypatch.setenv("ADMIN_EMAILS", "superadmin@example.com,boss@domain.com")
-    monkeypatch.setenv("JWT_SECRET", "test-secret-key-1234567890")
+    monkeypatch.setenv("JWT_SECRET", "test-only-signing-secret-for-auth-suite")
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "test-google-client.apps.googleusercontent.com")
     init_state(tmp_path / "test_state.json")
     app = create_app()
     with TestClient(app) as c:
@@ -69,6 +70,7 @@ def test_google_sign_in_regular_user(client):
         "email_verified": "true",
         "name": "Fresh User",
         "picture": "https://lh3.googleusercontent.com/photo.jpg",
+        "aud": "test-google-client.apps.googleusercontent.com",
         "exp": str(int(time.time()) + 3600),
     }
 
@@ -96,6 +98,7 @@ def test_google_sign_in_admin_user_via_whitelist(client):
         "email_verified": "true",
         "name": "Big Boss",
         "picture": "https://lh3.googleusercontent.com/admin.jpg",
+        "aud": "test-google-client.apps.googleusercontent.com",
         "exp": str(int(time.time()) + 3600),
     }
 
@@ -110,6 +113,54 @@ def test_google_sign_in_admin_user_via_whitelist(client):
         data = res.json()
         assert data["session"]["email"] == "boss@domain.com"
         assert data["session"]["role"] == "admin"
+
+
+def test_google_sign_in_rejects_token_for_another_client(client):
+    mock_google_info = {
+        "email": "fresh.user@gmail.com",
+        "email_verified": "true",
+        "aud": "another-google-client.apps.googleusercontent.com",
+        "exp": str(int(time.time()) + 3600),
+    }
+
+    with patch("httpx.Client.get") as mock_get:
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = mock_google_info
+        mock_get.return_value = mock_resp
+
+        response = client.post("/api/auth/google", json={"idToken": "token-for-another-client"})
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Google token audience mismatch."
+
+
+@pytest.mark.parametrize(
+    "secret",
+    [None, "short", "nutrivision-secure-jwt-secret-key-prod-v1"],
+)
+def test_app_requires_a_unique_jwt_secret(monkeypatch, secret):
+    if secret is None:
+        monkeypatch.delenv("JWT_SECRET", raising=False)
+    else:
+        monkeypatch.setenv("JWT_SECRET", secret)
+
+    with pytest.raises(RuntimeError, match="JWT_SECRET must be a unique value"):
+        create_app()
+
+
+def test_cors_allows_configured_origin_without_credentials(client):
+    response = client.get("/health", headers={"Origin": "http://localhost:5173"})
+
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+    assert "access-control-allow-credentials" not in response.headers
+
+
+def test_cors_rejects_unconfigured_vercel_preview(client):
+    response = client.get("/health", headers={"Origin": "https://untrusted.vercel.app"})
+
+    assert response.status_code == 200
+    assert "access-control-allow-origin" not in response.headers
 
 
 def test_multi_user_data_isolation(client):
@@ -351,4 +402,3 @@ def test_real_users_with_substring_names_are_not_deleted(tmp_path, monkeypatch):
     assert "purge_legacy_seeded_accounts_v1" in st2.applied_migrations
     assert st2.has_user("rafi.ahmed@gmail.com")
     assert st2.has_user("demo.user@gmail.com")
-

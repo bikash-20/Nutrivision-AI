@@ -19,6 +19,7 @@ export default function StepIndicator({ step, onStep }: StepIndicatorProps) {
   return (
     <LocalizedContent>
     <div
+      className="results-step-indicator"
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -40,6 +41,7 @@ export default function StepIndicator({ step, onStep }: StepIndicatorProps) {
         return (
           <div
             key={label}
+            className="results-step"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -49,6 +51,7 @@ export default function StepIndicator({ step, onStep }: StepIndicatorProps) {
             }}
           >
             <motion.button
+              className="results-step-button"
               type="button"
               onClick={() => onStep?.(i)}
               whileHover={{ y: -1 }}
@@ -85,6 +88,7 @@ export default function StepIndicator({ step, onStep }: StepIndicatorProps) {
               )}
             </motion.button>
             <span
+              className="results-step-label"
               onClick={() => onStep?.(i)}
               style={{
                 fontFamily: 'Inter',
@@ -102,6 +106,7 @@ export default function StepIndicator({ step, onStep }: StepIndicatorProps) {
 
             {i < STEP_LABELS.length - 1 && (
               <motion.span
+                className="results-step-separator"
                 animate={{ opacity: done ? 1 : 0.35 }}
                 transition={{ duration: 0.2 }}
                 style={{

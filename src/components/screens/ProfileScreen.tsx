@@ -475,7 +475,7 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
 
   return (
     <LocalizedContent>
-      <div className="profile-screen" style={{ padding: '20px var(--screen-gutter, 24px) 160px' }}>
+      <div className="profile-screen" style={{ padding: '20px var(--screen-gutter, 24px) 24px' }}>
         {session && (
           <motion.div
             initial={{ opacity: 0, y: 4 }}

@@ -91,7 +91,7 @@ export default function SettingsScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <LocalizedContent>
-      <section style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '8px 18px 150px' }}>
+      <section style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '8px 18px 24px' }}>
         <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <h1 style={{ margin: 0, color: T.ink, fontSize: 24, fontFamily: 'Fraunces, Georgia, serif' }}>

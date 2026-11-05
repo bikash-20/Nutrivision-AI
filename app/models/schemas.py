@@ -431,6 +431,7 @@ Role = Literal["user", "admin"]
 class AuthSession(BaseModel):
     email: str
     role: Role
+    local_only: bool = Field(default=False, alias="localOnly")
     login_at: str = Field(alias="loginAt")
     name: str | None = None
     avatar_url: str | None = Field(default=None, alias="avatarUrl")

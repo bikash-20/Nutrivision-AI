@@ -33,14 +33,20 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 GOOGLE_TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo"
-DEFAULT_JWT_SECRET = "nutrivision-secure-jwt-secret-key-prod-v1"
-
-
 DEFAULT_ADMIN_EMAILS = {"bikashtalukder040@gmail.com"}
 
 
 def _jwt_secret() -> bytes:
-    return os.environ.get("JWT_SECRET", DEFAULT_JWT_SECRET).encode("utf-8")
+    secret = os.environ.get("JWT_SECRET", "").strip()
+    if (
+        len(secret.encode("utf-8")) < 32
+        or secret == "nutrivision-secure-jwt-secret-key-prod-v1"
+    ):
+        raise RuntimeError(
+            "JWT_SECRET must be a unique value with at least 32 characters; "
+            "generate one with `openssl rand -hex 32`."
+        )
+    return secret.encode("utf-8")
 
 
 def _admin_emails() -> set[str]:
@@ -97,7 +103,7 @@ def verify_jwt(token: str, secret: bytes | None = None) -> dict[str, Any] | None
 def verify_google_id_token(id_token: str, timeout: float = 6.0) -> dict[str, Any]:
     """Verify Google ID token via Google's tokeninfo endpoint.
 
-    If GOOGLE_CLIENT_ID is set in env, also verifies the audience.
+    Requires GOOGLE_CLIENT_ID and verifies the token audience against it.
     """
     try:
         with httpx.Client(timeout=timeout) as client:
@@ -118,17 +124,21 @@ def verify_google_id_token(id_token: str, timeout: float = 6.0) -> dict[str, Any
                 detail="Google ID token is expired.",
             )
 
-        # Check audience if GOOGLE_CLIENT_ID is configured
+        # Reject tokens issued to another OAuth application.
         client_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
-        if client_id:
-            aud = data.get("aud", "")
-            azp = data.get("azp", "")
-            if aud != client_id and azp != client_id:
-                log.warning("Google token audience mismatch: aud=%s, azp=%s vs expected=%s", aud, azp, client_id)
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Google token audience mismatch.",
-                )
+        if not client_id:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Google OAuth is not configured on this server.",
+            )
+        audience = data.get("aud", "")
+        audiences = {audience} if isinstance(audience, str) else set(audience or [])
+        if client_id not in audiences:
+            log.warning("Google token audience mismatch: aud=%s vs expected=%s", audience, client_id)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Google token audience mismatch.",
+            )
 
         # Check email verified
         if str(data.get("email_verified", "")).lower() != "true":

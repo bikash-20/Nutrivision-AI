@@ -127,6 +127,9 @@ def _cors_origins() -> list[str]:
 def create_app() -> FastAPI:
     """Build the FastAPI app. Factored out so tests can instantiate
     it with a fresh state file via `app.dependency_overrides`."""
+    from app.api.auth import _jwt_secret
+
+    _jwt_secret()
     app = FastAPI(
         title="NutriVision AI backend",
         version="0.1.0",
@@ -143,8 +146,7 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=_cors_origins(),
-        allow_origin_regex=r"^https://.*\.vercel\.app$",
-        allow_credentials=True,
+        allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],
     )
