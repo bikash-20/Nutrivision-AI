@@ -13,7 +13,7 @@ Authenticates a user via Google OAuth 2.0 Identity Services.
 2. The Google GIS SDK returns a signed OpenID Connect ID token (`credential`).
 3. The client sends the ID token to `POST /api/auth/google`.
 4. The backend:
-   - Fetches Google's public JWKS certificates (`https://www.googleapis.com/oauth2/v3/certs`) or calls `google.oauth2.id_token.verify_oauth2_token`.
+   - Calls Google's tokeninfo endpoint to verify the token; when `GOOGLE_CLIENT_ID` is configured, it also checks the token audience.
    - Validates that the token signature is authentic, not expired (`exp`), and issued for `GOOGLE_CLIENT_ID` (`aud`).
    - Extracts `email`, `name`, and `picture`.
    - Determines the role: assigns `admin` if the email appears in the `ADMIN_EMAILS` environment variable, otherwise `user`.

@@ -2,16 +2,17 @@
 
 > **Orientation for AI agents and incoming engineers picking up the NutriVision AI codebase.**
 > Read this document first for the 5-minute mental model, critical constraints, and architectural invariants.
+> Current local and hosted runtime boundaries: [Architecture guide](./ARCHITECTURE.md) and [Mermaid architecture diagrams](../.github/modernize/assessment/engines/facts/architecture-diagram.md).
 
 ---
 
 ## 1. What is NutriVision AI?
 
-NutriVision AI is a production-grade, phone-first Progressive Web App (PWA) demonstrating a complete **Vision-to-Market** loop:
-- **Visual Ingestion:** 5-tier multimodal vision cascade (Groq LPU $\rightarrow$ Gemini 2.0 Flash $\rightarrow$ OpenRouter $\rightarrow$ Gemini 1.5 $\rightarrow$ Hugging Face).
+NutriVision AI is a phone-first Progressive Web App (PWA) with local-first workflows and an optional hosted API, demonstrating a **Vision-to-Market** loop:
+- **Visual Ingestion:** Installed Ollama vision models handle local image analysis first. Eligible signed-in online flows can use the configured hosted provider cascade.
 - **Clinical Nutrition:** Dynamic BMR/TDEE calculation (Mifflin-St Jeor), clinical AMDR macronutrient splits, and localized Bangladeshi composition databases combined with Open Food Facts and USDA FoodData Central.
 - **Market Intelligence & Dietary Pivots:** Macro- and BDT price-delta calculations for meals, tied directly to a 1-tap localized weekly grocery list.
-- **AI Health Coach & Voice Assistant:** Dr. Susmit (Scientist) & Farhan (Habit Coach) with live PostgreSQL grounding (`nv_users`, `nv_meals`, `nv_grocery`), single-pass dual-channel inference, 3-tier speech cascade (ElevenLabs premade voices $\rightarrow$ server-side `edge-tts` neural fallback $\rightarrow$ browser speech synthesis), on-demand `🔊 Listen` button with local caching, and browser STT with on-the-fly `[বাং / EN]` toggle.
+- **AI Health Coach & Voice Assistant:** Local Ollama chat, browser-recorded audio transcribed by local Whisper, and speech from the selected Piper or Qwen3-TTS engine. Hosted coach and speech endpoints remain available for online API sessions.
 - **Admin Intelligence:** 4-view admin portal (live metrics, user directory, popular food analytics, low-confidence review queue).
 - **Storage Resilience:** Fail-loud PostgreSQL startup with `psycopg[binary]`, tracked migrations (`nv_migrations`), and public health monitoring (`/api/health`).
 
@@ -23,7 +24,8 @@ NutriVision AI is a production-grade, phone-first Progressive Web App (PWA) demo
 |---|---|---|
 | **Frontend PWA** | React 18, TypeScript, Vite, framer-motion | `src/App.tsx`, `src/components/*` |
 | **Authentication** | Google Identity Services (GIS), JWT (HS256) | `src/lib/auth.ts`, `app/api/auth.py` |
-| **Voice & Speech** | ElevenLabs REST API, edge-tts (Neural), Web Speech API, Web Audio | `app/services/tts_service.py`, `src/components/screens/CoachScreen.tsx` |
+| **Local Voice & Speech** | faster-whisper, Piper, Qwen3-TTS, browser MediaRecorder | `app/local_voice.py`, `src/lib/localAI.ts`, `src/components/screens/CoachScreen.tsx` |
+| **Hosted Voice** | ElevenLabs REST API, edge-tts (Neural) | `app/services/tts_service.py`, hosted coach API |
 | **Backend API** | FastAPI, Python 3.11+, Pydantic v2 | `app/main.py`, `app/api/*` |
 | **Persistence** | PostgreSQL (`psycopg 3`), JSON fallback | `app/services/state.py` |
 | **Vector & Cache** | ChromaDB, SQLite TTL | `app/cache/vector_cache.py`, `app/cache/sqlite_cache.py` |
@@ -48,7 +50,7 @@ NutriVision AI is a production-grade, phone-first Progressive Web App (PWA) demo
 ## 4. Key Architectural Patterns & Constraints
 
 ### A. Authentication & User Partitions
-- **Real Google Sign-In:** `POST /api/auth/google` accepts Google ID tokens (`credential`), verifies signatures via Google's public JWKS certificates, and returns signed session JWTs.
+- **Google Sign-In:** `POST /api/auth/google` accepts Google ID tokens (`credential`), verifies them through Google's tokeninfo endpoint, and returns signed session JWTs. `continueOffline()` creates a separate local-only session without contacting the backend.
 - **Bearer Token Authorization:** The frontend attaches `Authorization: Bearer <jwt>` to API requests.
 - **Zero Mock Personas:** All legacy synthetic accounts (`judge`, `rafi`, `@nutrivision.ai`) have been eliminated. New authenticated users start with a clean zero-state profile (0 meals, 0 streak, 0 stats).
 - **Role Control:** Admin privileges are assigned only if the verified email appears in `ADMIN_EMAILS`.

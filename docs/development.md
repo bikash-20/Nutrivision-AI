@@ -56,8 +56,9 @@ src/
 │   ├── schemas.ts                # TS wire-format source of truth
 │   └── css.d.ts
 ├── lib/
-│   ├── api.ts                    # Mock API client (swap target)
-│   ├── auth.ts                   # Mock auth (don't touch)
+│   ├── api.ts                    # Typed REST client with local-first fallbacks
+│   ├── auth.ts                   # Hosted and local-only session management
+│   ├── localAI.ts                # Ollama, Whisper, Piper, and Qwen3 adapters
 │   ├── format.ts                 # formatRelative, hashStr, pickThumbnailStyle
 │   ├── format.test.ts
 │   ├── personalize.ts            # Flag rules + meal totals

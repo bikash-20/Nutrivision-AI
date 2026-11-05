@@ -170,7 +170,8 @@ src/
 ├── types/
 │   └── schemas.ts            # TypeScript contracts (mirrors backend Pydantic)
 ├── lib/
-│   ├── api.ts                # Mock API client (drop-in swap target)
+│   ├── api.ts                # Typed REST client with local-first fallbacks
+│   ├── localAI.ts            # Ollama, Whisper, Piper, and Qwen3 adapters
 │   └── storage.ts            # Typed localStorage wrapper
 ├── mocks/
 │   └── fixtures.ts           # Typed mock data
@@ -195,7 +196,9 @@ src/
         ├── ResultsScreen.tsx     # Detected items list
         ├── NutrientsScreen.tsx   # Macro donuts + explainability
         ├── ProfileScreen.tsx     # Goals, prefs, allergens, budget
-        └── GroceryScreen.tsx     # Weekly grocery list
+        ├── GroceryScreen.tsx     # Weekly grocery list
+        ├── CoachScreen.tsx       # Local-first AI chat and voice
+        └── SettingsScreen.tsx    # Ollama model and local voice picker
 ```
 
 ## Design System
@@ -209,11 +212,11 @@ src/
 
 ## Architecture & Backend
 
-The system operates on an asynchronous, decoupled client-server architecture:
+The system uses a hybrid architecture: core user workflows can run with browser-local data and device-local AI, while account-backed and provider-integrated features use the hosted API when available. See the [Mermaid architecture and component diagrams](./.github/modernize/assessment/engines/facts/architecture-diagram.md) or the [architecture guide](./docs/ARCHITECTURE.md).
 
 - **Frontend:** React 18 + TypeScript PWA deployed on Vercel, talking to the backend via a typed REST API client with JWT authentication (`Authorization: Bearer <token>`).
 - **Backend:** FastAPI (Python 3.11+) service deployed on Render, exposing OpenAPI-documented endpoints with Pydantic v2 validation.
-- **Authentication:** Real Google OAuth 2.0 (Google Identity Services). Client sends Google ID token to `POST /api/auth/google`; backend verifies token signatures via Google's public JWKS endpoints, extracts user identity, assigns role (admin checked against `ADMIN_EMAILS`), and signs a secure session JWT.
+- **Authentication:** Google Identity Services supplies an ID token to `POST /api/auth/google`; the backend verifies it using Google's tokeninfo endpoint, assigns roles using the `ADMIN_EMAILS` allowlist, and issues a signed session JWT. The browser also supports an explicit local-only session.
 - **Multi-Tenant Persistence:** `app/services/state.py` dynamically activates PostgreSQL when `DATABASE_URL` is set, with connection pooling via `psycopg 3` (`psycopg[binary]`). Automatically runs DDL migrations for `nv_users`, `nv_meals`, and `nv_grocery`. Fully compatible with Neon pooled endpoints (`-pooler`) and `channel_binding=require` with server-side prepared statements disabled (`prepare_threshold=None`). Falls back to JSON storage if `DATABASE_URL` is unset.
 - **Admin Intelligence Dashboard:** Real-time metrics aggregated directly from PostgreSQL:
   - **Overview:** Active user counts, meals today/this week, real flagged meals ratio, and a dynamic 7-day meal volume sparkline.
@@ -222,7 +225,9 @@ The system operates on an asynchronous, decoupled client-server architecture:
   - **Review Queue:** Flagged low-confidence (<70%) meal audit log with modal actions for approval, name correction, and dismissal.
 - **Multi-Tier Vision Cascade:** **Groq Vision** (Tier 1 fast LPU) → **Google Gemini 2.0 Flash** (Tier 2 high accuracy) → **OpenRouter Vision** (Tier 3 free cascade) → **Gemini 1.5 Fallback** (Tier 4) → optional **Hugging Face** classifier (Tier 5 validator).
 - **Nutrition Cascade:** Open Food Facts → USDA FoodData Central → Fruityvice + canonical Bangladeshi & global food composition databases.
-- **Caching:** ChromaDB vector cache lookup + SQLite TTL exact-match cache.
+- **Local AI and voice:** The browser calls Ollama for local chat and vision, and an optional loopback FastAPI service for Whisper speech recognition and selected Piper or Qwen3-TTS synthesis. These model files are installed separately and are not bundled with the PWA.
+- **Offline client data:** The browser's `localStorage` stores local profiles, meals, grocery changes, sessions, and AI settings; the service worker caches the app shell and static assets. Local-only writes are not synchronized automatically to an account.
+- **Caching:** ChromaDB persistent retrieval and vision caches plus a SQLite TTL cache. Browser storage is independent of backend persistence.
 
 ### Required Environment Variables
 
@@ -317,6 +322,7 @@ Comprehensive docs live in [`docs/`](./docs/README.md):
 
 - [Master Workflow & System Guide](./docs/WORKFLOW.md) — complete step-by-step user journey, vision cascade, and Voice AI Coach
 - [Architecture overview](./docs/ARCHITECTURE.md) — the 5-minute orientation
+- [Mermaid architecture diagrams](./.github/modernize/assessment/engines/facts/architecture-diagram.md) — application layers and component relationships
 - [What happens when you upload a picture](./docs/IMAGE_UPLOAD_FLOW.md) — frame-by-frame trace from camera to saved meal
 - [Agent context](./docs/AGENT_CONTEXT.md) — for AI agents or new developers picking up the project
 - [Schema lockstep rules](./docs/schemas.md) — how `src/types/schemas.ts` ↔ `app/models/schemas.py` stay in sync

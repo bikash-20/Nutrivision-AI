@@ -1,6 +1,6 @@
 # Frontend Architecture & Component Guide
 
-React 18 + Vite + TypeScript Progressive Web App (PWA) with responsive design, Google OAuth authentication, dark/light theme hydration, and English/Bengali localization.
+React 18 + Vite + TypeScript Progressive Web App (PWA) with responsive design, hosted and local-only sessions, dark/light theme hydration, English/Bengali localization, and local AI integrations. See the [runtime architecture](../ARCHITECTURE.md) and its [Mermaid diagrams](../../.github/modernize/assessment/engines/facts/architecture-diagram.md).
 
 ---
 
@@ -48,7 +48,7 @@ This guarantees that `data-theme="dark"` is already attached to `<html>` prior t
 - The `LoginScreen` renders the official Google sign-in button and Google One-Tap prompt.
 - On successful authorization:
   1. The Google ID token is dispatched to `POST /api/auth/google`.
-  2. The backend verifies the token with Google public JWKS certificates and returns a secure session JWT.
+  2. The backend verifies the token through Google's tokeninfo endpoint and returns a signed session JWT.
   3. `loginWithGoogle()` persists the session in `localStorage['nv_auth']`.
   4. Role determination: Users whose verified email is listed in `ADMIN_EMAILS` are granted `admin` access; all others receive `user` access.
   5. The application dynamically routes admins to `<AdminLayout>` and regular users to `<UserApp>`.
@@ -79,13 +79,22 @@ In `<AdminLayout>`, the admin dashboard provides 4 active navigable views:
 - **Popular Foods (`'popular'`):** Ranked food item frequencies with date-range filters (`Today`, `7 Days`, `30 Days`, `All Time`) and share percentage progress bars.
 - **Review Queue (`'review'`):** Low-confidence (<70%) meals audit log with modal actions for approval, dish label correction, and dismissal.
 
+### C. Local AI and Voice
+
+- **SettingsScreen** discovers Ollama models, shows text and vision capability, and supports Automatic model selection or a chosen installed model.
+- **Local image and chat inference** uses `src/lib/localAI.ts` to call Ollama directly. Vision analysis requires a vision-capable model; hosted vision can be used in eligible signed-in online flows.
+- **Microphone input** is captured by the browser and transcribed by the optional local Whisper service. The transcript is inserted into the Coach input as text.
+- **Speech playback** uses the engine selected in Settings: Piper or Qwen3-TTS. The local voice server reports each runtime's readiness and returns an explicit error when the selected engine or model is unavailable.
+- Local model weights are not bundled. The service binds to loopback by default and is launched separately from the hosted backend.
+
 ---
 
 ## 4. API Client (`src/lib/api.ts`)
 
-The typed API client manages communication with the FastAPI backend:
+The typed API client manages communication with the FastAPI backend and device-local data:
 - Automatically injects `Authorization: Bearer <token>` from the active Google auth session.
 - Normalizes snake_case backend payloads to TypeScript camelCase interfaces.
+- Uses local storage fallbacks for supported workflows in offline and local-only sessions; local writes are not synchronized automatically.
 - Intercepts `401 Unauthorized` responses to clear invalid sessions and redirect to login.
 
 ### Key API Methods:

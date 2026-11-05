@@ -8,7 +8,7 @@ Welcome to the architectural and operational documentation for **NutriVision AI*
 
 | If you want to… | Read |
 |---|---|
-| Understand the complete end-to-end architecture | [ARCHITECTURE.md](./ARCHITECTURE.md) |
+| Understand the current hybrid local and hosted architecture | [ARCHITECTURE.md](./ARCHITECTURE.md) and [Mermaid architecture diagrams](../.github/modernize/assessment/engines/facts/architecture-diagram.md) |
 | Follow the complete master workflow & user journey | [WORKFLOW.md](./WORKFLOW.md) / [WORKFLOW_GUIDE.md](./WORKFLOW_GUIDE.md) |
 | Onboard as an AI agent or new core engineer | [AGENT_CONTEXT.md](./AGENT_CONTEXT.md) |
 | Deep dive into ChromaDB RAG & Live Price Scraper | [RAG_AND_SCRAPING_GUIDE.md](./RAG_AND_SCRAPING_GUIDE.md) |

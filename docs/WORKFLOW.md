@@ -269,6 +269,8 @@ The backend vision engine ([`app/services/vision_service.py`](file:///Users/bika
 
 ### Screen 6: Multi-Agent Voice AI Coach with KaTeX Math (`CoachScreen`)
 
+**Offline-first voice path:** The browser records microphone audio, sends it to the optional loopback Whisper service, and places the transcript into the Coach input. The assistant reply is sent to Ollama in local mode; after the full reply is available, the selected Piper or Qwen3-TTS engine synthesizes it locally. Engine readiness and selection are managed in Settings. Hosted voice endpoints are a separate online capability.
+
 - **Dual-Persona Architecture**:
   1. 🔬 **Dr. Susmit (Nutritional Biochemist)**:
      - Male Persona Voice (`JBFqnCBsd6RMkjVDRZzb` - George Premade).
@@ -288,7 +290,7 @@ The backend vision engine ([`app/services/vision_service.py`](file:///Users/bika
       - Dr. Susmit (English): `en-US-AndrewNeural` | Bengali: `bn-BD-PradeepNeural`
       - Farhan (English): `en-US-AvaNeural` | Bengali: `bn-BD-NabanitaNeural`
   - **Browser Fallback**: Falls back to `window.speechSynthesis` only as a last resort if all cloud synthesis fails.
-- **Speech-to-Text (STT)**: Integrated Web Speech API recording in either Bengali (`bn-BD`) or English (`en-US`).
+- **Speech-to-Text (STT)**: Browser audio recording with local Whisper transcription in English or Bengali (`en` / `bn`).
 
 ---
 
@@ -503,4 +505,3 @@ sequenceDiagram
 
 ---
 *Created and maintained by the NutriVision AI Engineering Team.*
-
