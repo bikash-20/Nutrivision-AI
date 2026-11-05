@@ -21,21 +21,32 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import math
 import os
+import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Request, status
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import BaseModel, Field
 
+from app.api.auth import get_current_user_optional, require_current_user
 from app.cache.sqlite_cache import TTLCache
 from app.cache.vector_cache import VectorCache
-from app.models.schemas import AnalyzeResult, DetectedItem, PipelineTrace, VisionDetectionResult
+from app.models.schemas import (
+    AnalyzeResult,
+    AuthSession,
+    DetectedItem,
+    PipelineTrace,
+    VisionDetectionResult,
+)
 from app.services import portion as portion_svc
 from app.services import reconcile as reconcile_svc
 from app.services.gemini_client import GeminiClient
 from app.services.groq_client import GroqClient
 from app.services.hf_client import HFClient
 from app.services.openrouter_client import OpenRouterVisionClient
+from app.services.state import PHOTO_UPLOAD_LIMIT, State, get_state
 from app.services.trace import make_trace
 
 log = logging.getLogger(__name__)
@@ -129,17 +140,72 @@ def _vision_ttl_s() -> int:
 
 def _cache_key(image_ref: str) -> str:
     """Namespace live-analysis cache entries away from earlier demo fixtures."""
-    return hashlib.sha256(f"live-vision-v1:{image_ref}".encode("utf-8")).hexdigest()
+    return hashlib.sha256(f"live-vision-v1:{image_ref}".encode()).hexdigest()
 
 
 class AnalyzeRequest(BaseModel):
     """Request body for `analyze_meal`."""
 
     image_ref: str
+    upload_id: str | None = Field(default=None, min_length=8, max_length=100)
+    image_hash: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+
+
+class PhotoUploadQuotaRequest(BaseModel):
+    upload_id: str = Field(min_length=8, max_length=100)
+    image_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+
+def _reserve_photo_upload(
+    state: State,
+    user: AuthSession,
+    upload_id: str,
+    image_hash: str,
+) -> dict[str, object]:
+    allowed, reset_at, remaining = state.reserve_photo_upload(user.email, upload_id, image_hash)
+    reset_at_utc = reset_at.astimezone(UTC)
+    reset_at_text = reset_at_utc.isoformat().replace("+00:00", "Z")
+    if not allowed:
+        retry_after = max(1, math.ceil((reset_at_utc - datetime.now(UTC)).total_seconds()))
+        reset_message = "one hour" if retry_after >= 55 * 60 else f"{math.ceil(retry_after / 60)} minutes"
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={
+                "code": "photo_upload_limit_reached",
+                "limit": PHOTO_UPLOAD_LIMIT,
+                "reset_at": reset_at_text,
+                "message": (
+                    f"You’ve reached the limit of {PHOTO_UPLOAD_LIMIT} photo uploads per hour. "
+                    f"You can upload again when your limit resets in {reset_message}. "
+                    "Paid plans are coming soon."
+                ),
+            },
+            headers={"Retry-After": str(retry_after)},
+        )
+    return {
+        "limit": PHOTO_UPLOAD_LIMIT,
+        "remaining": remaining,
+        "reset_at": reset_at_text,
+    }
+
+
+@router.post("/quota")
+def reserve_photo_upload(
+    body: PhotoUploadQuotaRequest,
+    user: AuthSession = Depends(require_current_user),  # noqa: B008
+    state: State = Depends(get_state),  # noqa: B008
+) -> dict[str, object]:
+    """Reserve a photo upload for the signed-in user before local or hosted AI runs."""
+    return _reserve_photo_upload(state, user, body.upload_id, body.image_hash)
 
 
 @router.post("/analyze", response_model=AnalyzeResult)
-async def analyze_meal(request: Request, body: AnalyzeRequest) -> AnalyzeResult:
+async def analyze_meal(
+    request: Request,
+    body: AnalyzeRequest,
+    user: AuthSession | None = Depends(get_current_user_optional),  # noqa: B008
+    state: State = Depends(get_state),  # noqa: B008
+) -> AnalyzeResult:
     """Vision pipeline — see module docstring for the full flow.
 
     A request-body size cap is enforced before we touch any cache or
@@ -160,6 +226,20 @@ async def analyze_meal(request: Request, body: AnalyzeRequest) -> AnalyzeResult:
                     "Send a smaller image or switch to multipart upload."
                 ),
             )
+
+    if user is not None:
+        actual_image_hash = hashlib.sha256(body.image_ref.encode()).hexdigest()
+        if body.image_hash is not None and body.image_hash != actual_image_hash:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Photo upload hash does not match the submitted image.",
+            )
+        _reserve_photo_upload(
+            state,
+            user,
+            body.upload_id or str(uuid.uuid4()),
+            actual_image_hash,
+        )
 
     pipeline: list[PipelineTrace] = [
         make_trace("cache-check", "Cache check", "running"),

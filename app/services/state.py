@@ -21,7 +21,7 @@ import sys
 import threading
 import urllib.parse
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Generic, Literal, TypeVar
 
@@ -51,6 +51,10 @@ T = TypeVar("T")
 
 class StateError(ValueError):
     """Raised when a mutation references an unknown entity id."""
+
+
+PHOTO_UPLOAD_LIMIT = 2
+PHOTO_UPLOAD_WINDOW = timedelta(hours=1)
 
 
 def make_clean_profile(name: str = "") -> UserProfile:
@@ -302,7 +306,20 @@ class PostgresStore:
                 print("Table 'nv_grocery' verified in public schema.", flush=True)
                 log.info("Table 'nv_grocery' verified in public schema.")
 
-                # 4. nv_migrations table (tracked schema and data migrations)
+                # 4. Authenticated image-upload quota windows
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS nv_photo_uploads (
+                        user_email TEXT NOT NULL REFERENCES nv_users(email) ON DELETE CASCADE,
+                        upload_id TEXT NOT NULL,
+                        image_hash TEXT NOT NULL DEFAULT '',
+                        created_at TIMESTAMPTZ NOT NULL,
+                        PRIMARY KEY (user_email, upload_id)
+                    );
+                """)
+                cur.execute("ALTER TABLE nv_photo_uploads ADD COLUMN IF NOT EXISTS image_hash TEXT NOT NULL DEFAULT '';")
+                cur.execute("CREATE INDEX IF NOT EXISTS idx_nv_photo_uploads_user_created ON nv_photo_uploads(user_email, created_at);")
+
+                # 5. nv_migrations table (tracked schema and data migrations)
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS nv_migrations (
                         id TEXT PRIMARY KEY,
@@ -349,7 +366,7 @@ class PostgresStore:
                 else:
                     log.info("Tracked migration 'purge_legacy_seeded_accounts_v1' already applied — skipping.")
 
-        success_msg = "PostgreSQL schema migrations completed successfully (nv_users, nv_meals, nv_grocery, nv_migrations verified)."
+        success_msg = "PostgreSQL schema migrations completed successfully (nv_users, nv_meals, nv_grocery, nv_photo_uploads, nv_migrations verified)."
         print(success_msg, flush=True)
         log.info(success_msg)
 
@@ -364,6 +381,7 @@ class State:
         self.meals = Bucket[MealEntry](newest_first=True)
         self.grocery = Bucket[GroceryItem]()
         self.users: dict[str, UserData] = {}
+        self.photo_uploads: list[dict[str, str]] = []
         self.applied_migrations: set[str] = set()
 
         self.postgres_store: PostgresStore | None = None
@@ -593,6 +611,18 @@ class State:
         raw_migrations = raw.get("migrations", [])
         if isinstance(raw_migrations, list):
             self.applied_migrations = set(raw_migrations)
+        raw_photo_uploads = raw.get("photo_uploads", [])
+        if isinstance(raw_photo_uploads, list):
+            self.photo_uploads = [
+                {
+                    "email": str(item["email"]).lower().strip(),
+                    "upload_id": str(item["upload_id"]),
+                    "image_hash": str(item.get("image_hash", "")),
+                    "created_at": str(item["created_at"]),
+                }
+                for item in raw_photo_uploads
+                if isinstance(item, dict) and item.get("email") and item.get("upload_id") and item.get("created_at")
+            ]
 
         try:
             self.profile = UserProfile.model_validate(raw.get("profile", {}))
@@ -651,6 +681,7 @@ class State:
             "meals": [m.model_dump(mode="json", by_alias=True) for m in self.meals.items],
             "grocery": [g.model_dump(mode="json", by_alias=True) for g in self.grocery.items],
             "migrations": sorted(list(self.applied_migrations)),
+            "photo_uploads": self.photo_uploads,
             "users": {
                 email: {
                     "email": u.email,
@@ -752,6 +783,114 @@ class State:
             result = mutate()
             self._save_unlocked()
             return result
+
+    def reserve_photo_upload(
+        self,
+        email: str,
+        upload_id: str,
+        image_hash: str,
+        *,
+        now: datetime | None = None,
+    ) -> tuple[bool, datetime, int]:
+        """Atomically reserve one of a user's two rolling-hour photo uploads."""
+        clean_email = email.lower().strip()
+        current_time = now or datetime.now(UTC)
+        if current_time.tzinfo is None:
+            current_time = current_time.replace(tzinfo=UTC)
+        current_time = current_time.astimezone(UTC)
+        cutoff = current_time - PHOTO_UPLOAD_WINDOW
+
+        with self._lock:
+            if self.storage_type == "postgres":
+                if not self.is_healthy or not self.postgres_store:
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="Photo upload quota storage is unavailable.",
+                    )
+                try:
+                    with self.postgres_store._get_conn() as conn:
+                        with conn.transaction():
+                            with conn.cursor() as cur:
+                                cur.execute("SELECT pg_advisory_xact_lock(hashtext(%s));", (clean_email,))
+                                cur.execute(
+                                    "DELETE FROM nv_photo_uploads WHERE user_email = %s AND created_at <= %s;",
+                                    (clean_email, cutoff),
+                                )
+                                cur.execute(
+                                    "SELECT created_at, image_hash FROM nv_photo_uploads WHERE user_email = %s AND upload_id = %s;",
+                                    (clean_email, upload_id),
+                                )
+                                existing = cur.fetchone()
+                                cur.execute(
+                                    "SELECT COUNT(*), MIN(created_at) FROM nv_photo_uploads WHERE user_email = %s;",
+                                    (clean_email,),
+                                )
+                                count, oldest = cur.fetchone()
+                                if existing:
+                                    if existing[1] != image_hash:
+                                        raise HTTPException(
+                                            status_code=status.HTTP_409_CONFLICT,
+                                            detail="This upload ID is already associated with a different photo.",
+                                        )
+                                    return True, oldest + PHOTO_UPLOAD_WINDOW, max(0, PHOTO_UPLOAD_LIMIT - count)
+                                if count >= PHOTO_UPLOAD_LIMIT:
+                                    return False, oldest + PHOTO_UPLOAD_WINDOW, 0
+                                cur.execute(
+                                    "INSERT INTO nv_photo_uploads (user_email, upload_id, image_hash, created_at) VALUES (%s, %s, %s, %s);",
+                                    (clean_email, upload_id, image_hash, current_time),
+                                )
+                                count += 1
+                                cur.execute(
+                                    "SELECT MIN(created_at) FROM nv_photo_uploads WHERE user_email = %s;",
+                                    (clean_email,),
+                                )
+                                oldest = cur.fetchone()[0]
+                                return True, oldest + PHOTO_UPLOAD_WINDOW, max(0, PHOTO_UPLOAD_LIMIT - count)
+                except HTTPException:
+                    raise
+                except Exception as exc:
+                    sanitized = sanitize_db_error(exc, self.postgres_store.dsn)
+                    log.error("PostgreSQL photo quota reservation failed: %s", sanitized)
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="Photo upload quota storage is unavailable.",
+                    ) from exc
+
+            active_uploads = []
+            for entry in self.photo_uploads:
+                try:
+                    created_at = datetime.fromisoformat(entry["created_at"].replace("Z", "+00:00"))
+                except (KeyError, ValueError):
+                    continue
+                if created_at.tzinfo is None:
+                    created_at = created_at.replace(tzinfo=UTC)
+                if entry["email"] == clean_email and created_at > cutoff:
+                    active_uploads.append((entry, created_at.astimezone(UTC)))
+            self.photo_uploads = [entry for entry, _ in active_uploads]
+
+            existing_entry = next((entry for entry, _ in active_uploads if entry["upload_id"] == upload_id), None)
+            if existing_entry is not None:
+                if existing_entry.get("image_hash", "") != image_hash:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="This upload ID is already associated with a different photo.",
+                    )
+                oldest = min(created_at for _, created_at in active_uploads)
+                return True, oldest + PHOTO_UPLOAD_WINDOW, max(0, PHOTO_UPLOAD_LIMIT - len(active_uploads))
+            if len(active_uploads) >= PHOTO_UPLOAD_LIMIT:
+                oldest = min(created_at for _, created_at in active_uploads)
+                self._save_file_unlocked()
+                return False, oldest + PHOTO_UPLOAD_WINDOW, 0
+
+            self.photo_uploads.append({
+                "email": clean_email,
+                "upload_id": upload_id,
+                "image_hash": image_hash,
+                "created_at": current_time.isoformat().replace("+00:00", "Z"),
+            })
+            oldest = min([created_at for _, created_at in active_uploads] + [current_time])
+            self._save_file_unlocked()
+            return True, oldest + PHOTO_UPLOAD_WINDOW, max(0, PHOTO_UPLOAD_LIMIT - len(active_uploads) - 1)
 
     # ── User Account Partitioning ─────────────────────────────────────────
 

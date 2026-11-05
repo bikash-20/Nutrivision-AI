@@ -111,7 +111,12 @@ function localTodaySummary(): TodaySummary {
 }
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(
+    public status: number,
+    message: string,
+    public code?: string,
+    public resetAt?: string,
+  ) {
     super(message);
     this.name = 'ApiError';
   }
@@ -144,15 +149,25 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
       }
     }
     let detail = resp.statusText;
+    let code: string | undefined;
+    let resetAt: string | undefined;
     try {
       const body = await resp.json();
       if (body && typeof body === 'object' && 'detail' in body) {
-        detail = String((body as { detail: unknown }).detail);
+        const apiDetail = (body as { detail: unknown }).detail;
+        if (typeof apiDetail === 'string') {
+          detail = apiDetail;
+        } else if (apiDetail && typeof apiDetail === 'object') {
+          const structuredDetail = apiDetail as { message?: unknown; code?: unknown; reset_at?: unknown };
+          if (typeof structuredDetail.message === 'string') detail = structuredDetail.message;
+          if (typeof structuredDetail.code === 'string') code = structuredDetail.code;
+          if (typeof structuredDetail.reset_at === 'string') resetAt = structuredDetail.reset_at;
+        }
       }
     } catch {
       // Body wasn't JSON; fall back to statusText.
     }
-    throw new ApiError(resp.status, `API ${resp.status}: ${detail}`);
+    throw new ApiError(resp.status, detail, code, resetAt);
   }
 
   // 204 No Content → return undefined cast.
@@ -197,10 +212,79 @@ export const DEFAULT_PROFILE: UserProfile = {
 /**
  * POST /api/vision/analyze  →  { detected, pipeline }
  */
-export async function analyzeMeal(imageRef: string): Promise<AnalyzeResult> {
+export async function analyzeMeal(imageRef: string, uploadId?: string, imageHash?: string): Promise<AnalyzeResult> {
   return apiFetch<AnalyzeResult>('/api/vision/analyze', {
     method: 'POST',
-    body: JSON.stringify({ image_ref: imageRef }),
+    body: JSON.stringify({ image_ref: imageRef, upload_id: uploadId, image_hash: imageHash }),
+  });
+}
+
+const PHOTO_UPLOAD_LIMIT = 2;
+const PHOTO_UPLOAD_WINDOW_MS = 60 * 60 * 1000;
+
+export async function getPhotoUploadHash(imageRef: string): Promise<string> {
+  if (!globalThis.crypto?.subtle) {
+    throw new ApiError(503, 'Secure photo verification is unavailable in this browser. Use HTTPS or localhost.');
+  }
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(imageRef));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function reserveLocalPhotoUpload(uploadId: string, imageHash: string): void {
+  const email = storage.load<AuthSession>('auth')?.email?.toLowerCase() ?? 'anonymous';
+  const key = `nv_photo_uploads:${email}`;
+  let uploads: Array<{ id: string; imageHash: string; createdAt: number }> = [];
+  try {
+    const raw = localStorage.getItem(key);
+    uploads = raw ? (JSON.parse(raw) as Array<{ id: string; imageHash: string; createdAt: number }>) : [];
+  } catch {
+    throw new ApiError(503, 'Unable to read this device’s photo upload limit. Check browser storage settings.');
+  }
+  const cutoff = Date.now() - PHOTO_UPLOAD_WINDOW_MS;
+  uploads = uploads.filter(
+    (entry) => entry && typeof entry.id === 'string' && typeof entry.imageHash === 'string'
+      && Number.isFinite(entry.createdAt) && entry.createdAt > cutoff,
+  );
+  const existing = uploads.find((entry) => entry.id === uploadId);
+  if (existing) {
+    if (existing.imageHash !== imageHash) {
+      throw new ApiError(409, 'This upload ID is already associated with a different photo.');
+    }
+    return;
+  }
+  if (uploads.length >= PHOTO_UPLOAD_LIMIT) {
+    const resetAt = Math.min(...uploads.map((entry) => entry.createdAt)) + PHOTO_UPLOAD_WINDOW_MS;
+    const minutes = Math.max(1, Math.ceil((resetAt - Date.now()) / 60_000));
+    const resetMessage = minutes >= 55 ? 'one hour' : `${minutes} minutes`;
+    throw new ApiError(
+      429,
+      `You’ve reached the limit of ${PHOTO_UPLOAD_LIMIT} photo uploads per hour. You can upload again when your limit resets in ${resetMessage}. Paid plans are coming soon.`,
+      'photo_upload_limit_reached',
+      new Date(resetAt).toISOString(),
+    );
+  }
+  uploads.push({ id: uploadId, imageHash, createdAt: Date.now() });
+  try {
+    localStorage.setItem(key, JSON.stringify(uploads));
+  } catch {
+    throw new ApiError(503, 'Unable to save this device’s photo upload limit. Check browser storage settings.');
+  }
+}
+
+/** Reserve the hourly photo allowance before running local or hosted image analysis. */
+export async function reservePhotoUpload(uploadId: string, imageHash: string): Promise<void> {
+  const session = storage.load<AuthSession>('auth');
+  if (
+    session?.localOnly
+    || !session?.token
+    || (typeof navigator !== 'undefined' && !navigator.onLine)
+  ) {
+    reserveLocalPhotoUpload(uploadId, imageHash);
+    return;
+  }
+  await apiFetch<{ limit: number; remaining: number; reset_at: string }>('/api/vision/quota', {
+    method: 'POST',
+    body: JSON.stringify({ upload_id: uploadId, image_hash: imageHash }),
   });
 }
 

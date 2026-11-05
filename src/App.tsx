@@ -2,7 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Settings } from 'lucide-react';
 import { T, TABS } from './data';
-import { getProfile, saveMeal, updateLatestMeal, analyzeMeal, resolveNutrition } from './lib/api';
+import {
+  getProfile,
+  saveMeal,
+  updateLatestMeal,
+  analyzeMeal,
+  resolveNutrition,
+  reservePhotoUpload,
+  getPhotoUploadHash,
+  ApiError,
+} from './lib/api';
 import { analyzeImageLocally, LocalAIError } from './lib/localAI';
 import { getEffectiveNutrition } from './lib/personalize';
 import { getSession, logout } from './lib/auth';
@@ -126,6 +135,7 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
   const [pipeline, setPipeline] = useState<PipelineTrace[]>([]);
   const [pipelineToast, setPipelineToast] = useState<string | null>(null);
   const [analysisMessage, setAnalysisMessage] = useState<string | null>(null);
+  const [photoUploadMessage, setPhotoUploadMessage] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<import('./types/schemas').AnalyzeResult | null>(null);
   const resultsNavigationTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reduceMotion = useReducedMotion();
@@ -161,19 +171,41 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
     setTab(next);
   };
 
-  const handleCapture = async (imageDataUrl?: string) => {
+  const handleCapture = async (imageDataUrl: string): Promise<boolean> => {
+    const uploadId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `upload-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    setPhotoUploadMessage(null);
+    let imageHash: string;
+    try {
+      imageHash = await getPhotoUploadHash(imageDataUrl);
+      await reservePhotoUpload(uploadId, imageHash);
+    } catch (error) {
+      console.error('Photo upload reservation failed:', error);
+      setPhotoUploadMessage(
+        error instanceof ApiError
+          ? error.message
+          : translate('Could not verify your photo upload limit. Please try again.')
+      );
+      return false;
+    }
+
+    void processCapture(imageDataUrl, uploadId, imageHash);
+    return true;
+  };
+
+  const processCapture = async (imageDataUrl: string, uploadId: string, imageHash: string) => {
     clearResultsNavigationTimeout();
     setCaptured(true);
     setAnalysisMessage(null);
     setAnalysisResult(null);
-    if (imageDataUrl) setCapturedImage(imageDataUrl);
+    setCapturedImage(imageDataUrl);
     setDirection(1);
     setPipelineToast(translate('Analyzing photo…'));
 
     let next: DetectedItem[] = [];
     let trace: PipelineTrace[] = [];
     try {
-      if (!imageDataUrl) throw new Error('A photo is required to analyze a meal');
       let result: import('./types/schemas').AnalyzeResult;
       try {
         const local = await analyzeImageLocally(imageDataUrl, profile);
@@ -181,7 +213,7 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
         setPipelineToast(translate(`Analyzed on-device with ${local.model}`));
       } catch (localError) {
         if (session.localOnly || (typeof navigator !== 'undefined' && !navigator.onLine)) throw localError;
-        result = await analyzeMeal(imageDataUrl);
+        result = await analyzeMeal(imageDataUrl, uploadId, imageHash);
       }
       setAnalysisResult(result);
       next = result.detected;
@@ -405,6 +437,7 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
               captured={captured}
               previewUrl={capturedImage}
               onNavigateTab={goToTab}
+              photoUploadMessage={photoUploadMessage}
               userName={profile?.name || session?.name || (session?.email ? session.email.split('@')[0] : null)}
             />
           )}

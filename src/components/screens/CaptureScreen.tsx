@@ -21,14 +21,15 @@ const TAB_GROCERY = (() => {
 })();
 
 interface CaptureScreenProps {
-  /** Called with the captured image data URL when the user takes a photo. */
-  onCapture: (dataUrl: string) => void;
+  /** Called with the captured image data URL; returns false when reservation is rejected. */
+  onCapture: (dataUrl: string) => Promise<boolean>;
   onReset?: () => void;
   captured: boolean;
   /** Optional preview URL to show after capture (e.g. from parent state). */
   previewUrl?: string | null;
   /** Optional callback to switch tabs (used by quick-action chips). */
   onNavigateTab?: (index: number) => void;
+  photoUploadMessage?: string | null;
   userName?: string | null;
 }
 
@@ -77,6 +78,7 @@ export default function CaptureScreen({
   captured,
   previewUrl,
   onNavigateTab,
+  photoUploadMessage,
   userName,
 }: CaptureScreenProps) {
   useTokens();
@@ -87,6 +89,7 @@ export default function CaptureScreen({
   const [phase, setPhase] = useState<CapturePhase>('idle');
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [capturePending, setCapturePending] = useState(false);
   const [analyzeProgress, setAnalyzeProgress] = useState(0);
   const [rippled, setRippled] = useState(false);
   const [pressed, setPressed] = useState(false);
@@ -236,15 +239,30 @@ export default function CaptureScreen({
     return canvas.toDataURL('image/jpeg', 0.92);
   }, []);
 
+  const submitCapture = useCallback(async (dataUrl: string) => {
+    if (capturePending) return;
+    setCapturePending(true);
+    setAnalyzing(true);
+    try {
+      const accepted = await onCapture(dataUrl);
+      stopCamera();
+      if (accepted) {
+        setPhase('captured');
+      } else {
+        setPhase('idle');
+        setAnalyzing(false);
+      }
+    } finally {
+      setCapturePending(false);
+    }
+  }, [capturePending, onCapture, stopCamera]);
+
   const handleShutter = useCallback(() => {
     const dataUrl = captureFrame();
     if (!dataUrl) return;
 
-    stopCamera();
-    setPhase('captured');
-    setAnalyzing(true);
-    onCapture(dataUrl);
-  }, [captureFrame, stopCamera, onCapture]);
+    void submitCapture(dataUrl);
+  }, [captureFrame, submitCapture]);
 
   // ── File upload fallback ──────────────────────────────────────────────
 
@@ -279,22 +297,13 @@ export default function CaptureScreen({
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
             const optimized = canvas.toDataURL('image/jpeg', 0.82);
-            stopCamera();
-            setPhase('captured');
-            setAnalyzing(true);
-            onCapture(optimized);
+            void submitCapture(optimized);
           } else {
-            stopCamera();
-            setPhase('captured');
-            setAnalyzing(true);
-            onCapture(rawDataUrl);
+            void submitCapture(rawDataUrl);
           }
         };
         img.onerror = () => {
-          stopCamera();
-          setPhase('captured');
-          setAnalyzing(true);
-          onCapture(rawDataUrl);
+          void submitCapture(rawDataUrl);
         };
         img.src = rawDataUrl;
       };
@@ -302,7 +311,7 @@ export default function CaptureScreen({
       // Reset input so the same file can be re-selected
       e.target.value = '';
     },
-    [stopCamera, onCapture],
+    [submitCapture],
   );
 
   // ── Tap to start ──────────────────────────────────────────────────────
@@ -390,6 +399,24 @@ export default function CaptureScreen({
       >
         {isBn ? 'থালাটির ছবি তুলুন — বাকিটা আমরা দেখছি।' : "Snap your plate — we'll do the rest."}
       </motion.p>
+
+      {photoUploadMessage && (
+        <div
+          role="alert"
+          style={{
+            margin: '0 0 16px',
+            padding: '12px 14px',
+            borderRadius: 12,
+            background: 'rgba(177, 69, 48, 0.08)',
+            color: T.ink,
+            fontFamily: 'Inter',
+            fontSize: 14,
+            lineHeight: 1.5,
+          }}
+        >
+          {photoUploadMessage}
+        </div>
+      )}
 
       {/* ── Capture card ──────────────────────────────────────────── */}
       <motion.div
@@ -544,6 +571,7 @@ export default function CaptureScreen({
             {/* Shutter button */}
             <motion.button
               type="button"
+              disabled={capturePending}
               onClick={(e) => {
                 e.stopPropagation();
                 handleShutter();
