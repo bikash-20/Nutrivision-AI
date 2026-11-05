@@ -1,5 +1,13 @@
 # NutriVision AI
 <img width="1280" height="807" alt="image" src="https://github.com/user-attachments/assets/7fc967c6-fd04-434e-859b-7a3eeb1a8987" />
+<img width="1280" height="754" alt="image" src="https://github.com/user-attachments/assets/d2c14f8c-0ec2-4d67-bda4-c185f4179159" />
+<img width="1280" height="754" alt="image" src="https://github.com/user-attachments/assets/042108a1-1647-43a6-b912-1b67b6b69be8" />
+<img width="1280" height="754" alt="image" src="https://github.com/user-attachments/assets/840ec9a3-23f0-4fbc-8362-b9322561046b" />
+<img width="1280" height="684" alt="image" src="https://github.com/user-attachments/assets/8d8fe356-6619-4701-8b59-0774f5276db2" />
+<img width="1280" height="684" alt="image" src="https://github.com/user-attachments/assets/2d4d4898-5044-4064-8b76-a6b9fb2e2ee1" />
+
+
+
 
 
 > *Snap a meal. Know your body. Shop smart.*
