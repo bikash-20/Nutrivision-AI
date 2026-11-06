@@ -230,6 +230,14 @@ export async function getPhotoUploadHash(imageRef: string): Promise<string> {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
+export async function getPhotoUploadHashFromBytes(bytes: ArrayBuffer): Promise<string> {
+  if (!globalThis.crypto?.subtle) {
+    throw new ApiError(503, 'Secure photo verification is unavailable in this browser. Use HTTPS or localhost.');
+  }
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
 function reserveLocalPhotoUpload(uploadId: string, imageHash: string): void {
   const email = storage.load<AuthSession>('auth')?.email?.toLowerCase() ?? 'anonymous';
   const key = `nv_photo_uploads:${email}`;

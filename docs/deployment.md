@@ -109,6 +109,12 @@ and defaults to `2`. Set it to any positive integer in Render's environment
 settings; the service applies the change after restart/redeploy. Browser-only
 offline sessions retain their separate local limit of `2`.
 
+The curated RAG index uses `RAG_CHROMA_PATH` (default
+`app/cache/rag_chroma`), separate from the vision detection cache. It is
+re-seeded from the bundled knowledge documents when the service starts; attach
+a persistent disk and point this variable at its mount path if retaining the
+index across instance restarts is important.
+
 ---
 
 ## 4. Frontend Deployment (Vercel)

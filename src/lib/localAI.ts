@@ -281,6 +281,7 @@ export async function analyzeImageLocally(
       const detected = parseDetectedItems(content);
       return {
         result: {
+          source: 'on_device_vision',
           detected,
           is_food: detected.length > 0,
           pipeline: [

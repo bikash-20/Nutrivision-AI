@@ -138,6 +138,9 @@ class PipelineTrace(BaseModel):
 
 
 InputMode = Literal["cooked_meal", "raw_ingredients", "restaurant_menu"]
+AnalysisSource = Literal[
+    "hosted_vision", "vision_cache", "on_device_vision", "precomputed_reference"
+]
 
 
 class RecipeSuggestion(BaseModel):
@@ -173,6 +176,7 @@ class VisionDetectionResult(BaseModel):
 class AnalyzeResult(BaseModel):
     detected: list[DetectedItem]
     pipeline: list[PipelineTrace]
+    source: AnalysisSource = "hosted_vision"
     is_food: bool = True
     input_mode: InputMode = "cooked_meal"
     overall_confidence: float = 0.85

@@ -14,14 +14,25 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 log = logging.getLogger(__name__)
 
-DEFAULT_CHROMA_PATH = "app/cache/chroma"
+DEFAULT_RAG_CHROMA_PATH = "app/cache/rag_chroma"
+RAGCollectionName = Literal[
+    "bd_recipes_and_hidden_ingredients",
+    "clinical_nutrition_guidelines",
+    "bd_market_and_seasonal_produce",
+    "packaged_food_facts_bd",
+]
+
+
+class RAGServiceUnavailable(RuntimeError):
+    """Raised when the knowledge base cannot serve a retrieval request."""
 
 
 class RAGChunk(BaseModel):
@@ -34,9 +45,19 @@ class RAGChunk(BaseModel):
 
 class RAGQueryRequest(BaseModel):
     query: str
-    collection_name: str
+    collection_name: RAGCollectionName
     filters: dict[str, Any] | None = None
     top_k: int = Field(default=3, ge=1, le=10)
+
+    @field_validator("query")
+    @classmethod
+    def normalize_query(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("Query must not be empty.")
+        if len(normalized) > 1000:
+            raise ValueError("Query must be at most 1000 characters.")
+        return normalized
 
 
 class RAGQueryResponse(BaseModel):
@@ -361,14 +382,15 @@ class RAGService:
     """Manages multi-collection nutrition RAG using ChromaDB with auto-seeding."""
 
     def __init__(self, path: Path | str | None = None) -> None:
-        raw = path or os.environ.get("CHROMA_CACHE_PATH") or DEFAULT_CHROMA_PATH
+        raw = path or os.environ.get("RAG_CHROMA_PATH") or DEFAULT_RAG_CHROMA_PATH
         self.path = Path(raw)
         self.path.mkdir(parents=True, exist_ok=True)
         self._client: Any | None = None
         self._collections: dict[str, Any] = {}
         self._seeded = False
+        self._lock = threading.RLock()
 
-    def _get_client(self) -> Any | None:
+    def _get_client(self) -> Any:
         if self._client is not None:
             return self._client
         try:
@@ -378,101 +400,114 @@ class RAGService:
                 path=str(self.path),
                 settings=Settings(anonymized_telemetry=False),
             )
-            return self._client
         except Exception as exc:  # noqa: BLE001
-            log.warning("ChromaDB client initialization failed: %s", exc)
-            return None
+            log.exception("ChromaDB client initialization failed.")
+            raise RAGServiceUnavailable("RAG vector store is unavailable.") from exc
+        return self._client
 
     def ensure_collections(self) -> None:
-        """Seed all 4 collections on first run if empty."""
-        client = self._get_client()
-        if client is None or self._seeded:
-            return
+        """Create and seed each curated collection before serving retrieval."""
+        with self._lock:
+            if self._seeded:
+                return
+            client = self._get_client()
 
-        for col_name, seed_docs in COLLECTION_SEEDS.items():
             try:
-                col = client.get_or_create_collection(
-                    name=col_name,
-                    metadata={"hnsw:space": "cosine"},
-                )
-                self._collections[col_name] = col
-
-                # Check if collection has documents
-                existing_count = col.count()
-                if existing_count == 0 and seed_docs:
-                    ids = [d["id"] for d in seed_docs]
-                    documents = [d["document"] for d in seed_docs]
-                    metadatas = [d["metadata"] for d in seed_docs]
-                    col.add(ids=ids, documents=documents, metadatas=metadatas)
-                    log.info("Seeded %d documents into ChromaDB collection '%s'", len(ids), col_name)
+                for col_name, seed_docs in COLLECTION_SEEDS.items():
+                    col = client.get_or_create_collection(
+                        name=col_name,
+                        metadata={"hnsw:space": "cosine"},
+                    )
+                    self._collections[col_name] = col
+                    if seed_docs:
+                        col.upsert(
+                            ids=[doc["id"] for doc in seed_docs],
+                            documents=[doc["document"] for doc in seed_docs],
+                            metadatas=[doc["metadata"] for doc in seed_docs],
+                        )
+                        log.info("Ensured %d seed documents in RAG collection '%s'", len(seed_docs), col_name)
             except Exception as exc:  # noqa: BLE001
-                log.warning("Failed ensuring collection '%s': %s", col_name, exc)
+                log.exception("Failed ensuring RAG collection '%s'.", col_name)
+                raise RAGServiceUnavailable("RAG knowledge base initialization failed.") from exc
 
-        self._seeded = True
+            self._seeded = True
+
+    def health(self) -> dict[str, int]:
+        """Ensure all curated collections are ready and return their document counts."""
+        self.ensure_collections()
+        try:
+            counts = {name: int(self._collections[name].count()) for name in COLLECTION_SEEDS}
+        except Exception as exc:  # noqa: BLE001
+            log.exception("Failed reading RAG collection health.")
+            raise RAGServiceUnavailable("RAG knowledge base health check failed.") from exc
+        if any(count == 0 for count in counts.values()):
+            raise RAGServiceUnavailable("One or more RAG collections are empty.")
+        return counts
 
     def query(
         self,
-        collection_name: str,
+        collection_name: RAGCollectionName,
         query_text: str,
         filters: dict[str, Any] | None = None,
         top_k: int = 3,
     ) -> list[RAGChunk]:
-        """Query a specific collection with optional metadata filters and return matched chunks."""
-        self.ensure_collections()
-        col = self._collections.get(collection_name)
-        if col is None:
-            client = self._get_client()
-            if client is None:
-                return []
+        """Query one of the curated knowledge collections."""
+        if collection_name not in COLLECTION_SEEDS:
+            raise ValueError(f"Unsupported RAG collection: {collection_name}")
+        normalized_query = query_text.strip()
+        if not normalized_query:
+            raise ValueError("Query must not be empty.")
+        if len(normalized_query) > 1000:
+            raise ValueError("Query must be at most 1000 characters.")
+        if not 1 <= top_k <= 10:
+            raise ValueError("top_k must be between 1 and 10.")
+
+        with self._lock:
+            self.ensure_collections()
+            col = self._collections[collection_name]
             try:
-                col = client.get_collection(name=collection_name)
-                self._collections[collection_name] = col
-            except Exception:
-                return []
+                kwargs: dict[str, Any] = {
+                    "query_texts": [normalized_query],
+                    "n_results": top_k,
+                }
+                if filters:
+                    kwargs["where"] = filters
 
-        try:
-            kwargs: dict[str, Any] = {
-                "query_texts": [query_text],
-                "n_results": top_k,
-            }
-            if filters:
-                kwargs["where"] = filters
+                res = col.query(**kwargs)
+                chunks: list[RAGChunk] = []
+                ids = res.get("ids", [[]])[0]
+                docs = res.get("documents", [[]])[0]
+                metadatas = res.get("metadatas", [[]])[0]
+                distances = res.get("distances", [[]])[0] if "distances" in res else []
 
-            res = col.query(**kwargs)
-            chunks: list[RAGChunk] = []
-
-            ids = res.get("ids", [[]])[0]
-            docs = res.get("documents", [[]])[0]
-            metadatas = res.get("metadatas", [[]])[0]
-            distances = res.get("distances", [[]])[0] if "distances" in res else []
-
-            for i, chunk_id in enumerate(ids):
-                doc = docs[i] if i < len(docs) else ""
-                meta = metadatas[i] if i < len(metadatas) else {}
-                dist = distances[i] if i < len(distances) else None
-                citation = meta.get("citation", "Official Nutrition Benchmark")
-                chunks.append(
-                    RAGChunk(
-                        id=str(chunk_id),
-                        document=str(doc),
-                        metadata=meta,
-                        distance=float(dist) if dist is not None else None,
-                        citation=str(citation),
+                for i, chunk_id in enumerate(ids):
+                    doc = docs[i] if i < len(docs) else ""
+                    meta = metadatas[i] if i < len(metadatas) else {}
+                    dist = distances[i] if i < len(distances) else None
+                    citation = meta.get("citation", "")
+                    chunks.append(
+                        RAGChunk(
+                            id=str(chunk_id),
+                            document=str(doc),
+                            metadata=meta,
+                            distance=float(dist) if dist is not None else None,
+                            citation=str(citation),
+                        )
                     )
-                )
-            return chunks
-        except Exception as exc:  # noqa: BLE001
-            log.warning("RAG query failed on collection '%s': %s", collection_name, exc)
-            return []
+                return chunks
+            except Exception as exc:  # noqa: BLE001
+                log.exception("RAG query failed on collection '%s'.", collection_name)
+                raise RAGServiceUnavailable("RAG retrieval failed.") from exc
 
 
 # Process-wide singleton
 _rag_service: RAGService | None = None
+_rag_service_lock = threading.Lock()
 
 
 def get_rag_service() -> RAGService:
     global _rag_service
-    if _rag_service is None:
-        _rag_service = RAGService()
-    return _rag_service
-
+    with _rag_service_lock:
+        if _rag_service is None:
+            _rag_service = RAGService()
+        return _rag_service

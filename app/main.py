@@ -92,7 +92,8 @@ async def lifespan(_app: FastAPI):
             import asyncio
             await asyncio.sleep(0.1)
             from app.services.rag_service import get_rag_service
-            get_rag_service().ensure_collections()
+
+            await asyncio.to_thread(get_rag_service().ensure_collections)
         except Exception as exc:
             import logging
             logging.getLogger("app.main").warning("Async RAG warmup encountered error: %s", exc)

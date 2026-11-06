@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Camera, Sparkles, ScanLine, RotateCcw, X, Upload, UtensilsCrossed, History, ShoppingBag } from 'lucide-react';
 import { T, getGreeting, NUTRITION_DB } from '../../data';
 import { useTokens } from '../../theme/useTokens';
-import { getTodaySummary, getMealHistory } from '../../lib/api';
+import { getPhotoUploadHashFromBytes, getTodaySummary, getMealHistory } from '../../lib/api';
 import { formatRelative, pickThumbnailStyle, toBengaliDigits } from '../../lib/format';
 import RevenueCurveChart from '../../components/RevenueCurveChart';
 import { MOCK_TABS } from '../../mocks/fixtures';
@@ -22,7 +22,7 @@ const TAB_GROCERY = (() => {
 
 interface CaptureScreenProps {
   /** Called with the captured image data URL; returns false when reservation is rejected. */
-  onCapture: (dataUrl: string) => Promise<boolean>;
+  onCapture: (dataUrl: string, originalImageHash?: string) => Promise<boolean>;
   onReset?: () => void;
   captured: boolean;
   /** Optional preview URL to show after capture (e.g. from parent state). */
@@ -239,12 +239,12 @@ export default function CaptureScreen({
     return canvas.toDataURL('image/jpeg', 0.92);
   }, []);
 
-  const submitCapture = useCallback(async (dataUrl: string) => {
+  const submitCapture = useCallback(async (dataUrl: string, originalImageHash?: string) => {
     if (capturePending) return;
     setCapturePending(true);
     setAnalyzing(true);
     try {
-      const accepted = await onCapture(dataUrl);
+      const accepted = await onCapture(dataUrl, originalImageHash);
       stopCamera();
       if (accepted) {
         setPhase('captured');
@@ -271,45 +271,56 @@ export default function CaptureScreen({
       const file = e.target.files?.[0];
       if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        const rawDataUrl = reader.result as string;
-        // Optimize and downscale large camera photos client-side to ensure
-        // fast transmission (~250KB payload) and sub-second upload speeds.
-        const img = new Image();
-        img.onload = () => {
-          const maxDim = 1080;
-          let width = img.width;
-          let height = img.height;
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            const optimized = canvas.toDataURL('image/jpeg', 0.82);
-            void submitCapture(optimized);
-          } else {
-            void submitCapture(rawDataUrl);
-          }
-        };
-        img.onerror = () => {
-          void submitCapture(rawDataUrl);
-        };
-        img.src = rawDataUrl;
-      };
-      reader.readAsDataURL(file);
-      // Reset input so the same file can be re-selected
       e.target.value = '';
+      void file.arrayBuffer()
+        .then((bytes) => getPhotoUploadHashFromBytes(bytes))
+        .catch((error: unknown) => {
+          console.error('Could not hash original photo bytes:', error);
+          return undefined;
+        })
+        .then((originalImageHash) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const rawDataUrl = reader.result as string;
+            // Optimize and downscale large camera photos client-side to ensure
+            // fast transmission (~250KB payload) and sub-second upload speeds.
+            const img = new Image();
+            img.onload = () => {
+              const maxDim = 1080;
+              let width = img.width;
+              let height = img.height;
+              if (width > maxDim || height > maxDim) {
+                if (width > height) {
+                  height = Math.round((height * maxDim) / width);
+                  width = maxDim;
+                } else {
+                  width = Math.round((width * maxDim) / height);
+                  height = maxDim;
+                }
+              }
+              const canvas = document.createElement('canvas');
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              if (ctx) {
+                ctx.drawImage(img, 0, 0, width, height);
+                const optimized = canvas.toDataURL('image/jpeg', 0.82);
+                void submitCapture(optimized, originalImageHash);
+              } else {
+                void submitCapture(rawDataUrl, originalImageHash);
+              }
+            };
+            img.onerror = () => {
+              void submitCapture(rawDataUrl, originalImageHash);
+            };
+            img.src = rawDataUrl;
+          };
+          reader.onerror = () => {
+            console.error('Could not read the selected photo.');
+            setAnalyzing(false);
+          };
+          reader.readAsDataURL(file);
+        });
     },
     [submitCapture],
   );

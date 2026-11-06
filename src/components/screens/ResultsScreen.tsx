@@ -1037,6 +1037,32 @@ export default function ResultsScreen({
         </motion.button>
       </div>
 
+      {analysisResult?.source === 'precomputed_reference' && (
+        <div
+          role="note"
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 8,
+            margin: '0 0 16px',
+            padding: '12px 14px',
+            borderRadius: 14,
+            background: isDark ? 'rgba(255, 190, 80, 0.12)' : 'rgba(255, 190, 80, 0.18)',
+            color: T.ink,
+            fontFamily: 'Inter',
+            fontSize: 12,
+            lineHeight: 1.5,
+          }}
+        >
+          <AlertTriangle size={16} aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }} />
+          <span>
+            {isBn
+              ? 'এটি আগে থেকে প্রস্তুত ছবির রেফারেন্স—লাইভ ভিশন বিশ্লেষণ নয়। খাবারের লেবেল নির্ধারিত; পরিমাণ ও পুষ্টির মান আনুমানিক।'
+              : 'Precomputed image reference—not live vision analysis. Food labels are preset; portion sizes and nutrition are estimates.'}
+          </span>
+        </div>
+      )}
+
       <SummaryCard totals={totals} itemCount={detected.length} profile={profile} />
 
       {step === 2 ? (

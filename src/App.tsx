@@ -13,6 +13,7 @@ import {
   ApiError,
 } from './lib/api';
 import { analyzeImageLocally, LocalAIError } from './lib/localAI';
+import { analyzeCapturedPhoto } from './lib/photoAnalysis';
 import { getEffectiveNutrition } from './lib/personalize';
 import { getSession, logout } from './lib/auth';
 import { ThemeProvider } from './theme/ThemeContext';
@@ -171,7 +172,7 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
     setTab(next);
   };
 
-  const handleCapture = async (imageDataUrl: string): Promise<boolean> => {
+  const handleCapture = async (imageDataUrl: string, originalImageHash?: string): Promise<boolean> => {
     const uploadId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID()
       : `upload-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -190,11 +191,16 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
       return false;
     }
 
-    void processCapture(imageDataUrl, uploadId, imageHash);
+    void processCapture(imageDataUrl, uploadId, imageHash, originalImageHash);
     return true;
   };
 
-  const processCapture = async (imageDataUrl: string, uploadId: string, imageHash: string) => {
+  const processCapture = async (
+    imageDataUrl: string,
+    uploadId: string,
+    imageHash: string,
+    originalImageHash?: string,
+  ) => {
     clearResultsNavigationTimeout();
     setCaptured(true);
     setAnalysisMessage(null);
@@ -206,14 +212,25 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
     let next: DetectedItem[] = [];
     let trace: PipelineTrace[] = [];
     try {
-      let result: import('./types/schemas').AnalyzeResult;
-      try {
-        const local = await analyzeImageLocally(imageDataUrl, profile);
-        result = local.result;
-        setPipelineToast(translate(`Analyzed on-device with ${local.model}`));
-      } catch (localError) {
-        if (session.localOnly || (typeof navigator !== 'undefined' && !navigator.onLine)) throw localError;
-        result = await analyzeMeal(imageDataUrl, uploadId, imageHash);
+      const outcome = await analyzeCapturedPhoto(
+        {
+          imageDataUrl,
+          originalImageHash,
+          uploadId,
+          imageHash,
+          profile: profile ?? undefined,
+          localOnly: session.localOnly === true,
+          online: typeof navigator === 'undefined' || navigator.onLine,
+        },
+        analyzeImageLocally,
+        analyzeMeal,
+      );
+      const { result } = outcome;
+      if (outcome.method === 'precomputed_reference') {
+        const referenceLabel = result.pipeline.find((entry) => entry.stage === 'vision-id')?.label;
+        setPipelineToast(translate(referenceLabel ?? 'Using a precomputed image reference.'));
+      } else if (outcome.method === 'on_device') {
+        setPipelineToast(translate(`Analyzed on-device with ${outcome.model}`));
       }
       setAnalysisResult(result);
       next = result.detected;

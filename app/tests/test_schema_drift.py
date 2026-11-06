@@ -228,6 +228,7 @@ MUST_MATCH = {
     "FoodCategory",
     # Vision pipeline outputs
     "DetectedItem",
+    "AnalysisSource",
     "ResolvedItem",
     "PipelineTrace",
     "AnalyzeResult",

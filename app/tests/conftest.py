@@ -60,6 +60,7 @@ def client(tmp_path: Path, state_path: Path) -> Generator[TestClient, None, None
     os.environ["STATE_PATH"] = str(state_path)
     os.environ["SQLITE_CACHE_PATH"] = str(tmp_path / "test_cache.db")
     os.environ["CHROMA_CACHE_PATH"] = str(tmp_path / "test_chroma")
+    os.environ["RAG_CHROMA_PATH"] = str(tmp_path / "test_rag_chroma")
 
     # Drop the cached singletons between tests so each one starts clean.
     import app.services.state as state_mod

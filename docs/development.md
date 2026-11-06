@@ -164,6 +164,7 @@ cp app/.env.example app/.env
 |---|---|---|
 | `STATE_PATH` | `app/state.json` | JSON file backing the state singleton |
 | `PHOTO_UPLOAD_LIMIT` | `2` | Positive integer; per-user rolling-hour quota for hosted photo uploads |
+| `RAG_CHROMA_PATH` | `app/cache/rag_chroma` | Dedicated ChromaDB directory for curated RAG knowledge; separate from image detections |
 | `CORS_ALLOW_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Comma-separated CORS allow-list |
 | `GEMINI_API_KEY` | (unset) | Enables Gemini vision. If both vision provider keys are unset, analysis returns HTTP 503. |
 | `GEMINI_MODEL` | `gemini-2.0-flash` | Model name |
@@ -195,9 +196,20 @@ curl http://localhost:8000/api/profile
 curl http://localhost:8000/api/meals/today
 ```
 
-Upload an actual photo in the frontend. The API expects a valid image
-data URL and at least one configured provider; with no provider it
-returns HTTP 503 rather than sample detections.
+For non-reference photos, the API expects a valid image data URL and at
+least one configured provider; with no provider it returns HTTP 503 rather
+than sample detections.
+
+### Precomputed photo references
+
+The frontend hashes the original file bytes before image resizing and checks
+the SHA-256 against `src/lib/precomputedPhotoReferences.ts`. An exact match
+uses the precomputed item labels without calling on-device or hosted vision.
+The results screen identifies these as precomputed references and states that
+portions and nutrition are estimates. This is a local hash lookup, not a RAG
+query; unmatched images keep the normal on-device-then-hosted analysis flow.
+Only hashes and result data are stored in code, so users must select the exact
+original image bytes for a match.
 
 ### CORS env var
 

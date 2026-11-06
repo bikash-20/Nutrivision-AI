@@ -121,6 +121,12 @@ export interface PipelineTrace {
   label: string;
 }
 
+export type AnalysisSource =
+  | 'hosted_vision'
+  | 'vision_cache'
+  | 'on_device_vision'
+  | 'precomputed_reference';
+
 export type InputMode = 'cooked_meal' | 'raw_ingredients' | 'restaurant_menu';
 
 export interface RecipeSuggestion {
@@ -144,6 +150,7 @@ export interface MenuItemAnalysis {
 export interface AnalyzeResult {
   detected: DetectedItem[];
   pipeline: PipelineTrace[];
+  source: AnalysisSource;
   is_food?: boolean;
   input_mode?: InputMode;
   overall_confidence?: number;

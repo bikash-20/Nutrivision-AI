@@ -284,7 +284,7 @@ async def analyze_meal(
                 make_trace("reconcile", "Reconcile (cached)", "cache-hit"),
             ]
         )
-        return AnalyzeResult(detected=cached, pipeline=pipeline)
+        return AnalyzeResult(detected=cached, pipeline=pipeline, source="vision_cache")
     pipeline[0].status = "done"
 
     # 2. Multi-Provider Cascade Pipeline: Groq (Fastest) -> Gemini (Primary) -> OpenRouter -> Gemini (Fallback) -> HF.

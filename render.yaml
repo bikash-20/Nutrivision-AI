@@ -18,5 +18,7 @@ services:
         sync: false
       - key: PHOTO_UPLOAD_LIMIT
         value: "2"
+      - key: RAG_CHROMA_PATH
+        value: app/cache/rag_chroma
       - key: JWT_SECRET
         generateValue: true
