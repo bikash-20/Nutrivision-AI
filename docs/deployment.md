@@ -86,6 +86,7 @@ NutriVision AI uses `psycopg 3` with automatic DDL table migrations on startup.
 | `GOOGLE_CLIENT_ID` | `xxxxxxxx.apps.googleusercontent.com` | Matches Google Console |
 | `JWT_SECRET` | `openssl rand -hex 32` | 64-char random hex string |
 | `ADMIN_EMAILS` | `bikashtalukder040@gmail.com,lead@domain.com` | Admin permissions grant (comma-separated Google emails) |
+| `PHOTO_UPLOAD_LIMIT` | `2` | Positive integer; per-user rolling-hour photo quota. Change this Render environment variable to adjust the hosted limit. |
 | `ELEVENLABS_API_KEY` | `xi-...` | Optional ElevenLabs text-to-speech API key |
 | `ELEVENLABS_VOICE_ID_MALE` | `JBFqnCBsd6RMkjVDRZzb` | Premade Male voice preset for Dr. Susmit & Farhan (defaults to George) |
 | `ELEVENLABS_VOICE_ID_FARHAN` | `JBFqnCBsd6RMkjVDRZzb` | Optional voice preset override for Farhan (defaults to George) |
@@ -102,6 +103,11 @@ NutriVision AI uses `psycopg 3` with automatic DDL table migrations on startup.
 
 4. Deploy the service and record the assigned HTTPS domain:
    `https://cloud-camp-hackathon.onrender.com`
+
+The hosted photo quota reads `PHOTO_UPLOAD_LIMIT` from the backend environment
+and defaults to `2`. Set it to any positive integer in Render's environment
+settings; the service applies the change after restart/redeploy. Browser-only
+offline sessions retain their separate local limit of `2`.
 
 ---
 

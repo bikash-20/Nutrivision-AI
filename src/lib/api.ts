@@ -219,7 +219,7 @@ export async function analyzeMeal(imageRef: string, uploadId?: string, imageHash
   });
 }
 
-const PHOTO_UPLOAD_LIMIT = 2;
+const LOCAL_ONLY_PHOTO_UPLOAD_LIMIT = 2;
 const PHOTO_UPLOAD_WINDOW_MS = 60 * 60 * 1000;
 
 export async function getPhotoUploadHash(imageRef: string): Promise<string> {
@@ -252,13 +252,13 @@ function reserveLocalPhotoUpload(uploadId: string, imageHash: string): void {
     }
     return;
   }
-  if (uploads.length >= PHOTO_UPLOAD_LIMIT) {
+  if (uploads.length >= LOCAL_ONLY_PHOTO_UPLOAD_LIMIT) {
     const resetAt = Math.min(...uploads.map((entry) => entry.createdAt)) + PHOTO_UPLOAD_WINDOW_MS;
     const minutes = Math.max(1, Math.ceil((resetAt - Date.now()) / 60_000));
     const resetMessage = minutes >= 55 ? 'one hour' : `${minutes} minutes`;
     throw new ApiError(
       429,
-      `You’ve reached the limit of ${PHOTO_UPLOAD_LIMIT} photo uploads per hour. You can upload again when your limit resets in ${resetMessage}. Paid plans are coming soon.`,
+      `You’ve reached the limit of ${LOCAL_ONLY_PHOTO_UPLOAD_LIMIT} photo uploads per hour. You can upload again when your limit resets in ${resetMessage}. Paid plans are coming soon.`,
       'photo_upload_limit_reached',
       new Date(resetAt).toISOString(),
     );

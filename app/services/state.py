@@ -53,8 +53,19 @@ class StateError(ValueError):
     """Raised when a mutation references an unknown entity id."""
 
 
-PHOTO_UPLOAD_LIMIT = 2
 PHOTO_UPLOAD_WINDOW = timedelta(hours=1)
+
+
+def get_photo_upload_limit() -> int:
+    """Return the configured positive per-user photo quota."""
+    raw_limit = os.environ.get("PHOTO_UPLOAD_LIMIT", "2")
+    try:
+        limit = int(raw_limit)
+    except ValueError as exc:
+        raise RuntimeError("PHOTO_UPLOAD_LIMIT must be a positive integer.") from exc
+    if limit < 1:
+        raise RuntimeError("PHOTO_UPLOAD_LIMIT must be a positive integer.")
+    return limit
 
 
 def make_clean_profile(name: str = "") -> UserProfile:
@@ -792,7 +803,8 @@ class State:
         *,
         now: datetime | None = None,
     ) -> tuple[bool, datetime, int]:
-        """Atomically reserve one of a user's two rolling-hour photo uploads."""
+        """Atomically reserve one of a user's configured rolling-hour photo uploads."""
+        upload_limit = get_photo_upload_limit()
         clean_email = email.lower().strip()
         current_time = now or datetime.now(UTC)
         if current_time.tzinfo is None:
@@ -832,8 +844,8 @@ class State:
                                             status_code=status.HTTP_409_CONFLICT,
                                             detail="This upload ID is already associated with a different photo.",
                                         )
-                                    return True, oldest + PHOTO_UPLOAD_WINDOW, max(0, PHOTO_UPLOAD_LIMIT - count)
-                                if count >= PHOTO_UPLOAD_LIMIT:
+                                    return True, oldest + PHOTO_UPLOAD_WINDOW, max(0, upload_limit - count)
+                                if count >= upload_limit:
                                     return False, oldest + PHOTO_UPLOAD_WINDOW, 0
                                 cur.execute(
                                     "INSERT INTO nv_photo_uploads (user_email, upload_id, image_hash, created_at) VALUES (%s, %s, %s, %s);",
@@ -845,7 +857,7 @@ class State:
                                     (clean_email,),
                                 )
                                 oldest = cur.fetchone()[0]
-                                return True, oldest + PHOTO_UPLOAD_WINDOW, max(0, PHOTO_UPLOAD_LIMIT - count)
+                                return True, oldest + PHOTO_UPLOAD_WINDOW, max(0, upload_limit - count)
                 except HTTPException:
                     raise
                 except Exception as exc:
@@ -876,8 +888,8 @@ class State:
                         detail="This upload ID is already associated with a different photo.",
                     )
                 oldest = min(created_at for _, created_at in active_uploads)
-                return True, oldest + PHOTO_UPLOAD_WINDOW, max(0, PHOTO_UPLOAD_LIMIT - len(active_uploads))
-            if len(active_uploads) >= PHOTO_UPLOAD_LIMIT:
+                return True, oldest + PHOTO_UPLOAD_WINDOW, max(0, upload_limit - len(active_uploads))
+            if len(active_uploads) >= upload_limit:
                 oldest = min(created_at for _, created_at in active_uploads)
                 self._save_file_unlocked()
                 return False, oldest + PHOTO_UPLOAD_WINDOW, 0
@@ -890,7 +902,7 @@ class State:
             })
             oldest = min([created_at for _, created_at in active_uploads] + [current_time])
             self._save_file_unlocked()
-            return True, oldest + PHOTO_UPLOAD_WINDOW, max(0, PHOTO_UPLOAD_LIMIT - len(active_uploads) - 1)
+            return True, oldest + PHOTO_UPLOAD_WINDOW, max(0, upload_limit - len(active_uploads) - 1)
 
     # ── User Account Partitioning ─────────────────────────────────────────
 

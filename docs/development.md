@@ -163,6 +163,7 @@ cp app/.env.example app/.env
 | Var | Default | Effect when set |
 |---|---|---|
 | `STATE_PATH` | `app/state.json` | JSON file backing the state singleton |
+| `PHOTO_UPLOAD_LIMIT` | `2` | Positive integer; per-user rolling-hour quota for hosted photo uploads |
 | `CORS_ALLOW_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Comma-separated CORS allow-list |
 | `GEMINI_API_KEY` | (unset) | Enables Gemini vision. If both vision provider keys are unset, analysis returns HTTP 503. |
 | `GEMINI_MODEL` | `gemini-2.0-flash` | Model name |

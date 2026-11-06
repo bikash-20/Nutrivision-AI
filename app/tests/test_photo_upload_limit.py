@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
+import pytest
 from fastapi.testclient import TestClient
 
 IMAGE_HASH = "a" * 64
@@ -48,6 +49,40 @@ def test_photo_upload_reservation_is_idempotent_for_same_user_and_upload_id(
 
     assert first.status_code == retry.status_code == second.status_code == 200
     assert third.status_code == 429
+
+
+def test_photo_upload_limit_uses_environment_configuration(
+    client: TestClient,
+    auth_headers: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PHOTO_UPLOAD_LIMIT", "3")
+    reservations = [
+        client.post(
+            "/api/vision/quota",
+            json={"upload_id": f"configured-{index:04d}", "image_hash": IMAGE_HASH},
+            headers=auth_headers,
+        )
+        for index in range(4)
+    ]
+
+    assert [response.status_code for response in reservations] == [200, 200, 200, 429]
+    detail = reservations[3].json()["detail"]
+    assert detail["limit"] == 3
+    assert "limit of 3 photo uploads per hour" in detail["message"]
+
+
+@pytest.mark.parametrize("configured_limit", ["0", "-1", "many"])
+def test_photo_upload_limit_rejects_invalid_environment_values(
+    configured_limit: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from app.services.state import get_photo_upload_limit
+
+    monkeypatch.setenv("PHOTO_UPLOAD_LIMIT", configured_limit)
+
+    with pytest.raises(RuntimeError, match="PHOTO_UPLOAD_LIMIT must be a positive integer"):
+        get_photo_upload_limit()
 
 
 def test_photo_upload_quota_is_per_authenticated_user(

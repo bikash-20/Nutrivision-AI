@@ -46,7 +46,7 @@ from app.services.gemini_client import GeminiClient
 from app.services.groq_client import GroqClient
 from app.services.hf_client import HFClient
 from app.services.openrouter_client import OpenRouterVisionClient
-from app.services.state import PHOTO_UPLOAD_LIMIT, State, get_state
+from app.services.state import State, get_photo_upload_limit, get_state
 from app.services.trace import make_trace
 
 log = logging.getLogger(__name__)
@@ -162,6 +162,7 @@ def _reserve_photo_upload(
     upload_id: str,
     image_hash: str,
 ) -> dict[str, object]:
+    upload_limit = get_photo_upload_limit()
     allowed, reset_at, remaining = state.reserve_photo_upload(user.email, upload_id, image_hash)
     reset_at_utc = reset_at.astimezone(UTC)
     reset_at_text = reset_at_utc.isoformat().replace("+00:00", "Z")
@@ -172,10 +173,10 @@ def _reserve_photo_upload(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail={
                 "code": "photo_upload_limit_reached",
-                "limit": PHOTO_UPLOAD_LIMIT,
+                "limit": upload_limit,
                 "reset_at": reset_at_text,
                 "message": (
-                    f"You’ve reached the limit of {PHOTO_UPLOAD_LIMIT} photo uploads per hour. "
+                    f"You’ve reached the limit of {upload_limit} photo uploads per hour. "
                     f"You can upload again when your limit resets in {reset_message}. "
                     "Paid plans are coming soon."
                 ),
@@ -183,7 +184,7 @@ def _reserve_photo_upload(
             headers={"Retry-After": str(retry_after)},
         )
     return {
-        "limit": PHOTO_UPLOAD_LIMIT,
+        "limit": upload_limit,
         "remaining": remaining,
         "reset_at": reset_at_text,
     }

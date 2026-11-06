@@ -23,7 +23,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import admin, auth, coach, grocery, market, meals, nutrition, profile, rag, vision
-from app.services.state import init_state
+from app.services.state import get_photo_upload_limit, get_state, init_state
 
 
 def _load_env() -> None:
@@ -127,6 +127,7 @@ def _cors_origins() -> list[str]:
 def create_app() -> FastAPI:
     """Build the FastAPI app. Factored out so tests can instantiate
     it with a fresh state file via `app.dependency_overrides`."""
+    get_photo_upload_limit()
     from app.api.auth import _jwt_secret
 
     _jwt_secret()
@@ -174,7 +175,7 @@ def create_app() -> FastAPI:
     def health() -> dict[str, str]:
         """Liveness endpoint used by the hosting platform."""
         from fastapi.responses import JSONResponse
-        from app.services.state import get_state
+
         state = get_state()
         if not state.is_healthy:
             return JSONResponse(status_code=503, content={"status": "degraded"})
@@ -184,7 +185,7 @@ def create_app() -> FastAPI:
     def api_health():
         """Public health endpoint reporting storage backend and DB connection health."""
         from fastapi.responses import JSONResponse
-        from app.services.state import get_state
+
         state = get_state()
         info = state.get_health_status()
         if info.get("status") != "ok":

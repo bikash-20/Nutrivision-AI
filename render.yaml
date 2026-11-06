@@ -16,6 +16,7 @@ services:
         sync: false
       - key: ADMIN_EMAILS
         sync: false
+      - key: PHOTO_UPLOAD_LIMIT
+        value: "2"
       - key: JWT_SECRET
         generateValue: true
-
