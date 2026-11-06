@@ -21,6 +21,11 @@ import { T } from '../../data';
 import { useTokens } from '../../theme/useTokens';
 import { sendCoachRemote } from '../../lib/api';
 import { chatWithLocalModel, getLocalAISettings, LocalAIError, synthesizeLocally, transcribeLocally } from '../../lib/localAI';
+import {
+  coachHistoryStorageKey,
+  loadCoachSessionHistory,
+  saveCoachSessionHistory,
+} from '../../lib/coachSessionHistory';
 import { LocalizedContent, useLanguage } from '../../i18n/LanguageContext';
 import type {
   CoachAgentType,
@@ -40,6 +45,7 @@ interface DisplayCoachMessage extends CoachMessage {
 
 interface CoachScreenProps {
   profile: UserProfile;
+  sessionKey: string;
   imageContext?: string | null;
   localOnly?: boolean;
 }
@@ -244,14 +250,18 @@ function FormattedMessage({
   );
 }
 
-export default function CoachScreen({ profile, imageContext = null, localOnly = false }: CoachScreenProps) {
+export default function CoachScreen({ profile, sessionKey, imageContext = null, localOnly = false }: CoachScreenProps) {
   const { theme } = useTokens();
   const isDark = theme === 'dark';
   const { language } = useLanguage();
   const isBn = language === 'bn';
 
   const [agentType, setAgentType] = useState<CoachAgentType>('scientist');
-  const [messages, setMessages] = useState<DisplayCoachMessage[]>([]);
+  const [messages, setMessages] = useState<DisplayCoachMessage[]>(
+    () => loadCoachSessionHistory(sessionKey, 'scientist'),
+  );
+  const activeHistoryKeyRef = useRef(coachHistoryStorageKey(sessionKey, 'scientist'));
+  const skipHistorySaveRef = useRef(false);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(imageContext);
@@ -378,6 +388,22 @@ export default function CoachScreen({ profile, imageContext = null, localOnly = 
   // Synchronize persona and welcome message with active language
   useEffect(() => {
     stopAudio();
+    const historyKey = coachHistoryStorageKey(sessionKey, agentType);
+    const restoreMessages = (welcome: DisplayCoachMessage) => {
+      if (activeHistoryKeyRef.current !== historyKey) {
+        activeHistoryKeyRef.current = historyKey;
+        skipHistorySaveRef.current = true;
+        const history = loadCoachSessionHistory(sessionKey, agentType);
+        setMessages(history.length > 0 ? history : [welcome]);
+        return;
+      }
+
+      setMessages((previous) => {
+        if (previous.some((message) => message.role === 'user')) return previous;
+        const history = loadCoachSessionHistory(sessionKey, agentType);
+        return history.length > 0 ? history : [welcome];
+      });
+    };
     if (agentType === 'scientist') {
       const welcome: DisplayCoachMessage = {
         role: 'assistant',
@@ -391,7 +417,7 @@ export default function CoachScreen({ profile, imageContext = null, localOnly = 
           ? 'স্বাগতম! আমি আপনার পুষ্টি সহায়ক।'
           : 'Welcome! I am your nutrition assistant.',
       };
-      setMessages([welcome]);
+      restoreMessages(welcome);
       setSuggestedPrompts(
         isBn
           ? [
@@ -421,7 +447,7 @@ export default function CoachScreen({ profile, imageContext = null, localOnly = 
           ? 'হ্যালো! আমি আপনার অভ্যাস সহায়ক।'
           : 'Hello! I am your habit coach. Let us build sustainable nutrition habits together.',
       };
-      setMessages([welcome]);
+      restoreMessages(welcome);
       setSuggestedPrompts(
         isBn
           ? [
@@ -439,7 +465,16 @@ export default function CoachScreen({ profile, imageContext = null, localOnly = 
       setChatError(null);
       setVoiceError(null);
     }
-  }, [agentType, isBn, stopAudio]);
+  }, [agentType, isBn, sessionKey, stopAudio]);
+
+  useEffect(() => {
+    if (skipHistorySaveRef.current) {
+      skipHistorySaveRef.current = false;
+      return;
+    }
+    if (activeHistoryKeyRef.current !== coachHistoryStorageKey(sessionKey, agentType)) return;
+    saveCoachSessionHistory(sessionKey, agentType, messages);
+  }, [agentType, messages, sessionKey]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

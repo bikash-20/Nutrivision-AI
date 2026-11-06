@@ -506,7 +506,14 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
             />
           )}
           {tab === 4 && <GroceryScreen profile={profile} />}
-          {tab === 5 && <CoachScreen profile={profile} imageContext={capturedImage} localOnly={session.localOnly} />}
+          {tab === 5 && (
+            <CoachScreen
+              profile={profile}
+              sessionKey={session.email}
+              imageContext={capturedImage}
+              localOnly={session.localOnly}
+            />
+          )}
         </motion.div>
         }
         </LocalizedContent>
