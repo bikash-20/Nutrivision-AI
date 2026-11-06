@@ -15,7 +15,7 @@ import logging
 import os
 import re
 import threading
-from typing import Any, Tuple
+from typing import Any
 
 import httpx
 
@@ -307,7 +307,7 @@ class TTSService:
         agent_type: str | None = None,
         persona: str | None = None,
         timeout: float = 6.0,
-    ) -> Tuple[bytes | None, str, bool, str]:
+    ) -> tuple[bytes | None, str, bool, str]:
         """Synthesize text into MP3 audio with persona-aware dual-voice resilience.
 
         Tier 1: ElevenLabs (Male George for Dr. Susmit, Female Sarah for Farhana).

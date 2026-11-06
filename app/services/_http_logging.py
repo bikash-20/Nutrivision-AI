@@ -21,7 +21,6 @@ import logging
 
 import httpx
 
-
 _log = logging.getLogger(__name__)
 
 

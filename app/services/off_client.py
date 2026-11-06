@@ -22,7 +22,6 @@ import httpx
 from app.models.schemas import NutritionFacts
 from app.services._http_logging import log_http_failure
 
-
 log = logging.getLogger(__name__)
 
 # Required by OFF API ToS — they reject requests with a generic UA.

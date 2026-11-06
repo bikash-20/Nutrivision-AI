@@ -13,18 +13,17 @@ import json
 import logging
 import os
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
 import httpx
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from app.models.schemas import (
     AuthSession,
     GoogleAuthRequest,
     GoogleAuthResponse,
     Role,
-    UserProfile,
 )
 from app.services.state import State, get_state
 
@@ -87,7 +86,7 @@ def verify_jwt(token: str, secret: bytes | None = None) -> dict[str, Any] | None
         h_b64, p_b64, sig_b64 = parts
         sec = secret or _jwt_secret()
         expected_sig = hmac.new(
-            sec, f"{h_b64}.{p_b64}".encode("utf-8"), hashlib.sha256
+            sec, f"{h_b64}.{p_b64}".encode(), hashlib.sha256
         ).digest()
         actual_sig = _b64url_decode(sig_b64)
         if not hmac.compare_digest(expected_sig, actual_sig):
@@ -155,7 +154,7 @@ def verify_google_id_token(id_token: str, timeout: float = 6.0) -> dict[str, Any
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Unable to verify Google credentials with Google OAuth service.",
-        )
+        ) from None
 
 
 def get_current_user_optional(
@@ -195,7 +194,7 @@ def get_current_user_optional(
     return AuthSession(
         email=email,
         role=role,
-        login_at=payload.get("login_at", datetime.now(timezone.utc).isoformat()),
+        login_at=payload.get("login_at", datetime.now(UTC).isoformat()),
         name=name,
         avatar_url=avatar_url,
         token=token,
@@ -251,7 +250,7 @@ def sign_in_with_google(
         user_profile.name = name
         state.set_user_profile(email, user_profile)
 
-    now_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    now_iso = datetime.now(UTC).isoformat().replace("+00:00", "Z")
     session_payload = {
         "sub": sub,
         "email": email,

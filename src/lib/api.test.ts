@@ -1,5 +1,12 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { addGroceryItem, addGroceryItemsBatch, getGroceryList, DEFAULT_PROFILE } from './api';
+import {
+  addGroceryItem,
+  addGroceryItemsBatch,
+  getGroceryList,
+  getProfile,
+  resolveNutrition,
+  DEFAULT_PROFILE,
+} from './api';
 
 describe('Grocery pipeline API', () => {
   beforeEach(() => {
@@ -112,5 +119,48 @@ describe('Grocery pipeline API', () => {
         method: 'POST',
       }),
     );
+  });
+
+  it('surfaces server errors instead of claiming profile or nutrition fallbacks succeeded', async () => {
+    const navigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+    Object.defineProperty(globalThis, 'navigator', {
+      configurable: true,
+      value: { onLine: true },
+    });
+    const unavailableResponse = {
+      ok: false,
+      status: 503,
+      statusText: 'Service Unavailable',
+      json: () => Promise.resolve({ detail: 'Backend unavailable' }),
+    };
+    globalThis.fetch = vi.fn().mockResolvedValue(unavailableResponse) as typeof fetch;
+
+    try {
+      await expect(getProfile()).rejects.toMatchObject({ status: 503 });
+
+      globalThis.fetch = vi.fn().mockResolvedValue(unavailableResponse) as typeof fetch;
+      await expect(
+        resolveNutrition([{ name: 'Unknown meal', confidence: 90, grams: 100 }]),
+      ).rejects.toMatchObject({ status: 503 });
+    } finally {
+      if (navigatorDescriptor) {
+        Object.defineProperty(globalThis, 'navigator', navigatorDescriptor);
+      } else {
+        delete (globalThis as { navigator?: Navigator }).navigator;
+      }
+    }
+  });
+
+  it('keeps the nutrition fallback for genuine network failures', async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockRejectedValue(new TypeError('Network request failed')) as typeof fetch;
+
+    const result = await resolveNutrition([
+      { name: 'Unknown meal', confidence: 90, grams: 100 },
+    ]);
+
+    expect(result.resolved).toHaveLength(1);
+    expect(result.resolved[0].partial).toBe(true);
   });
 });

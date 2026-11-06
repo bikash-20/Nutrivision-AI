@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -27,7 +27,7 @@ def test_authenticated_user_can_reserve_two_photos_then_gets_reset_details(
     assert "Paid plans are coming soon." in detail["message"]
     assert reservations[2].headers["retry-after"].isdigit()
     reset_at = datetime.fromisoformat(detail["reset_at"].replace("Z", "+00:00"))
-    assert datetime.now(timezone.utc) < reset_at <= datetime.now(timezone.utc) + timedelta(hours=1)
+    assert datetime.now(UTC) < reset_at <= datetime.now(UTC) + timedelta(hours=1)
 
 
 def test_photo_upload_reservation_is_idempotent_for_same_user_and_upload_id(

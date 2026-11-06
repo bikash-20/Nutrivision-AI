@@ -17,8 +17,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.models.schemas import HealthGoals, UserProfile
-from app.seed.fixtures import DEFAULT_GROCERY_GROUPS, DEFAULT_PROFILE, TARGETS
-
+from app.seed.fixtures import DEFAULT_PROFILE, TARGETS
 
 # ── Cut (b): fixtures ────────────────────────────────────────────────────
 
@@ -94,8 +93,8 @@ def test_database_url_loud_failure_returns_503(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("DATABASE_URL", fake_url)
     monkeypatch.setenv("STATE_PATH", str(tmp_path / "fail_state.json"))
 
-    from app.services.state import init_state
     from app.main import create_app
+    from app.services.state import init_state
     st = init_state(tmp_path / "fail_state.json")
     assert st.storage_type == "postgres"
     assert not st.is_healthy
@@ -352,7 +351,7 @@ def test_vision_cache_does_not_persist_uploaded_image_data_url(
     from app.models.schemas import DetectedItem
 
     image_ref = "data:image/jpeg;base64,c2Vuc2l0aXZlLWltYWdl"
-    expected_key = hashlib.sha256(f"live-vision-v1:{image_ref}".encode("utf-8")).hexdigest()
+    expected_key = hashlib.sha256(f"live-vision-v1:{image_ref}".encode()).hexdigest()
     vector_keys: list[str] = []
     sqlite_keys: list[tuple[str, str]] = []
 

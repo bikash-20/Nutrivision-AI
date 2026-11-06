@@ -18,17 +18,17 @@ import json
 import logging
 import re
 import urllib.parse
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import httpx
+
 try:
     from bs4 import BeautifulSoup
 except ImportError:
     BeautifulSoup = None  # type: ignore[assignment]
 from pydantic import BaseModel, Field
-
 
 log = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class LivePriceResult(BaseModel):
     unit: str = "1 kg"
     is_live_price: bool = False
     source: str = "TCB/DAM Benchmark"
-    scraped_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    scraped_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 class PriceScraper:
@@ -64,7 +64,7 @@ class PriceScraper:
         if not self.data_path.is_file():
             return []
         try:
-            with open(self.data_path, "r", encoding="utf-8") as f:
+            with open(self.data_path, encoding="utf-8") as f:
                 return json.load(f)
         except Exception as exc:
             log.warning("Failed to load bd_market_prices.json: %s", exc)

@@ -3,12 +3,18 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
-from app.models.schemas import DetectedItem, RecipeSuggestion, MenuItemAnalysis, VisionDetectionResult
 import app.api.vision as vision_mod
+from app.main import app
+from app.models.schemas import (
+    DetectedItem,
+    MenuItemAnalysis,
+    RecipeSuggestion,
+    VisionDetectionResult,
+)
 
 
 class _MockVisionWithResult:

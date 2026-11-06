@@ -20,7 +20,6 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
-
 # ─────────────────────────────────────────────────────────────────────────
 # Core nutrition primitives
 # ─────────────────────────────────────────────────────────────────────────

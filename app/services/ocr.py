@@ -13,7 +13,6 @@ import logging
 import os
 from pathlib import Path
 
-
 log = logging.getLogger(__name__)
 
 _ENABLED = os.environ.get("OCR_ENABLED", "").lower() in {"1", "true", "yes"}
@@ -21,6 +20,7 @@ _pytesseract = None
 if _ENABLED:
     try:
         import pytesseract  # type: ignore[import-not-found]
+        _pytesseract = pytesseract
     except ImportError:
         log.warning("OCR_ENABLED=true but pytesseract not installed; OCR disabled.")
         _pytesseract = None

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from app.models.schemas import DetectedItem
-from app.services.portion import estimate, MIN_GRAMS
+from app.services.portion import MIN_GRAMS, estimate
 
 
 def _item(name: str, grams: float, bbox=None) -> DetectedItem:

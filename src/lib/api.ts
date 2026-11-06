@@ -52,8 +52,13 @@ function deviceKey(key: string): string {
 }
 
 function useLocalFallback(error: unknown): boolean {
-  if (isLocalOnlySession() || (typeof navigator !== 'undefined' && !navigator.onLine)) return true;
-  return error instanceof TypeError || (error instanceof ApiError && error.status >= 500);
+  if (
+    isLocalOnlySession() ||
+    (typeof navigator !== 'undefined' && navigator.onLine === false)
+  ) {
+    return true;
+  }
+  return error instanceof TypeError;
 }
 
 function localMeals(): MealEntry[] {
@@ -325,7 +330,7 @@ export async function resolveNutrition(
       body: JSON.stringify({ items, profile: profile ?? null }),
     });
   } catch (err) {
-    // If backend is unreachable in local dev, provide offline lookup fallback
+    if (!useLocalFallback(err)) throw err;
     const resolved: ResolvedItem[] = items.map((it) => {
       const descriptor = MOCK_NUTRITION_DB[it.name] ?? null;
       return {

@@ -7,7 +7,6 @@ quality analytics for the NutriVision AI Admin Dashboard.
 from __future__ import annotations
 
 import logging
-from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
@@ -18,7 +17,6 @@ from app.models.schemas import (
     AdminUserSummary,
     AuthSession,
     PopularFoodItem,
-    ReviewQueueAction,
     ReviewQueueItem,
     ReviewQueueUpdateRequest,
 )

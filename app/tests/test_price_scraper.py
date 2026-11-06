@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import time
+
 import pytest
 from fastapi.testclient import TestClient
 
 from app.main import create_app
-from app.services.price_scraper import PriceScraper, get_price_scraper
+from app.services.price_scraper import PriceScraper
 
 
 @pytest.fixture

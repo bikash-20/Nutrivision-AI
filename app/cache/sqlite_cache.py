@@ -27,7 +27,6 @@ import time
 from pathlib import Path
 from typing import Any
 
-
 log = logging.getLogger(__name__)
 
 DEFAULT_TTL_S = 24 * 60 * 60  # 1 day

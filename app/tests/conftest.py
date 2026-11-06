@@ -38,6 +38,7 @@ def state_path(tmp_path: Path) -> Path:
 def auth_headers() -> dict[str, str]:
     """A valid Bearer token header for test requests."""
     import time
+
     from app.api.auth import create_jwt
 
     token = create_jwt(
@@ -63,9 +64,9 @@ def client(tmp_path: Path, state_path: Path) -> Generator[TestClient, None, None
     os.environ["RAG_CHROMA_PATH"] = str(tmp_path / "test_rag_chroma")
 
     # Drop the cached singletons between tests so each one starts clean.
-    import app.services.state as state_mod
     import app.api.nutrition as nutrition_mod
     import app.api.vision as vision_mod
+    import app.services.state as state_mod
 
     state_mod._state = None
     nutrition_mod._reset_clients_for_tests()
@@ -91,8 +92,8 @@ def stub_off(monkeypatch: pytest.MonkeyPatch):
     The stub returns a fixed `NutritionFacts` for any query — enough
     to exercise the resolve cascade without network calls.
     """
-    from app.models.schemas import NutritionFacts
     from app.api import nutrition as nutrition_mod
+    from app.models.schemas import NutritionFacts
 
     def fake_lookup(name: str) -> NutritionFacts:
         return NutritionFacts(

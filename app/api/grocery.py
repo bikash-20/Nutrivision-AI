@@ -17,7 +17,6 @@ from app.models.schemas import AuthSession, GroceryGroup, GroceryItem, GroceryLi
 from app.seed.fixtures import DEFAULT_GROCERY_GROUPS
 from app.services.state import State, get_state
 
-
 router = APIRouter(prefix="/api/grocery", tags=["grocery"])
 
 

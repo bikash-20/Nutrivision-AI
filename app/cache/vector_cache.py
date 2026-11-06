@@ -18,7 +18,6 @@ from typing import Any
 
 from app.models.schemas import DetectedItem
 
-
 log = logging.getLogger(__name__)
 
 DEFAULT_PATH = "app/cache/chroma"

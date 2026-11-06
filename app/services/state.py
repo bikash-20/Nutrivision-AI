@@ -21,9 +21,10 @@ import sys
 import threading
 import urllib.parse
 import uuid
-from datetime import UTC, datetime, timedelta, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, Callable, Generic, Literal, TypeVar
+from typing import Any, Generic, Literal, TypeVar
 
 from fastapi import HTTPException, status
 
@@ -121,7 +122,7 @@ def _calculate_streak(dates: set[str]) -> int:
     """Calculate consecutive daily streak from a set of YYYY-MM-DD dates."""
     if not dates:
         return 0
-    now = datetime.now(timezone.utc).date()
+    now = datetime.now(UTC).date()
     cur = now
     today_str = cur.isoformat()
     yesterday_str = (cur - timedelta(days=1)).isoformat()
@@ -152,7 +153,7 @@ class UserData:
         self.name = name or self.email.split("@")[0]
         self.avatar_url = avatar_url
         self.role: Role = role
-        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
         self.joined_date = joined_date or now
         self.last_active = last_active or now
         self.profile = make_clean_profile(self.name)
@@ -174,7 +175,7 @@ class Bucket(Generic[T]):
         self.newest_first = newest_first
 
     def by_id(self) -> dict[str, T]:
-        return {getattr(x, "id"): x for x in self.items}
+        return {x.id: x for x in self.items}
 
     def upsert(self, item: T, *, index: int | None = None) -> T:
         if index is None:
@@ -184,7 +185,7 @@ class Bucket(Generic[T]):
 
     def remove(self, item_id: str) -> None:
         before = len(self.items)
-        self.items = [x for x in self.items if getattr(x, "id") != item_id]
+        self.items = [x for x in self.items if x.id != item_id]
         if len(self.items) == before:
             raise StateError(f"unknown id: {item_id}")
 
@@ -369,7 +370,7 @@ class PostgresStore:
                         )
                     cur.execute(
                         "INSERT INTO nv_migrations (id, applied_at) VALUES (%s, %s) ON CONFLICT (id) DO NOTHING;",
-                        ("purge_legacy_seeded_accounts_v1", datetime.now(timezone.utc).isoformat()),
+                        ("purge_legacy_seeded_accounts_v1", datetime.now(UTC).isoformat()),
                     )
                     msg_mig = "Tracked migration 'purge_legacy_seeded_accounts_v1' applied successfully."
                     print(msg_mig, flush=True)
@@ -723,7 +724,7 @@ class State:
             try:
                 with self.postgres_store._get_conn() as conn:
                     with conn.cursor() as cur:
-                        for email, u in self.users.items():
+                        for u in self.users.values():
                             cur.execute("""
                                 INSERT INTO nv_users (email, name, avatar_url, role, joined_date, last_active, profile_json)
                                 VALUES (%s, %s, %s, %s, %s, %s, %s)
@@ -779,7 +780,7 @@ class State:
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail=f"Database mutation failed: {sanitized}",
-                )
+                ) from None
         else:
             self._save_file_unlocked()
 
@@ -915,7 +916,7 @@ class State:
     ) -> UserData:
         clean_email = email.lower().strip()
         effective_role: Role = "admin" if clean_email == "bikashtalukder040@gmail.com" or role == "admin" else "user"
-        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
         def op() -> UserData:
             if clean_email not in self.users:
@@ -957,7 +958,7 @@ class State:
                 user = UserData(email=clean_email, name=profile.name)
                 self.users[clean_email] = user
             user.profile = profile.model_copy(deep=True)
-            user.last_active = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+            user.last_active = datetime.now(UTC).isoformat().replace("+00:00", "Z")
             return user.profile.model_copy(deep=True)
 
         return self._mutate(op)  # type: ignore[return-value]
@@ -980,7 +981,7 @@ class State:
         active_goals: HealthGoals,
     ) -> MealEntry:
         clean_email = email.lower().strip()
-        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
         lowest_conf = min((it.confidence for it in items), default=100.0)
         review_status = "pending" if lowest_conf < 70.0 else None
 
@@ -1175,7 +1176,7 @@ class State:
             for u in all_users_list:
                 all_meals.extend(u.meals.items)
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             today_str = now.strftime("%Y-%m-%d")
             seven_days_ago_ts = now.timestamp() - (7 * 86400)
 
@@ -1345,11 +1346,11 @@ class State:
     def get_popular_foods(self, date_range: str = "7d") -> list[PopularFoodItem]:
         with self._lock:
             self._sync_users_from_db_unlocked()
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             cutoff_ts = 0.0
             today_str = now.strftime("%Y-%m-%d")
             if date_range == "today":
-                cutoff_ts = datetime(now.year, now.month, now.day, tzinfo=timezone.utc).timestamp()
+                cutoff_ts = datetime(now.year, now.month, now.day, tzinfo=UTC).timestamp()
             elif date_range == "7d":
                 cutoff_ts = now.timestamp() - (7 * 86400)
             elif date_range == "30d":
@@ -1501,7 +1502,7 @@ class State:
         photo_url: str | None,
         active_goals: HealthGoals,
     ) -> MealEntry:
-        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
         lowest_conf = min((it.confidence for it in items), default=100.0)
         review_status = "pending" if lowest_conf < 70.0 else None
 

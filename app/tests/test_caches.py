@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from app.cache.sqlite_cache import TTLCache
 from app.cache.vector_cache import VectorCache
-from app.models.schemas import DetectedItem
-
 
 # ── TTLCache ────────────────────────────────────────────────────────────
 

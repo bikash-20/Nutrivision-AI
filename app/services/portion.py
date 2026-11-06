@@ -11,9 +11,8 @@ Pure function — no I/O.
 
 from __future__ import annotations
 
-from app.models.schemas import DetectedItem
 from app.models.schemas import DENSITY_TABLE as _SEED_DENSITY
-
+from app.models.schemas import DetectedItem
 
 # Cap so a tiny seed doesn't disappear (e.g. 10g × 0.25 = 2.5g would
 # be useless for any UI display).

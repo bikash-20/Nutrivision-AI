@@ -36,7 +36,6 @@ from app.models.schemas import (
 )
 from app.services._http_logging import log_http_failure
 
-
 log = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "gemini-2.0-flash"

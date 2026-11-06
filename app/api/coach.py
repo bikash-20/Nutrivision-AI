@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import base64
 import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth import get_current_user_optional

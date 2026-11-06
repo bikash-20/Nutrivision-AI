@@ -21,7 +21,6 @@ import httpx
 
 from app.services._http_logging import log_http_failure
 
-
 log = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "nateraw/food"

@@ -18,28 +18,29 @@ can stub each layer without monkeypatching the live clients.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+from typing import Any
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from pathlib import Path
-import json
-
 from app.api.auth import get_current_user_optional
-from app.api.personalize import compute_contributions, resolve_detected_item
+from app.api.personalize import compute_contributions
 from app.models.schemas import (
     AuthSession,
     DetectedItem,
     FoodDescriptor,
     MacroTargets,
     NutritionFacts,
-    ResolveNutritionResult,
     ResolvedItem,
+    ResolveNutritionResult,
     UserProfile,
 )
 from app.seed.fixtures import NUTRITION_DB
 from app.seed.fixtures import TARGETS as DEFAULT_TARGETS
-from app.services import off_client as off_client_mod
 from app.services import fruityvice_client as fruityvice_client_mod
+from app.services import off_client as off_client_mod
 from app.services import usda_client as usda_client_mod
 from app.services.fruityvice_client import FruityviceClient
 from app.services.off_client import OFFClient

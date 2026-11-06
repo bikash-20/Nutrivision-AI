@@ -12,25 +12,19 @@ Models supported include `llama-3.2-11b-vision-preview`,
 
 from __future__ import annotations
 
-import base64
-import json
 import logging
 import os
-import re
-from pathlib import Path
 from typing import Any
 
 import httpx
 
-from app.models.schemas import BBox, DetectedItem, VisionDetectionResult
+from app.models.schemas import DetectedItem, VisionDetectionResult
 from app.services._http_logging import log_http_failure
 from app.services.gemini_client import (
     _DETECTION_PROMPT,
-    _parse_food_json,
     _parse_vision_result,
     _read_image,
 )
-
 
 log = logging.getLogger(__name__)
 

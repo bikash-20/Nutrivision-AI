@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import base64
 import json
-import httpx
-import pytest
 
-from app.services.groq_client import GroqClient, DEFAULT_MODEL, DEFAULT_BASE_URL
+import httpx
+
+from app.services.groq_client import GroqClient
 
 
 def test_unconfigured_client_does_not_make_a_request() -> None:

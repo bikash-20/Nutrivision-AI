@@ -25,7 +25,6 @@ import httpx
 from app.models.schemas import NutritionFacts
 from app.services._http_logging import log_http_failure
 
-
 log = logging.getLogger(__name__)
 
 DEFAULT_BASE_URL = "https://api.nal.usda.gov/fdc/v1"

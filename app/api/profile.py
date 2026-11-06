@@ -14,7 +14,6 @@ from app.api.auth import require_current_user
 from app.models.schemas import AuthSession, UserProfile
 from app.services.state import State, get_state
 
-
 router = APIRouter(prefix="/api/profile", tags=["profile"])
 
 

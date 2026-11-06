@@ -17,7 +17,7 @@ def _load_market_prices() -> dict[str, dict[str, Any]]:
     path = Path(__file__).resolve().parents[1] / "data" / "bd_market_prices.json"
     if not path.is_file():
         return {}
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     lookup: dict[str, dict[str, Any]] = {}
     for item in data:
@@ -65,9 +65,8 @@ def evaluate_dietary_pivots(
 
     pivots: list[dict[str, Any]] = []
 
-    is_diabetic = False
     if profile:
-        is_diabetic = bool(
+        bool(
             profile.goals.diabetic
             or "diabetes_t2" in profile.medical_conditions
             or "prediabetes" in profile.medical_conditions

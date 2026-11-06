@@ -12,13 +12,11 @@ from dataclasses import dataclass
 
 from app.models.schemas import (
     DetectedItem,
-    HealthGoals,
     NutrientContribution,
     ResolvedItem,
     UserProfile,
 )
 from app.services.targets import calculate_targets
-
 
 # A flagged nutrient is one the user's profile cares about.
 # Diabetic profiles care about sugar + fiber; everyone else sodium + fiber.

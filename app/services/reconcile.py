@@ -17,10 +17,9 @@ empty detection list rather than substituting fixture data.
 from __future__ import annotations
 
 import re
-from typing import Iterable
+from collections.abc import Iterable
 
 from app.models.schemas import DetectedItem
-
 
 # Scale HF classifier scores (0–1) into the same 0–100 range Gemini uses.
 _HF_SCORE_SCALE = 100.0

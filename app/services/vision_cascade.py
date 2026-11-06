@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import base64
 import hashlib
 import json
 import logging
@@ -15,9 +14,8 @@ from typing import Any
 import httpx
 
 from app.config.settings import settings
-from app.models.schemas import BBox, DetectedItem, PipelineTrace, UserProfile
+from app.models.schemas import BBox, DetectedItem, UserProfile
 from app.services._http_logging import log_http_failure
-from app.services.trace import make_trace
 
 log = logging.getLogger(__name__)
 
@@ -74,8 +72,8 @@ def perceptual_hash(image_ref: str) -> str:
         _, _, payload = image_ref.partition(",")
         # Sample middle 512 bytes where pixel data dominates metadata
         sample = payload[:512] + payload[-512:] if len(payload) > 1024 else payload
-        return hashlib.sha256(f"p-v1:{sample}".encode("utf-8")).hexdigest()
-    return hashlib.sha256(f"p-v1:{image_ref}".encode("utf-8")).hexdigest()
+        return hashlib.sha256(f"p-v1:{sample}".encode()).hexdigest()
+    return hashlib.sha256(f"p-v1:{image_ref}".encode()).hexdigest()
 
 
 # ── JSON Auto-Repair ─────────────────────────────────────────────────────
@@ -162,7 +160,7 @@ def call_gemini(image_ref: str, prompt: str) -> list[DetectedItem]:
         ]
     }
 
-    for attempt in range(2):
+    for _ in range(2):
         try:
             with httpx.Client(timeout=httpx.Timeout(15.0, connect=5.0)) as client:
                 resp = client.post(url, headers={"x-goog-api-key": settings.gemini_api_key}, json=body)
@@ -226,4 +224,3 @@ def _to_detected_items(raw_items: list[dict[str, Any]]) -> list[DetectedItem]:
             )
         )
     return out
-

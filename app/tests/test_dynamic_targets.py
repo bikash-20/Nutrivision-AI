@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
-import pytest
 from app.models.schemas import HealthGoals, UserProfile
-from app.services.targets import calculate_bmr, calculate_daily_calories, calculate_targets, calculate_tdee
+from app.services.targets import (
+    calculate_bmr,
+    calculate_daily_calories,
+    calculate_targets,
+    calculate_tdee,
+)
 
 
 def test_child_vs_adult_fiber_and_calories() -> None:

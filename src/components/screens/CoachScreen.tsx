@@ -26,6 +26,7 @@ import {
   loadCoachSessionHistory,
   saveCoachSessionHistory,
 } from '../../lib/coachSessionHistory';
+import { getScientistDisplayName } from '../../lib/coachCopy';
 import { LocalizedContent, useLanguage } from '../../i18n/LanguageContext';
 import type {
   CoachAgentType,
@@ -255,6 +256,7 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
   const isDark = theme === 'dark';
   const { language } = useLanguage();
   const isBn = language === 'bn';
+  const scientistName = getScientistDisplayName(language);
 
   const [agentType, setAgentType] = useState<CoachAgentType>('scientist');
   const [messages, setMessages] = useState<DisplayCoachMessage[]>(
@@ -409,13 +411,13 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
         role: 'assistant',
         persona: 'scientist',
         content: isBn
-          ? '🔬 **স্বাগতম! আমি আপনার পুষ্টি সহায়ক।**\n\n' +
+          ? `🔬 **স্বাগতম! আমি ${scientistName}, আপনার পুষ্টি সহায়ক।**\n\n` +
             'খাবার বা ছবি সম্পর্কে জিজ্ঞাসা করুন। সেট আপ থাকলে এই ডিভাইসের স্থানীয় মডেল উত্তর দেবে; অনলাইনে থাকলে অনুমোদিত হোস্টেড মডেল বিকল্প হিসেবে ব্যবহার হতে পারে।'
-          : '🔬 **Welcome! I am your nutrition assistant.**\n\n' +
+          : `🔬 **Welcome! I am ${scientistName}, your nutrition assistant.**\n\n` +
             'Ask about a meal or attach a photo. When configured, a local model answers on this device; a hosted model is used only while online.',
         voice_summary: isBn
-          ? 'স্বাগতম! আমি আপনার পুষ্টি সহায়ক।'
-          : 'Welcome! I am your nutrition assistant.',
+          ? `স্বাগতম! আমি ${scientistName}, আপনার পুষ্টি সহায়ক।`
+          : `Welcome! I am ${scientistName}, your nutrition assistant.`,
       };
       restoreMessages(welcome);
       setSuggestedPrompts(
@@ -734,7 +736,11 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
               }}
             >
               <span>🔬</span>
-              <span>{isBn ? 'পুষ্টি সহায়ক' : 'Nutrition assistant'}</span>
+              <span>
+                {isBn
+                  ? `${scientistName} (পুষ্টি বিজ্ঞানী)`
+                  : `${scientistName} (Nutrition Scientist)`}
+              </span>
             </motion.button>
 
             <motion.button
@@ -834,9 +840,11 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                   ) : agentType === 'scientist' ? (
                     <>
                       <span style={{ fontWeight: 600, color: isDark ? '#E8C49A' : T.primary }}>
-                        🔬 {isBn ? 'পুষ্টি সহায়ক' : 'Nutrition assistant'}
+                        {isBn
+                          ? `🔬 ${scientistName} · পুষ্টি বিজ্ঞানী`
+                          : `🔬 ${scientistName} · Nutrition Scientist`}
                       </span>
-                      <span style={{ opacity: 0.7 }}>• Nutrition assistant</span>
+                      <span style={{ opacity: 0.7 }}>• {scientistName}</span>
                     </>
                   ) : (
                     <>

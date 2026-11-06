@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
+import app.api.vision as vision_mod
 from app.main import app
 from app.models.schemas import DetectedItem
-import app.api.vision as vision_mod
 
 
 class _MockVisionProvider:
@@ -162,4 +164,3 @@ def test_gemini_and_groq_failure_cascades_to_openrouter(test_client: TestClient,
     trace = {t["stage"]: t for t in body["pipeline"]}
     assert trace["vision-id"]["status"] == "done"
     assert "OpenRouter" in trace["vision-id"]["label"]
-

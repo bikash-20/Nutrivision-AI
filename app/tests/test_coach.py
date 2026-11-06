@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from typing import Any
+
 import pytest
 from fastapi.testclient import TestClient
 
-from app.models.schemas import CoachAgentType, CoachChatRequest, CoachMessage, UserProfile
+from app.models.schemas import CoachMessage, UserProfile
 
 
 def test_coach_chat_validation_empty_messages(client: TestClient) -> None:
@@ -164,6 +165,7 @@ def test_coach_openrouter_fallback(monkeypatch: pytest.MonkeyPatch, client: Test
 def test_coach_openrouter_dynamic_model_selection(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify OpenRouter uses OPENROUTER_FALLBACK_MODEL or defaults to 'openrouter/auto'."""
     import httpx
+
     from app.services.coach_service import CoachService
 
     captured_payloads: list[dict] = []
@@ -204,6 +206,7 @@ def test_coach_openrouter_dynamic_model_selection(monkeypatch: pytest.MonkeyPatc
 def test_coach_openrouter_cascade_on_candidate_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     """If candidate model fails with HTTP 429/404, OpenRouter cascades to subsequent model."""
     import httpx
+
     from app.services.coach_service import CoachService
 
     models_attempted: list[str] = []
@@ -375,6 +378,7 @@ def test_tts_service_fallback_when_unconfigured(monkeypatch: pytest.MonkeyPatch)
 def test_tts_service_mocked_synthesis_and_lru_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify ElevenLabs API synthesis and LRU cache hit."""
     import httpx
+
     from app.services.tts_service import TTSService
 
     call_count = 0
@@ -415,10 +419,12 @@ def test_tts_service_cache_isolation_between_personas(monkeypatch: pytest.Monkey
     to the other persona, even when using the same underlying audio model.
     """
     import hashlib
+
     import httpx
+
     from app.services.tts_service import (
-        TTSService,
         PREMADE_MALE_VOICE_ID,
+        TTSService,
     )
 
     calls: list[dict[str, Any]] = []
@@ -504,7 +510,8 @@ def test_tts_service_dynamic_env_lookup(monkeypatch: pytest.MonkeyPatch) -> None
 def test_tts_service_auto_retries_on_http_402_library_voice(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify ElevenLabs HTTP 402 library voice restriction triggers auto-retry with premade voice."""
     import httpx
-    from app.services.tts_service import TTSService, PREMADE_MALE_VOICE_ID
+
+    from app.services.tts_service import PREMADE_MALE_VOICE_ID, TTSService
 
     requested_urls: list[str] = []
 
@@ -543,6 +550,7 @@ def test_tts_service_auto_retries_on_http_402_library_voice(monkeypatch: pytest.
 def test_tts_service_edge_tts_fallback_when_elevenlabs_fails(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify server-side neural TTS (edge-tts) generates audio when ElevenLabs fails."""
     import httpx
+
     from app.services.tts_service import TTSService
 
     def mock_post(self: Any, url: str, headers: Any = None, json: Any = None) -> Any:
@@ -574,6 +582,7 @@ def test_tts_service_edge_tts_fallback_when_elevenlabs_fails(monkeypatch: pytest
 def test_tts_service_surfaces_http_error_diagnostic(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify non-200 responses from ElevenLabs surface clear diagnostic messages when edge-tts also fails."""
     import httpx
+
     from app.services.tts_service import TTSService
 
     def mock_post(self: Any, url: str, headers: Any = None, json: Any = None) -> Any:
@@ -605,7 +614,8 @@ def test_tts_service_surfaces_http_error_diagnostic(monkeypatch: pytest.MonkeyPa
 def test_tts_service_auto_routes_bengali_to_multilingual_model(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify Bengali Unicode automatically selects eleven_multilingual_v2 while English uses eleven_flash_v2_5."""
     import httpx
-    from app.services.tts_service import TTSService, DEFAULT_MODEL_ID, MULTILINGUAL_MODEL_ID
+
+    from app.services.tts_service import DEFAULT_MODEL_ID, MULTILINGUAL_MODEL_ID, TTSService
 
     recorded_models: list[str] = []
 
@@ -665,10 +675,10 @@ def test_coach_tts_endpoint(client: TestClient) -> None:
 def test_tts_service_persona_aware_voice_routing(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify Dr. Susmit routes to George (Male) and Farhana routes to Sarah (Female), ignoring legacy IDs."""
     import httpx
+
     from app.services.tts_service import (
-        TTSService,
         PREMADE_MALE_VOICE_ID,
-        PREMADE_FEMALE_VOICE_ID,
+        TTSService,
     )
 
     requested_urls: list[str] = []

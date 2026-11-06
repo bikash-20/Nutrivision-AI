@@ -37,7 +37,6 @@ from app.models.schemas import (
 from app.services.rag_service import get_rag_service
 from app.services.tts_service import get_tts_service, sanitize_for_speech
 
-
 log = logging.getLogger(__name__)
 
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
@@ -420,7 +419,7 @@ class CoachService:
             for m in recent_meals[-3:]:
                 items_str = ", ".join([f"{it.name} ({it.grams}g)" for it in m.items[:4]])
                 meal_lines.append(f"- {m.date[:10]} {m.label}: {items_str} [Total: {int(m.totals.kcal)} kcal]")
-            sections.append(f"\n[RECENT LOGGED MEALS]\n" + "\n".join(meal_lines))
+            sections.append("\n[RECENT LOGGED MEALS]\n" + "\n".join(meal_lines))
         else:
             sections.append(
                 f"\n[RECENT LOGGED MEALS]\n"

@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -21,7 +21,6 @@ from app.models.schemas import (
 )
 from app.services.state import State, get_state
 from app.services.targets import resolve_daily_kcal_target
-
 
 router = APIRouter(prefix="/api/meals", tags=["meals"])
 
@@ -117,7 +116,7 @@ def get_today_summary(
 ) -> TodaySummary:
     """Aggregate today's meals for the authenticated user."""
     meals = state.list_user_meals(current_user.email)
-    today_prefix = datetime.now(timezone.utc).date().isoformat()
+    today_prefix = datetime.now(UTC).date().isoformat()
     today = [m for m in meals if m.date.startswith(today_prefix)]
     user_profile = state.get_user_profile(current_user.email)
     return TodaySummary(
@@ -130,7 +129,6 @@ def get_today_summary(
     )
 
 
-from datetime import date, timedelta
 
 
 def _calculate_streak(days: set[str]) -> int:

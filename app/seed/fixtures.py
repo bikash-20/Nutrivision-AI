@@ -25,7 +25,6 @@ from app.models.schemas import (
     UserProfile,
 )
 
-
 # ── Vision pipeline initial output ──────────────────────────────────────
 
 DETECTED: list[DetectedItem] = [

@@ -273,7 +273,7 @@ def test_is_legacy_seeded_email_protects_real_users():
 
 def test_real_users_with_substring_names_are_not_deleted(tmp_path, monkeypatch):
     import json
-    from app.models.schemas import DetectedItem, HealthGoals, MealEntry, MealTotals
+
     from app.services.state import State
 
     monkeypatch.setenv("ADMIN_EMAILS", "admin@nutrivision.ai")

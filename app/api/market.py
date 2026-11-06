@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
+
 from fastapi import APIRouter, Query
 
 from app.services.price_scraper import LivePriceResult, get_price_scraper
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/market", tags=["market"])
 @router.get("/price", response_model=LivePriceResult)
 def get_market_price(
     q: str = Query(..., description="Item name in English or Bengali"),
-    name_bn: Optional[str] = Query(default=None, description="Bengali name hint"),
+    name_bn: str | None = Query(default=None, description="Bengali name hint"),
     live_demo: bool = Query(default=False, description="Simulate live demo update if blocked"),
 ) -> LivePriceResult:
     """Fetch live market price from Chaldal with strict 3s timeout and TCB/DAM fallback."""
