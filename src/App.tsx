@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Settings } from 'lucide-react';
+import { Leaf, Settings } from 'lucide-react';
 import { T, TABS } from './data';
 import {
   getProfile,
@@ -347,24 +347,15 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
 
   if (!profile) {
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 24,
-          color: T.inkSoft,
-          fontFamily: 'Inter',
-          fontSize: 16,
-          textAlign: 'center',
-        }}
+      <main
+        className="profile-loading-page"
+        role="status"
+        aria-live="polite"
+        aria-busy={!profileLoadFailed}
       >
         {profileLoadFailed ? (
           <>
-            <p role="alert" style={{ margin: 0 }}>
+            <p role="alert" className="profile-loading-error">
               {language === 'bn'
                 ? 'প্রোফাইল লোড করা যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।'
                 : 'Could not load your profile. Check your connection and try again.'}
@@ -388,9 +379,33 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
             </button>
           </>
         ) : (
-          language === 'bn' ? 'প্রোফাইল লোড হচ্ছে…' : 'Loading profile…'
+          <section className="profile-loading-card" aria-label={language === 'bn' ? 'প্রোফাইল লোড হচ্ছে' : 'Loading profile'}>
+            <div className="profile-loading-visual" aria-hidden="true">
+              <span className="profile-loading-orbit" />
+              <span className="profile-loading-orbit profile-loading-orbit-reverse" />
+              <span className="profile-loading-leaf">
+                <Leaf size={30} strokeWidth={1.8} />
+              </span>
+            </div>
+            <p className="profile-loading-eyebrow">
+              {language === 'bn' ? 'সার্ভারের সাথে সংযোগ করা হচ্ছে' : 'CONNECTING TO SERVER'}
+            </p>
+            <h1 className="profile-loading-title">
+              {language === 'bn' ? 'আপনার প্রোফাইল লোড হচ্ছে' : 'Loading your profile'}
+            </h1>
+            <p className="profile-loading-message">
+              {language === 'bn'
+                ? 'Render-এর free-tier সার্ভিস ঘুম থেকে জেগে উঠতে পারে। প্রথমবার উত্তর পেতে ৪০ সেকেন্ড বা তারও বেশি লাগতে পারে—দয়া করে পেজটি খোলা রাখুন।'
+                : 'Render’s free-tier service may be waking from sleep. The first response can take 40 seconds or more—please keep this page open.'}
+            </p>
+            <div className="profile-loading-dots" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
+          </section>
         )}
-      </div>
+      </main>
     );
   }
 

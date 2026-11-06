@@ -562,6 +562,63 @@ const bnPhrases: Record<string, string> = {
   'Eggs (6)': 'ডিম (৬টি)',
   'Chicken breast': 'মুরগির বুকের মাংস',
   'Whole wheat atta': 'আটা',
+  'Thai green curry': 'থাই গ্রিন কারি',
+  'Pho with rice noodles': 'চাল নুডলসসহ ফো স্যুপ',
+  'Dim sum': 'ডিম সাম',
+  'Spring rolls': 'স্প্রিং রোল',
+  'Bao buns': 'বাও বান',
+  'Roasted chicken': 'রোস্ট করা মুরগি',
+  'Roast chicken': 'রোস্ট মুরগি',
+  'Roasted pork': 'রোস্ট করা শূকরের মাংস',
+  'Roasted potatoes': 'রোস্ট করা আলু',
+  'Vegetable soup': 'সবজির স্যুপ',
+  'Roasted vegetables': 'রোস্ট করা শাকসবজি',
+  'Pastry': 'পেস্ট্রি',
+  'Tomato salad': 'টমেটোর সালাদ',
+  'Grain bowl': 'শস্যের বোল',
+  'Yogurt sauce': 'দইয়ের সস',
+  'Salad greens': 'সালাদপাতা',
+  'Fried eggs': 'ডিম ভাজি',
+  'Toast': 'টোস্ট',
+  'Waffles with fruit': 'ফলসহ ওয়াফল',
+  'Salad': 'সালাদ',
+  'Burger': 'বার্গার',
+  'Pizza': 'পিজ্জা',
+  'French fries': 'ফ্রেঞ্চ ফ্রাই',
+  'Fried chicken': 'ফ্রাইড চিকেন',
+  'Sandwich': 'স্যান্ডউইচ',
+  'Grilled salmon': 'গ্রিল করা স্যামন',
+  'Chicken': 'মুরগির মাংস',
+  'Rice noodles': 'চালের নুডলস',
+  'Mixed vegetables': 'মিশ্র সবজি',
+  'Salmon': 'স্যামন মাছ',
+  'Broccoli': 'ব্রকলি',
+  'Beans': 'শিম',
+  'Almonds': 'কাঠবাদাম',
+  'Pecans': 'পিকান বাদাম',
+  'Quinoa': 'কিনোয়া',
+  'Mushrooms': 'মাশরুম',
+  'Milk': 'দুধ',
+  'Lamb chops': 'খাসির চপ',
+  'Meatballs': 'মিটবল',
+  'Hummus': 'হুমুস',
+  'Crostini': 'ক্রোস্তিনি',
+  'Grilled steak': 'গ্রিল করা স্টেক',
+  'Roasted lamb chops': 'রোস্ট করা খাসির চপ',
+  'Croquettes': 'ক্রোকেট',
+  'Potato curry': 'আলুর তরকারি',
+  'Fried fish': 'ভাজা মাছ',
+  'Sweet': 'মিষ্টি',
+  'Chole': 'ছোলার তরকারি',
+  'Vegetable curry': 'সবজির তরকারি',
+  'Potato patty': 'আলুর প্যাটিস',
+  'Puri': 'পুরি',
+  'Egg curry': 'ডিমের তরকারি',
+  'Paneer curry': 'পনিরের তরকারি',
+  'Dum aloo': 'দম আলু',
+  'Meat curry': 'মাংসের তরকারি',
+  'Rosogolla': 'রসগোল্লা',
+  'Payesh': 'পায়েস',
 
   // Culinary items, cooking media, seasonings & ingredients
   'Salt': 'লবণ',
@@ -662,6 +719,7 @@ phraseLookupBnToEn.set('ভাত', 'White Rice');
 phraseLookupBnToEn.set('মসুর ডাল', 'Red Lentil Dal');
 phraseLookupBnToEn.set('খিচুড়ি', 'Khichuri');
 phraseLookupBnToEn.set('চিকেন বিরিয়ানি', 'Chicken Biryani');
+phraseLookupBnToEn.set('রসগোল্লা', 'Rasgulla');
 phraseLookupBnToEn.set('কাঁচা বাজার', 'Produce');
 phraseLookupBnToEn.set('শস্য ও চাল', 'Grains');
 phraseLookupBnToEn.set('দুধ ও দুগ্ধজাত', 'Dairy');
@@ -707,6 +765,32 @@ export function translateBengali(value: string): string {
   return translateText(value);
 }
 
+export function resolveFoodDisplayName(
+  name: string,
+  language: Language,
+  bengaliName?: string | null,
+): string {
+  if (!name) return '';
+  const trimmed = name.trim();
+  if (language === 'bn') {
+    if (bengaliName && bengaliName.trim()) return bengaliName.trim();
+    const directBn = phraseLookup.get(trimmed.toLowerCase());
+    if (directBn) return directBn;
+    const canonicalBn = resolveFoodName(trimmed, 'bn');
+    if (canonicalBn && canonicalBn.toLowerCase() !== trimmed.toLowerCase()) return canonicalBn;
+    return translateText(trimmed);
+  }
+
+  const directEn = phraseLookupBnToEn.get(trimmed.toLowerCase());
+  if (directEn) return directEn;
+  const canonicalEn = resolveFoodName(trimmed, 'en');
+  if (canonicalEn && canonicalEn.toLowerCase() !== trimmed.toLowerCase() && !/[\u0980-\u09FF]/.test(canonicalEn)) {
+    return canonicalEn;
+  }
+  if (!/[\u0980-\u09FF]/.test(trimmed)) return trimmed;
+  return canonicalEn || trimmed;
+}
+
 type LanguageContextValue = {
   language: Language;
   setLanguage: (language: Language) => void;
@@ -748,28 +832,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       language,
       setLanguage,
       translate: language === 'bn' ? translateText : translateToEnglish,
-      foodName: (name, bengaliName) => {
-        if (!name) return '';
-        const trimmed = name.trim();
-        if (language === 'bn') {
-          if (bengaliName && bengaliName.trim()) return bengaliName.trim();
-          const canonicalBn = resolveFoodName(trimmed, 'bn');
-          if (canonicalBn && canonicalBn.toLowerCase() !== trimmed.toLowerCase()) return canonicalBn;
-          const directBn = phraseLookup.get(trimmed.toLowerCase());
-          if (directBn) return directBn;
-          return translateText(trimmed);
-        } else {
-          // English mode
-          const canonicalEn = resolveFoodName(trimmed, 'en');
-          if (canonicalEn && canonicalEn.toLowerCase() !== trimmed.toLowerCase() && !/[\u0980-\u09FF]/.test(canonicalEn)) {
-            return canonicalEn;
-          }
-          const directEn = phraseLookupBnToEn.get(trimmed.toLowerCase());
-          if (directEn) return directEn;
-          if (!/[\u0980-\u09FF]/.test(trimmed)) return trimmed;
-          return canonicalEn || trimmed;
-        }
-      },
+      foodName: (name, bengaliName) => resolveFoodDisplayName(name, language, bengaliName),
     }),
     [language],
   );
