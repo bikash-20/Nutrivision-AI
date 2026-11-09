@@ -425,16 +425,20 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: 36,
-                height: 36,
+                width: 38,
+                height: 38,
                 borderRadius: '50%',
-                border: `1px solid ${T.cardBorderSoft}`,
-                background: T.cardBg,
+                border: '1.2px solid rgba(255, 255, 255, 0.75)',
+                background: 'rgba(255, 248, 240, 0.55)',
+                backdropFilter: 'blur(18px)',
+                WebkitBackdropFilter: 'blur(18px)',
+                boxShadow: '0 4px 14px -2px rgba(61, 39, 29, 0.12), inset 0 1px 1.5px rgba(255, 255, 255, 0.9)',
                 color: T.ink,
                 cursor: 'pointer',
+                transition: 'transform 160ms ease, box-shadow 160ms ease',
               }}
             >
-              <Settings size={17} />
+              <Settings size={18} strokeWidth={2} />
             </button>
             <StepDots active={tab} onChange={goToTab} />
           </div>

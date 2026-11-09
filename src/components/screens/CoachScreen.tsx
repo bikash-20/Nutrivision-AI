@@ -119,7 +119,7 @@ function parseFormattedInline(text: string, isUser: boolean, isDark: boolean) {
           key={index}
           style={{
             fontWeight: 700,
-            color: isUser ? '#FFFFFF' : (isDark ? '#F9F2E4' : '#241B18'),
+            color: isUser ? '#FFFFFF' : (isDark ? '#F9F2E4' : '#2C1A11'),
           }}
         >
           {boldContent}
@@ -140,10 +140,10 @@ function parseFormattedInline(text: string, isUser: boolean, isDark: boolean) {
             margin: '2px 0',
             backgroundColor: isUser
               ? 'rgba(255,255,255,0.2)'
-              : (isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(74, 58, 52, 0.08)'),
+              : (isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(200, 116, 40, 0.10)'),
             color: isUser
               ? '#FFFFFF'
-              : (isDark ? '#E8C49A' : '#4A3A34'),
+              : (isDark ? '#E8C49A' : '#7C5A44'),
             fontWeight: 600,
           }}
         >
@@ -220,7 +220,7 @@ function FormattedMessage({
                         flexShrink: 0,
                         backgroundColor: isUser
                           ? 'rgba(255,255,255,0.85)'
-                          : (isDark ? '#E8C49A' : '#4A3A34'),
+                          : (isDark ? '#E8C49A' : '#7C5A44'),
                       }}
                     />
                     <span style={{ flex: 1 }}>{parseFormattedInline(cleanLine, isUser, isDark)}</span>
@@ -642,21 +642,22 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
       {/* Root Layout Container with guaranteed 160px bottom dock clearance */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 24 }}>
         {/* Header Title & Persona Switcher */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <h2
                 style={{
-                  fontSize: 'var(--text-lg)',
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: 22,
                   fontWeight: 700,
-                  color: isDark ? '#F9F2E4' : T.primary,
+                  color: isDark ? '#F9F2E4' : '#2C1A11',
                   margin: 0,
                   letterSpacing: '-0.02em',
                 }}
               >
                 {isBn ? 'পুষ্টি এআই সহায়ক' : 'Nutrition AI assistant'}
               </h2>
-              <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: isDark ? 'rgba(249, 242, 228, 0.78)' : T.inkSoft }}>
+              <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: isDark ? 'rgba(249, 242, 228, 0.72)' : '#7C5A44' }}>
                 {isBn
                   ? 'স্থানীয় AI ব্যবহার করুন; অনলাইনে থাকলে প্রয়োজনে হোস্টেড AI বিকল্প'
                   : 'Local model first; hosted AI is used only as an online fallback'}
@@ -664,16 +665,18 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
             </div>
             <div
               style={{
-                width: 38,
-                height: 38,
+                width: 40,
+                height: 40,
                 borderRadius: '50%',
                 background: agentType === 'scientist'
-                  ? (isDark ? 'rgba(208, 174, 146, 0.20)' : 'rgba(74, 58, 52, 0.12)')
-                  : (isDark ? 'rgba(134, 239, 172, 0.20)' : 'rgba(78, 124, 76, 0.15)'),
+                  ? (isDark ? 'rgba(208, 174, 146, 0.20)' : 'linear-gradient(135deg, rgba(200, 116, 40, 0.20), rgba(247, 238, 225, 0.8))')
+                  : (isDark ? 'rgba(134, 239, 172, 0.20)' : 'linear-gradient(135deg, rgba(46, 99, 51, 0.20), rgba(247, 238, 225, 0.8))'),
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: agentType === 'scientist' ? (isDark ? '#E8C49A' : T.primary) : (isDark ? '#86EFAC' : '#2E6333'),
+                color: agentType === 'scientist' ? (isDark ? '#E8C49A' : '#7C5A44') : (isDark ? '#86EFAC' : '#2E6333'),
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.8)',
+                boxShadow: 'inset 0 1px 2px rgba(255, 255, 255, 0.8), 0 4px 12px rgba(44, 26, 17, 0.08)',
               }}
             >
               <Bot size={20} />
@@ -682,16 +685,15 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
 
           {/* AI privacy and fallback disclosure */}
           <div
+            className="champagne-panel"
             style={{
-              padding: '6px 12px',
-              borderRadius: 10,
-              background: isDark ? 'rgba(184, 198, 138, 0.15)' : 'rgba(122, 140, 79, 0.10)',
-              border: isDark ? '1px solid rgba(184, 198, 138, 0.30)' : '1px solid rgba(122, 140, 79, 0.20)',
+              padding: '8px 12px',
+              borderRadius: 14,
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 8,
               fontSize: 'var(--text-xs)',
-              color: isDark ? '#B8C68A' : '#4E6828',
+              color: isDark ? '#B8C68A' : '#3E5C26',
               fontWeight: 600,
             }}
           >
@@ -705,14 +707,13 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
 
           {/* Dual-Agent Selector Toggle */}
           <div
+            className="champagne-panel"
             style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
-              gap: 8,
-              background: isDark ? 'rgba(42, 32, 27, 0.92)' : 'rgba(255, 255, 255, 0.65)',
+              gap: 6,
               padding: 4,
-              borderRadius: 16,
-              border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : `1px solid ${T.cardBorder}`,
+              borderRadius: 18,
             }}
           >
             <motion.button
@@ -720,11 +721,13 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
               onClick={() => setAgentType('scientist')}
               whileTap={{ scale: 0.98 }}
               style={{
-                padding: '8px 12px',
-                borderRadius: 12,
+                padding: '9px 12px',
+                borderRadius: 14,
                 border: 'none',
-                background: agentType === 'scientist' ? (isDark ? '#D0AE92' : T.primary) : 'transparent',
-                color: agentType === 'scientist' ? (isDark ? '#1F1815' : '#FFFFFF') : (isDark ? '#F9F2E4' : T.ink),
+                background: agentType === 'scientist'
+                  ? (isDark ? 'linear-gradient(145deg, #D0AE92, #A88265)' : 'linear-gradient(145deg, #3D271D 0%, #24140D 100%)')
+                  : 'transparent',
+                color: agentType === 'scientist' ? '#FFFFFF' : (isDark ? 'rgba(249, 242, 228, 0.72)' : '#7C5A44'),
                 fontSize: 'var(--text-sm)',
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -732,7 +735,10 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 6,
-                transition: 'background 200ms ease, color 200ms ease',
+                boxShadow: agentType === 'scientist'
+                  ? (isDark ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 14px rgba(44, 26, 17, 0.28), inset 0 1px 1px rgba(255,255,255,0.25)')
+                  : 'none',
+                transition: 'background 200ms ease, color 200ms ease, box-shadow 200ms ease',
               }}
             >
               <span>🔬</span>
@@ -748,11 +754,13 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
               onClick={() => setAgentType('coach')}
               whileTap={{ scale: 0.98 }}
               style={{
-                padding: '8px 12px',
-                borderRadius: 12,
+                padding: '9px 12px',
+                borderRadius: 14,
                 border: 'none',
-                background: agentType !== 'scientist' ? (isDark ? '#4ADE80' : '#2E6333') : 'transparent',
-                color: agentType !== 'scientist' ? (isDark ? '#143118' : '#FFFFFF') : (isDark ? '#F9F2E4' : T.ink),
+                background: agentType !== 'scientist'
+                  ? (isDark ? 'linear-gradient(145deg, #4ADE80, #22C55E)' : 'linear-gradient(145deg, #1C4A2E 0%, #0D2E1C 100%)')
+                  : 'transparent',
+                color: agentType !== 'scientist' ? '#FFFFFF' : (isDark ? 'rgba(249, 242, 228, 0.72)' : '#7C5A44'),
                 fontSize: 'var(--text-sm)',
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -760,7 +768,10 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 6,
-                transition: 'background 200ms ease, color 200ms ease',
+                boxShadow: agentType !== 'scientist'
+                  ? (isDark ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 14px rgba(28, 74, 46, 0.28), inset 0 1px 1px rgba(255,255,255,0.25)')
+                  : 'none',
+                transition: 'background 200ms ease, color 200ms ease, box-shadow 200ms ease',
               }}
             >
               <span>🧠</span>
@@ -772,16 +783,18 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
         {/* Clinical Disclaimer Banner */}
         <div
           style={{
-            padding: '8px 12px',
-            borderRadius: 12,
-            background: isDark ? 'rgba(240, 183, 154, 0.12)' : 'rgba(197, 85, 59, 0.08)',
-            border: isDark ? '1px solid rgba(240, 183, 154, 0.28)' : '1px solid rgba(197, 85, 59, 0.20)',
+            padding: '9px 14px',
+            borderRadius: 14,
+            background: isDark ? 'rgba(240, 183, 154, 0.12)' : 'rgba(255, 245, 238, 0.75)',
+            border: isDark ? '1px solid rgba(240, 183, 154, 0.28)' : '1px solid rgba(200, 116, 40, 0.22)',
+            boxShadow: isDark ? 'none' : 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 2px 8px rgba(44, 26, 17, 0.03)',
+            backdropFilter: 'blur(16px)',
             display: 'flex',
             alignItems: 'center',
             gap: 8,
             fontSize: 'var(--text-xs)',
-            color: isDark ? '#F0B79A' : '#A8432A',
-            lineHeight: 1.4,
+            color: isDark ? '#F0B79A' : '#9E4324',
+            lineHeight: 1.45,
           }}
         >
           <ShieldAlert size={14} style={{ flexShrink: 0 }} />
@@ -827,7 +840,7 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                   style={{
                     fontSize: 'var(--text-xs)',
                     fontWeight: 600,
-                    color: isDark ? 'rgba(249, 242, 228, 0.78)' : T.inkSoft,
+                    color: isDark ? 'rgba(249, 242, 228, 0.72)' : '#7C5A44',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 6,
@@ -839,7 +852,7 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                     <span>{profile.name || (isBn ? 'আপনি' : 'You')}</span>
                   ) : agentType === 'scientist' ? (
                     <>
-                      <span style={{ fontWeight: 600, color: isDark ? '#E8C49A' : T.primary }}>
+                      <span style={{ fontWeight: 600, color: isDark ? '#E8C49A' : '#7C5A44' }}>
                         {isBn
                           ? `🔬 ${scientistName} · পুষ্টি বিজ্ঞানী`
                           : `🔬 ${scientistName} · Nutrition Scientist`}
@@ -861,35 +874,29 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
 
                 {/* Message Bubble */}
                 <div
-                  className={isUser ? 'coach-bubble-user' : 'coach-bubble-assistant glass-card'}
+                  className={isUser ? 'coach-bubble-user' : 'coach-bubble-assistant champagne-panel'}
                   style={
                     isUser
                       ? {
-                          padding: '10px 16px',
-                          borderRadius: '16px 16px 4px 16px',
-                          backgroundColor: '#3D2E27',
-                          color: '#F9F5F0',
+                          padding: '12px 18px',
+                          borderRadius: '20px 20px 4px 20px',
+                          background: 'linear-gradient(145deg, #3D271D 0%, #24140D 100%)',
+                          color: '#FFF8F0',
                           fontSize: '0.9375rem',
                           lineHeight: 1.5,
                           minWidth: '48px',
                           display: 'inline-block',
                           wordBreak: 'break-word',
                           maxWidth: '88%',
+                          boxShadow: '0 6px 18px rgba(36, 20, 13, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.18)',
                         }
                       : {
                           maxWidth: '88%',
                           padding: '16px 20px',
-                          borderRadius: '16px 16px 16px 4px',
-                          backgroundColor: isDark ? 'rgba(42, 32, 27, 0.94)' : '#FFFFFF',
-                          border: isDark
-                            ? '1px solid rgba(255, 255, 255, 0.12)'
-                            : '1px solid rgba(92, 64, 51, 0.12)',
-                          boxShadow: isDark
-                            ? '0 4px 20px rgba(0, 0, 0, 0.35)'
-                            : '0 2px 8px rgba(0, 0, 0, 0.04)',
+                          borderRadius: '20px 20px 20px 4px',
                           fontSize: '0.9375rem',
                           lineHeight: 1.65,
-                          color: isDark ? '#F9F2E4' : '#2C221E',
+                          color: isDark ? '#F9F2E4' : '#2C1A11',
                           wordBreak: 'break-word',
                         }
                   }
@@ -908,13 +915,14 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                   {!isUser && m.voice_summary && (
                     <div
                       style={{
-                        padding: '8px 12px',
-                        borderRadius: 10,
-                        background: isDark ? 'rgba(208, 174, 146, 0.12)' : 'rgba(201, 98, 45, 0.08)',
-                        border: isDark ? '1px solid rgba(208, 174, 146, 0.25)' : '1px solid rgba(201, 98, 45, 0.18)',
+                        padding: '9px 12px',
+                        borderRadius: 12,
+                        background: isDark ? 'rgba(208, 174, 146, 0.12)' : 'rgba(200, 116, 40, 0.08)',
+                        border: isDark ? '1px solid rgba(208, 174, 146, 0.25)' : '1px solid rgba(200, 116, 40, 0.18)',
+                        boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.5)',
                         marginBottom: 12,
                         fontSize: 'var(--text-xs)',
-                        color: isDark ? '#E8C49A' : '#77574A',
+                        color: isDark ? '#E8C49A' : '#7C5A44',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -922,7 +930,7 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
-                        <Volume2 size={14} style={{ flexShrink: 0, color: isDark ? '#E8C49A' : T.primary }} />
+                        <Volume2 size={14} style={{ flexShrink: 0, color: isDark ? '#E8C49A' : '#C87428' }} />
                         <span style={{ fontStyle: 'italic', lineHeight: 1.4 }}>
                           &ldquo;{m.voice_summary}&rdquo;
                         </span>
@@ -932,15 +940,15 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                         onClick={() => playAudioForMessage(idx, m)}
                         disabled={fetchingAudioId === idx}
                         aria-label={isSpeakingThis ? 'Stop voice' : 'Play voice'}
+                        className="champagne-pill"
                         style={{
                           background: isSpeakingThis
-                            ? (isDark ? 'rgba(240, 183, 154, 0.25)' : 'rgba(201, 98, 45, 0.15)')
-                            : 'transparent',
+                            ? (isDark ? 'rgba(240, 183, 154, 0.25)' : 'rgba(200, 116, 40, 0.18)')
+                            : undefined,
                           border: 'none',
-                          borderRadius: 6,
                           cursor: fetchingAudioId === idx ? 'wait' : 'pointer',
-                          padding: '4px 6px',
-                          color: isDark ? '#E8C49A' : T.primary,
+                          padding: '4px 8px',
+                          color: isDark ? '#E8C49A' : '#7C5A44',
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: 4,
@@ -973,21 +981,20 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
 
                   {/* Fallback Listen action for assistant messages without voice_summary */}
                   {!isUser && !m.voice_summary && m.content && (
-                    <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
+                    <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
                       <button
                         type="button"
                         onClick={() => playAudioForMessage(idx, m)}
                         disabled={fetchingAudioId === idx}
                         aria-label={isSpeakingThis ? 'Stop voice' : 'Play voice'}
+                        className="champagne-pill"
                         style={{
                           background: isSpeakingThis
-                            ? (isDark ? 'rgba(240, 183, 154, 0.25)' : 'rgba(201, 98, 45, 0.15)')
-                            : 'transparent',
-                          border: isDark ? '1px solid rgba(208, 174, 146, 0.2)' : '1px solid rgba(201, 98, 45, 0.2)',
-                          borderRadius: 6,
+                            ? (isDark ? 'rgba(240, 183, 154, 0.25)' : 'rgba(200, 116, 40, 0.18)')
+                            : undefined,
                           cursor: fetchingAudioId === idx ? 'wait' : 'pointer',
-                          padding: '3px 8px',
-                          color: isDark ? '#E8C49A' : T.primary,
+                          padding: '4px 10px',
+                          color: isDark ? '#E8C49A' : '#7C5A44',
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: 4,
@@ -1024,20 +1031,19 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              className="champagne-panel"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
                 padding: '8px 14px',
-                borderRadius: 14,
-                background: isDark ? 'rgba(42, 32, 27, 0.90)' : 'rgba(255, 255, 255, 0.85)',
-                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : `1px solid ${T.cardBorder}`,
+                borderRadius: 16,
                 width: 'fit-content',
                 fontSize: 'var(--text-xs)',
-                color: isDark ? '#F9F2E4' : T.inkSoft,
+                color: isDark ? '#F9F2E4' : '#7C5A44',
               }}
             >
-              <Sparkles size={14} className="animate-spin" color={isDark ? '#E8C49A' : T.primary} />
+              <Sparkles size={14} className="animate-spin" color={isDark ? '#E8C49A' : '#C87428'} />
               <span>
                 {agentType === 'scientist'
                   ? isBn
@@ -1056,22 +1062,21 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
         {/* Domain Citation Badges */}
         {citations.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 'var(--text-xs)', color: isDark ? 'rgba(249, 242, 228, 0.78)' : T.inkSoft, fontWeight: 600 }}>
+            <span style={{ fontSize: 'var(--text-xs)', color: isDark ? 'rgba(249, 242, 228, 0.78)' : '#7C5A44', fontWeight: 600 }}>
               {isBn ? 'স্বীকৃত তথ্যসূত্র:' : 'Official Citations:'}
             </span>
             {citations.map((c, i) => (
               <span
                 key={i}
+                className="champagne-pill"
                 style={{
                   fontSize: 'var(--text-xs)',
                   padding: '3px 8px',
                   borderRadius: 8,
-                  background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(74, 58, 52, 0.08)',
-                  color: isDark ? '#F9F2E4' : T.ink,
+                  color: isDark ? '#F9F2E4' : '#2C1A11',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 4,
-                  border: isDark ? '1px solid rgba(255, 255, 255, 0.10)' : 'none',
                 }}
               >
                 <CheckCircle size={11} color={isDark ? '#86EFAC' : '#2E6333'} />
@@ -1088,7 +1093,7 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
               style={{
                 fontSize: 'var(--text-xs)',
                 fontWeight: 600,
-                color: isDark ? 'rgba(249, 242, 228, 0.78)' : T.inkSoft,
+                color: isDark ? 'rgba(249, 242, 228, 0.78)' : '#7C5A44',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 4,
@@ -1105,18 +1110,17 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.96 }}
                   onClick={() => handleSendMessage(p)}
+                  className="champagne-pill"
                   style={{
-                    padding: '8px 14px',
-                    borderRadius: 20,
-                    background: isDark ? 'rgba(42, 32, 27, 0.92)' : 'rgba(255, 255, 255, 0.90)',
-                    border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : `1px solid ${T.cardBorder}`,
-                    color: isDark ? '#F9F2E4' : T.ink,
+                    padding: '8px 16px',
+                    borderRadius: 999,
+                    color: isDark ? '#F9F2E4' : '#2C1A11',
                     fontSize: 'var(--text-sm)',
+                    fontWeight: 500,
                     lineHeight: 1.4,
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
                     flexShrink: 0,
-                    boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.3)' : '0 1px 4px rgba(0,0,0,0.03)',
                   }}
                 >
                   {p}
@@ -1133,14 +1137,13 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
+              className="champagne-panel"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
                 padding: 6,
-                background: isDark ? 'rgba(42, 32, 27, 0.92)' : 'rgba(255,255,255,0.9)',
-                borderRadius: 12,
-                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : `1px solid ${T.cardBorder}`,
+                borderRadius: 14,
                 width: 'fit-content',
               }}
             >
@@ -1149,7 +1152,7 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                 alt="Upload preview"
                 style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover' }}
               />
-              <span style={{ fontSize: 'var(--text-xs)', color: isDark ? '#F9F2E4' : T.ink }}>
+              <span style={{ fontSize: 'var(--text-xs)', color: isDark ? '#F9F2E4' : '#2C1A11' }}>
                 {isBn ? 'খাবারের ছবি যুক্ত করা হয়েছে' : 'Dish photo attached'}
               </span>
               <button
@@ -1163,7 +1166,7 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                   border: 'none',
                   cursor: 'pointer',
                   padding: 4,
-                  color: isDark ? 'rgba(249, 242, 228, 0.78)' : T.inkSoft,
+                  color: isDark ? 'rgba(249, 242, 228, 0.78)' : '#7C5A44',
                 }}
               >
                 <X size={14} />
@@ -1174,15 +1177,16 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
 
         {/* Input Bar with Attachment, Mic, and Send */}
         <div
+          className="champagne-panel"
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            background: isDark ? 'rgba(42, 32, 27, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-            padding: '6px 12px',
-            borderRadius: 24,
-            border: isDark ? '1px solid rgba(255, 255, 255, 0.14)' : `1px solid ${T.cardBorder}`,
-            boxShadow: isDark ? '0 4px 20px rgba(0, 0, 0, 0.4)' : '0 4px 16px rgba(46, 37, 34, 0.08)',
+            padding: '6px 10px',
+            borderRadius: 999,
+            boxShadow: isDark
+              ? '0 8px 30px rgba(0, 0, 0, 0.45)'
+              : 'inset 0 1.5px 2px rgba(255, 255, 255, 0.9), 0 8px 28px rgba(44, 26, 17, 0.12)',
           }}
         >
           <input
@@ -1200,7 +1204,7 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              color: isDark ? 'rgba(249, 242, 228, 0.78)' : T.inkSoft,
+              color: isDark ? 'rgba(249, 242, 228, 0.78)' : '#7C5A44',
               padding: 6,
               borderRadius: '50%',
               display: 'flex',
@@ -1219,11 +1223,11 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
             aria-label={isListening ? 'Stop listening' : 'Start voice input'}
             style={{
               background: isListening
-                ? (isDark ? 'rgba(240, 183, 154, 0.3)' : 'rgba(201, 98, 45, 0.18)')
+                ? (isDark ? 'rgba(240, 183, 154, 0.3)' : 'rgba(200, 116, 40, 0.18)')
                 : 'transparent',
               border: 'none',
               cursor: 'pointer',
-              color: isListening ? (isDark ? '#F0B79A' : '#C9622D') : (isDark ? 'rgba(249, 242, 228, 0.78)' : T.inkSoft),
+              color: isListening ? (isDark ? '#F0B79A' : '#C87428') : (isDark ? 'rgba(249, 242, 228, 0.78)' : '#7C5A44'),
               padding: 6,
               borderRadius: '50%',
               display: 'flex',
@@ -1249,16 +1253,11 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
             }}
             aria-label={`Switch voice language, currently ${speechLang === 'bn-BD' ? 'Bangla' : 'English'}`}
             title={speechLang === 'bn-BD' ? 'ভয়েস ভাষা: বাংলা (ইংরেজিতে পরিবর্তন করতে ট্যাপ করুন)' : 'Voice language: English (Tap to switch to Bangla)'}
+            className="champagne-pill"
             style={{
-              padding: '2px 7px',
-              borderRadius: 8,
-              border: isDark
-                ? '1px solid rgba(255, 255, 255, 0.16)'
-                : '1px solid rgba(74, 58, 52, 0.18)',
-              background: isDark
-                ? (speechLang === 'bn-BD' ? 'rgba(208, 174, 146, 0.22)' : 'rgba(255, 255, 255, 0.08)')
-                : (speechLang === 'bn-BD' ? 'rgba(74, 58, 52, 0.12)' : 'rgba(74, 58, 52, 0.06)'),
-              color: isDark ? '#F9F2E4' : T.ink,
+              padding: '3px 8px',
+              borderRadius: 999,
+              color: isDark ? '#F9F2E4' : '#2C1A11',
               fontSize: '11px',
               fontWeight: 700,
               cursor: 'pointer',
@@ -1302,7 +1301,7 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
               outline: 'none',
               background: 'transparent',
               fontSize: 'var(--text-base)',
-              color: isDark ? '#F9F2E4' : T.ink,
+              color: isDark ? '#F9F2E4' : '#2C1A11',
               padding: '6px 8px',
             }}
           />
@@ -1315,8 +1314,8 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
             aria-label="Send message"
             style={{
               background: !input.trim() && !imagePreview && !conversationImage
-                ? (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(74, 58, 52, 0.25)')
-                : (isDark ? '#D0AE92' : T.primary),
+                ? (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(74, 58, 52, 0.20)')
+                : (isDark ? '#D0AE92' : 'linear-gradient(145deg, #3D271D 0%, #24140D 100%)'),
               border: 'none',
               borderRadius: '50%',
               width: 36,
@@ -1324,9 +1323,14 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: isDark ? '#1F1815' : '#FFFFFF',
+              color: !input.trim() && !imagePreview && !conversationImage
+                ? (isDark ? 'rgba(249, 242, 228, 0.4)' : 'rgba(255, 255, 255, 0.7)')
+                : '#FFFFFF',
+              boxShadow: !input.trim() && !imagePreview && !conversationImage
+                ? 'none'
+                : '0 4px 12px rgba(36, 20, 13, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.25)',
               cursor: !input.trim() && !imagePreview && !conversationImage ? 'default' : 'pointer',
-              transition: 'background 180ms ease',
+              transition: 'background 180ms ease, box-shadow 180ms ease',
             }}
           >
             <Send size={15} />

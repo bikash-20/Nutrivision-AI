@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Dumbbell, Wheat, Droplets, Target } from 'lucide-react';
 import { T } from '../data';
 import { useTokens } from '../theme/useTokens';
 import { useLanguage, LocalizedContent } from '../i18n/LanguageContext';
@@ -261,13 +261,19 @@ export default function RevenueCurveChart({
       <motion.div
         layout
         onClick={onCardClick}
-        className={`glass-card ${className || ''}`}
+        className={`glass-card champagne-panel ${className || ''}`}
         style={{
-          borderRadius: 20,
-          padding: '16px 18px',
-          background: isDark ? 'rgba(42, 32, 27, 0.94)' : T.cardBg,
-          border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : `1px solid ${T.cardBorderSoft}`,
-          boxShadow: isDark ? '0 8px 32px rgba(0, 0, 0, 0.45)' : '0 8px 30px rgba(46, 37, 34, 0.08)',
+          borderRadius: 24,
+          padding: '22px 24px',
+          background: isDark
+            ? 'linear-gradient(145deg, rgba(38, 26, 21, 0.94) 0%, rgba(22, 15, 12, 0.96) 100%)'
+            : 'linear-gradient(135deg, rgba(255, 250, 244, 0.65) 0%, rgba(246, 234, 222, 0.45) 100%)',
+          backdropFilter: 'blur(28px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(28px) saturate(160%)',
+          border: isDark ? '1.5px solid rgba(255, 255, 255, 0.12)' : '1.5px solid rgba(255, 255, 255, 0.85)',
+          boxShadow: isDark
+            ? '0 16px 44px rgba(0, 0, 0, 0.55)'
+            : '0 24px 52px -12px rgba(61, 39, 29, 0.18), inset 0 1.5px 2px rgba(255, 255, 255, 0.95)',
           cursor: onCardClick ? 'pointer' : 'default',
           position: 'relative',
         }}
@@ -279,45 +285,49 @@ export default function RevenueCurveChart({
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: 10,
-            marginBottom: 12,
+            gap: 12,
+            marginBottom: 16,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div
               style={{
-                width: 30,
-                height: 30,
+                width: 38,
+                height: 38,
                 borderRadius: '50%',
-                background: isDark ? 'rgba(208, 174, 146, 0.18)' : 'rgba(201, 98, 45, 0.12)',
-                color: isDark ? '#E8C49A' : T.primary,
+                background: isDark
+                  ? 'linear-gradient(135deg, rgba(208, 174, 146, 0.25) 0%, rgba(142, 103, 79, 0.2) 100%)'
+                  : 'linear-gradient(135deg, rgba(255, 248, 240, 0.9) 0%, rgba(242, 224, 206, 0.7) 100%)',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.15)' : '1.2px solid rgba(255, 255, 255, 0.95)',
+                boxShadow: '0 4px 12px rgba(61, 39, 29, 0.08)',
+                color: isDark ? '#E8C49A' : '#3D271D',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <TrendingUp size={16} strokeWidth={2.4} />
+              <TrendingUp size={18} strokeWidth={2.4} />
             </div>
             <div>
               <h3
                 style={{
                   margin: 0,
-                  fontFamily: 'Inter',
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: isDark ? '#F9F2E4' : T.ink,
-                  letterSpacing: '-0.01em',
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: 18,
+                  fontWeight: 600,
+                  color: isDark ? '#FAF4EC' : '#2C1A11',
+                  letterSpacing: '-0.015em',
                 }}
               >
                 {displayTitle}
               </h3>
               <p
                 style={{
-                  margin: '2px 0 0',
-                  fontFamily: 'Inter',
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: isDark ? 'rgba(249, 242, 228, 0.78)' : T.inkSoft,
+                  margin: '3px 0 0',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: isDark ? 'rgba(250, 244, 236, 0.75)' : '#7C5A44',
                 }}
               >
                 {subtitle
@@ -331,54 +341,47 @@ export default function RevenueCurveChart({
 
           {/* High-Contrast Badges & Legend */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span
                 style={{
-                  width: 10,
+                  width: 14,
                   height: 3,
                   borderRadius: 2,
-                  background: isDark ? '#D0AE92' : T.primary,
+                  background: isDark ? '#FAF4EC' : '#2C1A11',
                   display: 'inline-block',
                 }}
               />
-              <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: isDark ? '#F9F2E4' : T.ink }}>
+              <span style={{ fontFamily: 'var(--font-sans)', fontSize: 11.5, fontWeight: 600, color: isDark ? '#FAF4EC' : '#2C1A11' }}>
                 {isBn ? 'বর্তমান গ্রহণ' : 'Actual'}
               </span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span
                 style={{
-                  width: 12,
+                  width: 14,
                   height: 0,
-                  borderTop: `2px dashed ${isDark ? '#E8C49A' : T.accentAmber}`,
+                  borderTop: `2px dashed ${isDark ? '#E8C49A' : '#C87428'}`,
                   display: 'inline-block',
                 }}
               />
-              <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: isDark ? '#F9F2E4' : T.ink }}>
+              <span style={{ fontFamily: 'var(--font-sans)', fontSize: 11.5, fontWeight: 600, color: isDark ? '#FAF4EC' : '#2C1A11' }}>
                 {isBn ? 'পূর্বাভাস' : 'Forecast'}
               </span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span
                 style={{
-                  width: 12,
-                  height: 0,
-                  borderTop: `2px dashed #2E7D32`,
-                  display: 'inline-block',
-                }}
-              />
-              <span
-                style={{
-                  fontFamily: 'Inter',
+                  fontFamily: 'var(--font-sans)',
                   fontSize: 11,
                   fontWeight: 700,
-                  color: isDark ? '#86EFAC' : '#166534',
-                  background: isDark ? 'rgba(34, 197, 94, 0.16)' : '#DCFCE7',
-                  border: isDark ? '1px solid rgba(34, 197, 94, 0.35)' : 'none',
-                  padding: '2px 6px',
-                  borderRadius: 6,
+                  color: isDark ? '#86EFAC' : '#1B5E34',
+                  background: isDark ? 'rgba(34, 197, 94, 0.16)' : 'rgba(220, 245, 230, 0.85)',
+                  border: isDark ? '1px solid rgba(34, 197, 94, 0.35)' : '1px solid rgba(45, 122, 79, 0.35)',
+                  padding: '3px 10px',
+                  borderRadius: 16,
+                  boxShadow: '0 2px 8px rgba(45, 122, 79, 0.1)',
                 }}
               >
                 {isBn ? `লক্ষ্য: ${toBengaliDigits(targetKcal)}` : `Target: ${targetKcal}`}
@@ -649,37 +652,48 @@ export default function RevenueCurveChart({
         {showMacroChips && macros && (
           <div
             style={{
-              marginTop: 14,
-              paddingTop: 12,
-              borderTop: '1px solid rgba(74, 58, 52, 0.08)',
+              marginTop: 18,
+              paddingTop: 16,
+              borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(255, 255, 255, 0.65)',
               display: 'grid',
               gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: 8,
+              gap: 10,
             }}
           >
             {/* Protein Chip */}
             <div
               style={{
-                padding: '8px 10px',
-                borderRadius: 12,
-                background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(249, 242, 228, 0.65)',
-                border: `1px solid ${T.cardBorderSoft}`,
+                padding: '10px 12px',
+                borderRadius: 16,
+                background: isDark
+                  ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)'
+                  : 'linear-gradient(180deg, rgba(255, 252, 248, 0.75) 0%, rgba(244, 228, 214, 0.5) 100%)',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.9)',
+                boxShadow: '0 4px 14px -3px rgba(61, 39, 29, 0.08), inset 0 1px 1.5px rgba(255, 255, 255, 0.95)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: T.ink }}>
-                  {isBn ? 'প্রোটিন' : 'Protein'}
-                </span>
-                <span className="tnum" style={{ fontSize: 11, fontWeight: 700, color: T.primary }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <Dumbbell size={15} strokeWidth={2.2} color={isDark ? '#E8C49A' : '#3D271D'} />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: isDark ? 'rgba(250, 244, 236, 0.85)' : '#4A3225' }}>
+                    {isBn ? 'প্রোটিন' : 'Protein'}
+                  </span>
+                </div>
+                <span className="tnum" style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#FAF4EC' : '#2C1A11' }}>
                   {isBn ? `${toBengaliDigits(macros.protein)} গ্রাম` : `${macros.protein}g`}
                 </span>
               </div>
-              <div style={{ height: 4, borderRadius: 2, background: 'rgba(74, 58, 52, 0.1)', overflow: 'hidden' }}>
+              <div style={{ height: 5, borderRadius: 3, background: 'rgba(61, 39, 29, 0.12)', overflow: 'hidden', position: 'relative' }}>
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${Math.min(100, Math.round((macros.protein / 90) * 100))}%` }}
                   transition={{ duration: 0.8, ease: 'easeOut' }}
-                  style={{ height: '100%', background: T.primary, borderRadius: 2 }}
+                  style={{
+                    height: '100%',
+                    background: isDark ? 'linear-gradient(90deg, #D0AE92 0%, #FAF4EC 100%)' : 'linear-gradient(90deg, #3D271D 0%, #684A37 100%)',
+                    borderRadius: 3,
+                    boxShadow: '0 0 6px rgba(61, 39, 29, 0.4)',
+                  }}
                 />
               </div>
             </div>
@@ -687,26 +701,37 @@ export default function RevenueCurveChart({
             {/* Carbs Chip */}
             <div
               style={{
-                padding: '8px 10px',
-                borderRadius: 12,
-                background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(249, 242, 228, 0.65)',
-                border: `1px solid ${T.cardBorderSoft}`,
+                padding: '10px 12px',
+                borderRadius: 16,
+                background: isDark
+                  ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)'
+                  : 'linear-gradient(180deg, rgba(255, 252, 248, 0.75) 0%, rgba(244, 228, 214, 0.5) 100%)',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.9)',
+                boxShadow: '0 4px 14px -3px rgba(61, 39, 29, 0.08), inset 0 1px 1.5px rgba(255, 255, 255, 0.95)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: T.ink }}>
-                  {isBn ? 'কার্বস' : 'Carbs'}
-                </span>
-                <span className="tnum" style={{ fontSize: 11, fontWeight: 700, color: T.accentAmber }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <Wheat size={15} strokeWidth={2.2} color="#C87428" />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: isDark ? 'rgba(250, 244, 236, 0.85)' : '#4A3225' }}>
+                    {isBn ? 'কার্বস' : 'Carbs'}
+                  </span>
+                </div>
+                <span className="tnum" style={{ fontSize: 15, fontWeight: 700, color: '#C87428' }}>
                   {isBn ? `${toBengaliDigits(macros.carbs)} গ্রাম` : `${macros.carbs}g`}
                 </span>
               </div>
-              <div style={{ height: 4, borderRadius: 2, background: 'rgba(74, 58, 52, 0.1)', overflow: 'hidden' }}>
+              <div style={{ height: 5, borderRadius: 3, background: 'rgba(200, 116, 40, 0.15)', overflow: 'hidden', position: 'relative' }}>
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${Math.min(100, Math.round((macros.carbs / 220) * 100))}%` }}
                   transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
-                  style={{ height: '100%', background: T.accentAmber, borderRadius: 2 }}
+                  style={{
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #C87428 0%, #F59E0B 100%)',
+                    borderRadius: 3,
+                    boxShadow: '0 0 8px rgba(200, 116, 40, 0.5)',
+                  }}
                 />
               </div>
             </div>
@@ -714,26 +739,37 @@ export default function RevenueCurveChart({
             {/* Fat Chip */}
             <div
               style={{
-                padding: '8px 10px',
-                borderRadius: 12,
-                background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(249, 242, 228, 0.65)',
-                border: `1px solid ${T.cardBorderSoft}`,
+                padding: '10px 12px',
+                borderRadius: 16,
+                background: isDark
+                  ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)'
+                  : 'linear-gradient(180deg, rgba(255, 252, 248, 0.75) 0%, rgba(244, 228, 214, 0.5) 100%)',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.9)',
+                boxShadow: '0 4px 14px -3px rgba(61, 39, 29, 0.08), inset 0 1px 1.5px rgba(255, 255, 255, 0.95)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: T.ink }}>
-                  {isBn ? 'চর্বি' : 'Fat'}
-                </span>
-                <span className="tnum" style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#86EFAC' : '#166534' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <Droplets size={15} strokeWidth={2.2} color="#2D7A4F" />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: isDark ? 'rgba(250, 244, 236, 0.85)' : '#4A3225' }}>
+                    {isBn ? 'চর্বি' : 'Fat'}
+                  </span>
+                </div>
+                <span className="tnum" style={{ fontSize: 15, fontWeight: 700, color: '#2D7A4F' }}>
                   {isBn ? `${toBengaliDigits(macros.fat)} গ্রাম` : `${macros.fat}g`}
                 </span>
               </div>
-              <div style={{ height: 4, borderRadius: 2, background: 'rgba(74, 58, 52, 0.1)', overflow: 'hidden' }}>
+              <div style={{ height: 5, borderRadius: 3, background: 'rgba(45, 122, 79, 0.15)', overflow: 'hidden', position: 'relative' }}>
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${Math.min(100, Math.round((macros.fat / 65) * 100))}%` }}
                   transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
-                  style={{ height: '100%', background: isDark ? '#4ADE80' : '#2E7D32', borderRadius: 2 }}
+                  style={{
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #2D7A4F 0%, #10B981 100%)',
+                    borderRadius: 3,
+                    boxShadow: '0 0 8px rgba(45, 122, 79, 0.45)',
+                  }}
                 />
               </div>
             </div>

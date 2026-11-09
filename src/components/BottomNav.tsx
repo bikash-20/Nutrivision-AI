@@ -76,12 +76,20 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          minHeight: 84,
-          borderRadius: 28,
-          padding: '5px 6px',
+          minHeight: 86,
+          borderRadius: 36,
+          padding: '6px 10px',
+          background: isDark
+            ? 'linear-gradient(145deg, rgba(35, 25, 20, 0.92) 0%, rgba(20, 14, 11, 0.95) 100%)'
+            : 'linear-gradient(135deg, rgba(255, 248, 240, 0.65) 0%, rgba(246, 232, 218, 0.48) 100%)',
+          backdropFilter: 'blur(32px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(32px) saturate(160%)',
+          border: isDark
+            ? '1.5px solid rgba(255, 255, 255, 0.12)'
+            : '1.5px solid rgba(255, 255, 255, 0.82)',
           boxShadow: isDark
-            ? '0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255,255,255,0.08)'
-            : '0 8px 32px rgba(46, 37, 34, 0.10), inset 0 1px 0 rgba(255,255,255,0.55)',
+            ? '0 12px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255,255,255,0.1)'
+            : '0 20px 48px -10px rgba(61, 39, 29, 0.22), inset 0 1.5px 2px rgba(255, 255, 255, 0.9)',
         }}
       >
         {TABS.map((t, i) => {
@@ -135,11 +143,11 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                     layoutId="nav-pill"
                     style={{
                       position: 'absolute',
-                      inset: 0,
+                      inset: -2,
                       borderRadius: '50%',
-                      background: T.primary,
+                      background: 'linear-gradient(145deg, #42291E 0%, #24140D 100%)',
                       boxShadow:
-                        '0 8px 20px -6px rgba(46, 37, 34, 0.55), inset 0 1.5px 0 rgba(255,255,255,0.35)',
+                        '0 8px 22px -3px rgba(36, 20, 13, 0.55), inset 0 1.5px 1px rgba(255, 255, 255, 0.4)',
                     }}
                     transition={{ type: 'spring', stiffness: 340, damping: 28 }}
                   />
@@ -150,7 +158,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                     position: 'relative',
                     zIndex: 1,
                     display: 'inline-flex',
-                    color: isActive ? '#FFFFFF' : T.inkSoft,
+                    color: isActive ? '#FFFFFF' : (isDark ? '#D0AE92' : '#5C3C2E'),
                     transition: 'color 200ms ease',
                   }}
                 >
@@ -172,7 +180,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                       width: 42,
                       height: 42,
                       borderRadius: '50%',
-                      background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(74, 58, 52, 0.08)',
+                      background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.45)',
                       opacity: 0,
                       transform: 'scale(0.85)',
                       transition: 'opacity 180ms ease, transform 180ms ease',
@@ -185,10 +193,10 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
               <span
                 className="nav-tab-label"
                 style={{
-                  fontFamily: 'Inter',
-                  fontSize: 10,
-                  fontWeight: isActive ? 600 : 400,
-                  color: isActive ? T.primary : T.inkSoft,
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 11,
+                  fontWeight: isActive ? 700 : 500,
+                  color: isActive ? (isDark ? '#F9F2E4' : '#3D271D') : (isDark ? 'rgba(249, 242, 228, 0.65)' : '#7C5A44'),
                   letterSpacing: '0.01em',
                   whiteSpace: 'nowrap',
                   transition: 'color 200ms ease, font-weight 200ms ease',

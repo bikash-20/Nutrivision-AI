@@ -984,11 +984,11 @@ export default function ResultsScreen({
         <div>
           <h2
             style={{
-              fontFamily: 'Inter',
-              fontSize: 22,
+              fontFamily: 'var(--font-serif)',
+              fontSize: 24,
               fontWeight: 600,
-              color: T.ink,
-              letterSpacing: '-0.02em',
+              color: '#2C1A11',
+              letterSpacing: '-0.015em',
               margin: 0,
             }}
           >
@@ -998,8 +998,9 @@ export default function ResultsScreen({
             style={{
               fontFamily: 'Inter',
               fontSize: 12,
-              color: T.inkSoft,
-              margin: '2px 0 0',
+              color: '#684A37',
+              margin: '3px 0 0',
+              fontWeight: 500,
             }}
           >
             {isBn ? toBengaliDigits(detected.length) : detected.length} {isBn ? 'টি খাবার' : detected.length === 1 ? 'item' : 'items'} · {isBn ? toBengaliDigits(Math.round(totals.kcal)) : Math.round(totals.kcal)} {isBn ? 'কিলোক্যালরি' : 'kcal'}
@@ -1017,23 +1018,29 @@ export default function ResultsScreen({
           transition={{ type: 'spring', stiffness: 380, damping: 22 }}
           aria-pressed={editMode}
           aria-label={editMode ? (isBn ? 'সম্পাদনা বন্ধ করুন' : 'Exit edit mode') : (isBn ? 'সম্পাদনা শুরু করুন' : 'Enter edit mode')}
+          className="champagne-pill"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 4,
-            padding: '6px 10px',
+            gap: 5,
+            padding: '6px 12px',
             borderRadius: 999,
-            background: editMode ? T.primary : T.cardBg,
-            border: editMode ? 'none' : '1px solid rgba(74, 58, 52, 0.18)',
+            background: editMode
+              ? 'linear-gradient(145deg, #42291E 0%, #24140D 100%)'
+              : 'rgba(255, 250, 244, 0.72)',
+            border: editMode ? '1px solid rgba(255, 255, 255, 0.35)' : '1px solid rgba(255, 255, 255, 0.85)',
+            boxShadow: editMode
+              ? '0 4px 14px -2px rgba(36, 20, 13, 0.5)'
+              : 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85)',
             fontFamily: 'Inter',
-            fontSize: 11,
+            fontSize: 11.5,
             fontWeight: 600,
-            color: editMode ? '#FFFFFF' : T.ink,
+            color: editMode ? '#FFFFFF' : '#3D271D',
             cursor: 'pointer',
             minHeight: 32,
           }}
         >
-          <Edit3 size={11} /> {editMode ? (isBn ? 'সম্পন্ন' : 'Done') : (isBn ? 'সম্পাদনা' : 'Edit')}
+          <Edit3 size={12} /> {editMode ? (isBn ? 'সম্পন্ন' : 'Done') : (isBn ? 'সম্পাদনা' : 'Edit')}
         </motion.button>
       </div>
 
@@ -1069,38 +1076,39 @@ export default function ResultsScreen({
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="glass-card"
+          className="champagne-panel"
           style={{
             marginTop: 14,
             marginBottom: 24,
-            padding: '22px 18px',
-            borderRadius: 20,
-            background: 'rgba(255, 255, 255, 0.92)',
-            border: '1.5px solid rgba(46, 125, 50, 0.35)',
-            boxShadow: '0 8px 28px rgba(46, 125, 50, 0.12)',
+            padding: '24px 20px',
+            borderRadius: 24,
+            background: 'rgba(255, 248, 240, 0.75)',
+            border: '1.5px solid rgba(255, 255, 255, 0.85)',
+            boxShadow: 'inset 0 1.5px 2px rgba(255, 255, 255, 0.9), 0 20px 48px -12px rgba(61, 39, 29, 0.18)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
             <div
               style={{
-                width: 40,
-                height: 40,
+                width: 44,
+                height: 44,
                 borderRadius: '50%',
-                background: '#DCFCE7',
-                color: '#166534',
+                background: 'linear-gradient(145deg, #166534 0%, #0F4522 100%)',
+                color: '#FFFFFF',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
+                boxShadow: '0 6px 16px -3px rgba(22, 101, 52, 0.45), inset 0 1px 1.5px rgba(255, 255, 255, 0.4)',
               }}
             >
-              <CheckCircle2 size={22} strokeWidth={2.5} />
+              <CheckCircle2 size={24} strokeWidth={2.4} />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: T.ink, fontFamily: 'Inter' }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#2C1A11', fontFamily: 'var(--font-serif)', letterSpacing: '-0.015em' }}>
                 {isBn ? 'খাবার নিশ্চিতকরণ' : 'Confirm Your Meal'}
               </h3>
-              <p style={{ margin: '2px 0 0', fontSize: 12, color: T.inkSoft, fontFamily: 'Inter' }}>
+              <p style={{ margin: '3px 0 0', fontSize: 12, color: '#684A37', fontFamily: 'Inter' }}>
                 {isBn
                   ? 'সব উপাদান যাচাই সম্পন্ন হয়েছে। পুষ্টি ও বিশ্লেষণ দেখতে নিশ্চিত করুন।'
                   : 'All food items verified. Confirm to analyze nutrients and log this meal.'}
@@ -1113,14 +1121,15 @@ export default function ResultsScreen({
             {detected.map((it) => (
               <div
                 key={it.name}
+                className="champagne-pill"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '10px 14px',
-                  borderRadius: 12,
-                  background: T.cardBg,
-                  border: '1px solid rgba(74, 58, 52, 0.08)',
+                  borderRadius: 14,
+                  background: 'rgba(255, 250, 244, 0.72)',
+                  border: '1px solid rgba(255, 255, 255, 0.85)',
                   fontFamily: 'Inter',
                 }}
               >
@@ -1130,7 +1139,7 @@ export default function ResultsScreen({
                       width: 18,
                       height: 18,
                       borderRadius: '50%',
-                      background: '#166534',
+                      background: 'linear-gradient(135deg, #166534 0%, #0F4522 100%)',
                       color: '#FFFFFF',
                       display: 'flex',
                       alignItems: 'center',
@@ -1141,22 +1150,23 @@ export default function ResultsScreen({
                   >
                     ✓
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>
+                  <span style={{ fontSize: 13.5, fontWeight: 600, color: '#2C1A11' }}>
                     {foodName(it.name, it.name_bn)}
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: T.inkSoft }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#684A37' }}>
                     ~{isBn ? `${toBengaliDigits(it.grams)} গ্রাম` : `${it.grams}g`}
                   </span>
                   <span
                     style={{
                       fontSize: 10,
                       fontWeight: 700,
-                      padding: '2px 6px',
-                      borderRadius: 6,
-                      background: 'rgba(46, 125, 50, 0.12)',
-                      color: '#166534',
+                      padding: '2px 8px',
+                      borderRadius: 999,
+                      background: 'rgba(34, 197, 94, 0.14)',
+                      border: '1px solid rgba(34, 197, 94, 0.3)',
+                      color: '#15803D',
                     }}
                   >
                     {isBn ? toBengaliDigits(it.confidence) : it.confidence}%
@@ -1168,10 +1178,12 @@ export default function ResultsScreen({
 
           {/* Macro Breakdown Summary */}
           <div
+            className="champagne-pill"
             style={{
               padding: '12px 14px',
-              borderRadius: 12,
-              background: 'rgba(201, 98, 45, 0.08)',
+              borderRadius: 16,
+              background: 'linear-gradient(180deg, rgba(255, 248, 240, 0.8) 0%, rgba(240, 222, 204, 0.6) 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.85)',
               marginBottom: 18,
               display: 'flex',
               justifyContent: 'space-around',
@@ -1180,34 +1192,34 @@ export default function ResultsScreen({
             }}
           >
             <div>
-              <div style={{ fontSize: 10, color: T.inkSoft, fontWeight: 600, textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 10, color: '#8E674F', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {isBn ? 'ক্যালরি' : 'Calories'}
               </div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: T.ink }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#2C1A11', marginTop: 2 }}>
                 {isBn ? `${toBengaliDigits(Math.round(totals.kcal))} কিলোক্যালরি` : `${Math.round(totals.kcal)} kcal`}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 10, color: T.inkSoft, fontWeight: 600, textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 10, color: '#8E674F', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {isBn ? 'প্রোটিন' : 'Protein'}
               </div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: T.ink }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#2C1A11', marginTop: 2 }}>
                 {isBn ? `${toBengaliDigits(Math.round(totals.protein))} গ্রাম` : `${Math.round(totals.protein)}g`}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 10, color: T.inkSoft, fontWeight: 600, textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 10, color: '#8E674F', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {isBn ? 'কার্বোহাইড্রেট' : 'Carbs'}
               </div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: T.ink }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#2C1A11', marginTop: 2 }}>
                 {isBn ? `${toBengaliDigits(Math.round(totals.carbs))} গ্রাম` : `${Math.round(totals.carbs)}g`}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 10, color: T.inkSoft, fontWeight: 600, textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 10, color: '#8E674F', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {isBn ? 'চর্বি' : 'Fat'}
               </div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: T.ink }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#2C1A11', marginTop: 2 }}>
                 {isBn ? `${toBengaliDigits(Math.round(totals.fat))} গ্রাম` : `${Math.round(totals.fat)}g`}
               </div>
             </div>
@@ -1220,13 +1232,14 @@ export default function ResultsScreen({
               onClick={() => setStep(1)}
               whileHover={{ y: -1 }}
               whileTap={{ scale: 0.98 }}
+              className="champagne-pill"
               style={{
                 flex: 1,
                 padding: '13px 14px',
-                borderRadius: 14,
-                background: T.cardBg,
-                border: '1px solid rgba(74, 58, 52, 0.18)',
-                color: T.ink,
+                borderRadius: 999,
+                background: 'rgba(255, 250, 244, 0.72)',
+                border: '1px solid rgba(255, 255, 255, 0.85)',
+                color: '#2C1A11',
                 fontFamily: 'Inter',
                 fontSize: 12.5,
                 fontWeight: 600,
@@ -1250,15 +1263,15 @@ export default function ResultsScreen({
               style={{
                 flex: 2,
                 padding: '13px 18px',
-                borderRadius: 14,
-                background: '#166534',
-                color: '#FFFFFF',
-                border: 'none',
+                borderRadius: 999,
+                background: 'linear-gradient(145deg, #1C4A2E 0%, #0D2E1C 100%)',
+                color: '#FAF4EC',
+                border: '1px solid rgba(255, 255, 255, 0.35)',
                 fontFamily: 'Inter',
                 fontSize: 13,
                 fontWeight: 700,
                 cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(22, 101, 52, 0.35)',
+                boxShadow: '0 8px 24px -4px rgba(22, 68, 42, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.4)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1568,16 +1581,16 @@ export default function ResultsScreen({
               whileTap={{ scale: 0.98 }}
               style={{
                 width: '100%',
-                padding: '13px 20px',
-                borderRadius: 14,
-                background: T.primary,
-                color: '#FFFFFF',
-                border: 'none',
+                padding: '14px 20px',
+                borderRadius: 999,
+                background: 'linear-gradient(145deg, #42291E 0%, #24140D 100%)',
+                color: '#FAF4EC',
+                border: '1px solid rgba(255, 255, 255, 0.28)',
                 fontFamily: 'Inter',
                 fontSize: 13,
                 fontWeight: 700,
                 cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(201, 98, 45, 0.3)',
+                boxShadow: '0 8px 22px -3px rgba(36, 20, 13, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.35)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1593,7 +1606,7 @@ export default function ResultsScreen({
                 background: 'none',
                 border: 'none',
                 padding: '6px',
-                color: T.inkSoft,
+                color: '#8E674F',
                 fontFamily: 'Inter',
                 fontSize: 12,
                 fontWeight: 600,
@@ -1621,13 +1634,14 @@ export default function ResultsScreen({
               onClick={() => setStep(0)}
               whileHover={{ y: -1 }}
               whileTap={{ scale: 0.98 }}
+              className="champagne-pill"
               style={{
                 flex: 1,
                 padding: '13px 14px',
-                borderRadius: 14,
-                background: T.cardBg,
-                border: '1px solid rgba(74, 58, 52, 0.18)',
-                color: T.ink,
+                borderRadius: 999,
+                background: 'rgba(255, 250, 244, 0.72)',
+                border: '1px solid rgba(255, 255, 255, 0.85)',
+                color: '#2C1A11',
                 fontFamily: 'Inter',
                 fontSize: 12.5,
                 fontWeight: 600,
@@ -1644,15 +1658,15 @@ export default function ResultsScreen({
               style={{
                 flex: 2,
                 padding: '13px 18px',
-                borderRadius: 14,
-                background: T.primary,
-                color: '#FFFFFF',
-                border: 'none',
+                borderRadius: 999,
+                background: 'linear-gradient(145deg, #42291E 0%, #24140D 100%)',
+                color: '#FAF4EC',
+                border: '1px solid rgba(255, 255, 255, 0.28)',
                 fontFamily: 'Inter',
                 fontSize: 13,
                 fontWeight: 700,
                 cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(201, 98, 45, 0.3)',
+                boxShadow: '0 8px 22px -3px rgba(36, 20, 13, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.35)',
               }}
             >
               {isBn ? 'নিশ্চিতকরণে যান (Confirm) →' : 'Proceed to Confirm →'}

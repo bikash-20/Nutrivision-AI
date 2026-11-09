@@ -916,11 +916,11 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           style={{
-            fontFamily: 'Inter',
+            fontFamily: 'var(--font-serif)',
             fontSize: 24,
-            fontWeight: 700,
-            color: isDark ? '#F9F2E4' : T.ink,
-            letterSpacing: '-0.02em',
+            fontWeight: 600,
+            color: isDark ? '#FAF4EC' : '#2C1A11',
+            letterSpacing: '-0.015em',
           }}
         >
           {language === 'bn' ? 'এই খাবারের পুষ্টি বিশ্লেষণ' : 'This meal, explained'}
@@ -940,26 +940,29 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
               ].join('\n');
               if (navigator?.clipboard) navigator.clipboard.writeText(lines).catch(() => {});
             }}
-            whileHover={{ y: -1 }}
+            whileHover={{ y: -1, scale: 1.04 }}
             whileTap={{ scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 380, damping: 22 }}
             aria-label={language === 'bn' ? 'পুষ্টির সারসংক্ষেপ শেয়ার করুন' : 'Share nutrition summary'}
+            className="champagne-pill"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 5,
-              background: 'none',
-              border: 'none',
-              padding: '5px 6px',
+              background: 'rgba(255, 250, 244, 0.72)',
+              border: '1px solid rgba(255, 255, 255, 0.85)',
+              boxShadow: 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85)',
+              padding: '6px 12px',
+              borderRadius: 999,
               fontFamily: 'Inter',
               fontSize: 11.5,
               fontWeight: 600,
-              color: T.primary,
+              color: '#3D271D',
               cursor: 'pointer',
               minHeight: 32,
             }}
           >
-            <Share2 size={12} /> {language === 'bn' ? 'শেয়ার' : 'Share'}
+            <Share2 size={12} color="#8E674F" /> {language === 'bn' ? 'শেয়ার' : 'Share'}
           </motion.button>
         )}
       </div>
@@ -970,9 +973,10 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
         style={{
           fontFamily: 'Inter',
           fontSize: 13,
-          color: T.inkSoft,
+          color: isDark ? '#D8C4B6' : '#684A37',
           margin: '4px 0 20px',
           lineHeight: 1.4,
+          fontWeight: 500,
         }}
       >
         {profile?.goals.diabetic
@@ -1113,13 +1117,16 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
           hidden: {},
           show: { transition: { staggerChildren: 0.08 } },
         }}
-        className="glass-card macro-donut-card"
+        className="champagne-panel macro-donut-card"
         style={{
           display: 'flex',
           gap: 8,
-          padding: '20px 16px',
-          borderRadius: 22,
+          padding: '22px 18px',
+          borderRadius: 24,
           marginBottom: 18,
+          background: 'rgba(255, 248, 240, 0.72)',
+          border: '1.5px solid rgba(255, 255, 255, 0.85)',
+          boxShadow: 'inset 0 1.5px 2px rgba(255, 255, 255, 0.85), 0 20px 48px -12px rgba(61, 39, 29, 0.16)',
         }}
       >
         <motion.div
@@ -1132,7 +1139,7 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
           <MacroDonut
             value={Math.round(protein)}
             target={targets.protein}
-            color={T.primary}
+            color="#3D271D"
             label="Protein"
             delay={0.1}
           />
@@ -1147,7 +1154,7 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
           <MacroDonut
             value={Math.round(carbs)}
             target={targets.carbs}
-            color={overCarbs ? T.accentWarn : T.primary}
+            color={overCarbs ? '#C87428' : '#C87428'}
             label="Carbs"
             delay={0.18}
           />
@@ -1162,7 +1169,7 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
           <MacroDonut
             value={Math.round(fat)}
             target={targets.fat}
-            color={T.accentGood}
+            color="#2D6A4F"
             label="Fat"
             delay={0.26}
           />
@@ -1174,11 +1181,14 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, delay: 0.35 }}
-        className="glass-card"
+        className="champagne-panel"
         style={{
-          borderRadius: 22,
-          padding: '16px 18px',
+          borderRadius: 24,
+          padding: '18px 20px',
           marginBottom: 18,
+          background: 'rgba(255, 248, 240, 0.72)',
+          border: '1.5px solid rgba(255, 255, 255, 0.85)',
+          boxShadow: 'inset 0 1.5px 2px rgba(255, 255, 255, 0.85), 0 20px 48px -12px rgba(61, 39, 29, 0.16)',
         }}
       >
         <div
@@ -1186,31 +1196,38 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: 8,
+            marginBottom: 10,
           }}
         >
           <div
             style={{
-              fontFamily: 'Inter',
-              fontSize: 13,
+              fontFamily: 'var(--font-serif)',
+              fontSize: 16,
               fontWeight: 600,
-              color: T.ink,
+              color: '#2C1A11',
+              letterSpacing: '-0.015em',
             }}
           >
             {language === 'bn' ? 'অণুপুষ্টি' : 'Micronutrients'}
           </div>
           <div
             title={language === 'bn' ? 'দৈনিক মানদণ্ড' : 'Daily reference values'}
+            className="champagne-pill"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 4,
               fontFamily: 'Inter',
-              fontSize: 10,
-              color: T.inkSoft,
+              fontSize: 10.5,
+              fontWeight: 600,
+              color: '#684A37',
+              padding: '3px 8px',
+              borderRadius: 999,
+              background: 'rgba(255, 250, 244, 0.72)',
+              border: '1px solid rgba(255, 255, 255, 0.85)',
             }}
           >
-            <Info size={10} /> {language === 'bn' ? 'লক্ষ্যের সাথে তুলনা' : 'vs targets'}
+            <Info size={11} color="#8E674F" /> {language === 'bn' ? 'লক্ষ্যের সাথে তুলনা' : 'vs targets'}
           </div>
         </div>
 
@@ -1370,38 +1387,39 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
-          className="glass-card"
+          className="champagne-panel"
           style={{
             marginTop: 18,
             marginBottom: 20,
-            borderRadius: 22,
-            padding: '18px 20px',
-            background: T.cardBg,
-            border: '1.5px solid rgba(201, 98, 45, 0.3)',
-            boxShadow: '0 8px 30px rgba(46, 37, 34, 0.08)',
+            borderRadius: 24,
+            padding: '22px 20px',
+            background: 'rgba(255, 248, 240, 0.75)',
+            border: '1.5px solid rgba(255, 255, 255, 0.85)',
+            boxShadow: 'inset 0 1.5px 2px rgba(255, 255, 255, 0.9), 0 20px 48px -12px rgba(61, 39, 29, 0.16)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
             <span
               style={{
-                width: 32,
-                height: 32,
+                width: 36,
+                height: 36,
                 borderRadius: '50%',
-                background: T.primary,
-                color: '#FFFFFF',
+                background: 'linear-gradient(145deg, #42291E 0%, #24140D 100%)',
+                color: '#FAF4EC',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
+                boxShadow: '0 6px 16px -3px rgba(36, 20, 13, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.35)',
               }}
             >
               <Sparkles size={16} />
             </span>
             <div>
-              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: T.ink }}>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#2C1A11', fontFamily: 'var(--font-serif)', letterSpacing: '-0.015em' }}>
                 {language === 'bn' ? '💡 খাদ্যাভ্যাস পরিবর্তন ও স্মার্ট বাজার' : '💡 Smart Dietary Pivot & Market Intelligence'}
               </h3>
-              <p style={{ margin: '2px 0 0', fontSize: 11.5, color: T.inkSoft }}>
+              <p style={{ margin: '3px 0 0', fontSize: 11.5, color: '#684A37', fontWeight: 500 }}>
                 {language === 'bn' ? 'ক্লিনিক্যাল লক্ষ্য ও স্থানীয় বাজারদরের সুনির্দিষ্ট সমন্বয়' : 'Tailored meal swap with exact macro & BDT market deltas'}
               </p>
             </div>
@@ -1413,15 +1431,17 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
               return (
                 <div
                   key={pivot.id}
+                  className="champagne-pill"
                   style={{
-                    padding: '14px 16px',
-                    borderRadius: 16,
-                    background: T.cardBg,
-                    border: '1px solid rgba(74, 58, 52, 0.1)',
+                    padding: '16px 16px',
+                    borderRadius: 18,
+                    background: 'rgba(255, 250, 244, 0.72)',
+                    border: '1px solid rgba(255, 255, 255, 0.85)',
+                    boxShadow: 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85), 0 6px 16px -6px rgba(61, 39, 29, 0.08)',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <span style={{ fontSize: 13.5, fontWeight: 700, color: T.primaryDeep }}>
+                    <span style={{ fontSize: 13.5, fontWeight: 700, color: '#3D271D' }}>
                       {language === 'bn' ? pivot.title_bn : pivot.title_en}
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1432,7 +1452,8 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
                             fontWeight: 700,
                             padding: '2px 8px',
                             borderRadius: 999,
-                            background: 'rgba(34, 197, 94, 0.15)',
+                            background: 'rgba(34, 197, 94, 0.14)',
+                            border: '1px solid rgba(34, 197, 94, 0.3)',
                             color: '#15803D',
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -1458,8 +1479,9 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
                           fontWeight: 700,
                           padding: '2px 8px',
                           borderRadius: 999,
-                          background: '#DCFCE7',
-                          color: '#166534',
+                          background: 'rgba(34, 197, 94, 0.14)',
+                          border: '1px solid rgba(34, 197, 94, 0.3)',
+                          color: '#15803D',
                         }}
                       >
                         {language === 'bn' ? `গ্লাইসেমিক লোড -${toBengaliDigits(pivot.glycemic_reduction_pct)}%` : `-${pivot.glycemic_reduction_pct}% Glycemic`}
@@ -1467,7 +1489,7 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
                     </div>
                   </div>
 
-                  <p style={{ margin: '0 0 10px', fontSize: 12, color: T.ink, lineHeight: 1.45 }}>
+                  <p style={{ margin: '0 0 10px', fontSize: 12, color: '#3D271D', lineHeight: 1.45 }}>
                     {language === 'bn' ? pivot.rationale_bn : pivot.rationale_en}
                   </p>
 
@@ -1479,8 +1501,9 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
                         fontWeight: 700,
                         padding: '4px 8px',
                         borderRadius: 8,
-                        background: pivot.delta.kcal < 0 ? '#DCFCE7' : '#FEF3C7',
-                        color: pivot.delta.kcal < 0 ? '#166534' : '#92400E',
+                        background: pivot.delta.kcal < 0 ? 'rgba(34, 197, 94, 0.12)' : 'rgba(200, 116, 40, 0.12)',
+                        color: pivot.delta.kcal < 0 ? '#15803D' : '#9C4D11',
+                        border: pivot.delta.kcal < 0 ? '1px solid rgba(34, 197, 94, 0.25)' : '1px solid rgba(200, 116, 40, 0.25)',
                       }}
                     >
                       Δ {pivot.delta.kcal > 0 ? '+' : ''}{language === 'bn' ? toBengaliDigits(pivot.delta.kcal) : pivot.delta.kcal} {language === 'bn' ? 'ক্যালরি' : 'kcal'}
@@ -1491,8 +1514,9 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
                         fontWeight: 700,
                         padding: '4px 8px',
                         borderRadius: 8,
-                        background: pivot.delta.carbs < 0 ? '#DCFCE7' : '#FEF3C7',
-                        color: pivot.delta.carbs < 0 ? '#166534' : '#92400E',
+                        background: pivot.delta.carbs < 0 ? 'rgba(34, 197, 94, 0.12)' : 'rgba(200, 116, 40, 0.12)',
+                        color: pivot.delta.carbs < 0 ? '#15803D' : '#9C4D11',
+                        border: pivot.delta.carbs < 0 ? '1px solid rgba(34, 197, 94, 0.25)' : '1px solid rgba(200, 116, 40, 0.25)',
                       }}
                     >
                       Δ {pivot.delta.carbs > 0 ? '+' : ''}{language === 'bn' ? toBengaliDigits(pivot.delta.carbs) : pivot.delta.carbs} {language === 'bn' ? 'গ্রাম কার্বস' : 'g carbs'}
@@ -1504,8 +1528,9 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
                           fontWeight: 700,
                           padding: '4px 8px',
                           borderRadius: 8,
-                          background: '#DCFCE7',
-                          color: '#166534',
+                          background: 'rgba(34, 197, 94, 0.12)',
+                          color: '#15803D',
+                          border: '1px solid rgba(34, 197, 94, 0.25)',
                         }}
                       >
                         +{language === 'bn' ? toBengaliDigits(pivot.delta.fiber) : pivot.delta.fiber} {language === 'bn' ? 'গ্রাম আঁশ' : 'g fiber'}
@@ -1518,8 +1543,9 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
                           fontWeight: 700,
                           padding: '4px 8px',
                           borderRadius: 8,
-                          background: pivot.delta.sodium < 0 ? '#DCFCE7' : '#FEE2E2',
-                          color: pivot.delta.sodium < 0 ? '#166534' : '#991B1B',
+                          background: pivot.delta.sodium < 0 ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                          color: pivot.delta.sodium < 0 ? '#15803D' : '#991B1B',
+                          border: pivot.delta.sodium < 0 ? '1px solid rgba(34, 197, 94, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)',
                         }}
                       >
                         Δ {pivot.delta.sodium > 0 ? '+' : ''}{language === 'bn' ? toBengaliDigits(pivot.delta.sodium) : pivot.delta.sodium} {language === 'bn' ? 'মিগ্রা সোডিয়াম' : 'mg sodium'}
@@ -1531,8 +1557,9 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
                         fontWeight: 700,
                         padding: '4px 8px',
                         borderRadius: 8,
-                        background: pivot.is_live_price ? 'rgba(34, 197, 94, 0.15)' : 'rgba(74, 58, 52, 0.08)',
-                        color: pivot.is_live_price ? '#15803D' : T.ink,
+                        background: pivot.is_live_price ? 'rgba(34, 197, 94, 0.14)' : 'rgba(92, 60, 46, 0.08)',
+                        color: pivot.is_live_price ? '#15803D' : '#3D271D',
+                        border: pivot.is_live_price ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(92, 60, 46, 0.15)',
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: 3,
@@ -1555,16 +1582,18 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: 7,
-                        padding: '8px 16px',
+                        padding: '9px 18px',
                         borderRadius: 999,
-                        background: alreadyAdded ? '#2E7D32' : T.primary,
-                        color: '#FFFFFF',
-                        border: 'none',
+                        background: alreadyAdded
+                          ? 'linear-gradient(145deg, #166534 0%, #0F4522 100%)'
+                          : 'linear-gradient(145deg, #42291E 0%, #24140D 100%)',
+                        color: '#FAF4EC',
+                        border: '1px solid rgba(255, 255, 255, 0.35)',
                         fontFamily: 'Inter',
                         fontSize: 12,
                         fontWeight: 600,
                         cursor: alreadyAdded ? 'default' : isAddingPivot[pivot.id] ? 'wait' : 'pointer',
-                        boxShadow: '0 4px 12px rgba(201, 98, 45, 0.25)',
+                        boxShadow: '0 8px 22px -3px rgba(36, 20, 13, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.35)',
                       }}
                     >
                       {isAddingPivot[pivot.id] ? (
@@ -1589,15 +1618,16 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
                         onClick={onNavigateToGrocery}
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.96 }}
+                        className="champagne-pill"
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: 6,
-                          padding: '8px 14px',
+                          padding: '9px 16px',
                           borderRadius: 999,
-                          background: 'rgba(46, 125, 50, 0.12)',
-                          color: '#166534',
-                          border: '1px solid rgba(46, 125, 50, 0.35)',
+                          background: 'rgba(255, 250, 244, 0.8)',
+                          color: '#15803D',
+                          border: '1px solid rgba(34, 197, 94, 0.35)',
                           fontFamily: 'Inter',
                           fontSize: 12,
                           fontWeight: 600,

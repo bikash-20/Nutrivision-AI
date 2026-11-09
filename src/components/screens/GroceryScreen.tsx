@@ -259,20 +259,20 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
       >
         <h2
           style={{
-            fontFamily: 'Inter',
+            fontFamily: 'var(--font-serif)',
             fontSize: 24,
             fontWeight: 600,
-            color: T.ink,
-            letterSpacing: '-0.02em',
+            color: '#2C1A11',
+            letterSpacing: '-0.015em',
           }}
         >
-          This week's list
+          {isBn ? 'এই সপ্তাহের বাজার তালিকা' : "This week's list"}
         </h2>
         <ConfidenceRing
           value={pct}
           size={48}
           stroke={4}
-          color={overBudget ? T.accentWarn : T.accentGood}
+          color={overBudget ? '#C87428' : '#2D6A4F'}
           delay={0.15}
         >
           <span
@@ -291,29 +291,30 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
         style={{
           fontFamily: 'Inter',
           fontSize: 13,
-          color: T.inkSoft,
+          color: '#684A37',
           margin: '0 0 12px',
           lineHeight: 1.4,
+          fontWeight: 500,
         }}
       >
-        <span className="tnum" style={{ fontWeight: 600 }}>
+        <span className="tnum" style={{ fontWeight: 700, color: '#2C1A11' }}>
           ৳{isBn ? toBengaliDigits(totalSpent) : totalSpent}
         </span>{' '}
         {isBn ? 'খরচ · ' : 'spent · '}
         <span
           className="tnum"
           style={{
-            fontWeight: 600,
-            color: overBudget ? T.accentWarn : T.ink,
+            fontWeight: 700,
+            color: overBudget ? '#C87428' : '#2C1A11',
           }}
         >
           ৳{isBn ? toBengaliDigits(remaining) : remaining}
         </span>{' '}
         {isBn ? 'বাকি আছে মোট ' : 'left of '}
-        <span className="tnum" style={{ fontWeight: 600 }}>
+        <span className="tnum" style={{ fontWeight: 700, color: '#2C1A11' }}>
           ৳{isBn ? toBengaliDigits(weeklyCap) : weeklyCap}
         </span>{' '}
-        <span style={{ color: T.inkMuted }}>
+        <span style={{ color: '#8E674F' }}>
           {isBn ? `(৳${toBengaliDigits(budget)}/দিন × ৭ দিন)` : `(৳${budget}/day × 7 days)`}
         </span>
       </motion.p>
@@ -332,52 +333,50 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
         <motion.button
           type="button"
           onClick={shareList}
-          whileHover={{ y: -1 }}
+          whileHover={{ y: -1, scale: 1.04 }}
           whileTap={{ scale: 0.95 }}
           transition={{ type: 'spring', stiffness: 380, damping: 22 }}
           aria-label={isBn ? 'বাজারের তালিকা শেয়ার করুন' : 'Share grocery list'}
+          className="champagne-pill"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: 5,
-            background: 'none',
-            border: 'none',
-            padding: '4px 6px',
+            background: 'rgba(255, 250, 244, 0.72)',
+            border: '1px solid rgba(255, 255, 255, 0.85)',
+            boxShadow: 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85)',
+            padding: '5px 12px',
+            borderRadius: 999,
             fontFamily: 'Inter',
             fontSize: 11.5,
             fontWeight: 600,
-            color: T.primary,
+            color: '#3D271D',
             cursor: 'pointer',
           }}
         >
-          <Share2 size={12} /> {isBn ? 'তালিকা শেয়ার করুন' : 'Share list'}
+          <Share2 size={12} color="#8E674F" /> {isBn ? 'তালিকা শেয়ার করুন' : 'Share list'}
         </motion.button>
       </motion.div>
 
-      {/* ── Action toolbar: Generate from meals (primary) + Clear all (warning)
-           Both buttons live in one visible bar right under the budget summary.
-           Two earlier revs used near-transparent washes (alpha 0.10–0.12) of
-           the accent colors, which disappeared against the cream card
-           background. These use solid fills with matching border tints, so
-           they're legible at a glance and the destructive action is
-           visually distinct from the constructive one. */}
+      {/* ── Action toolbar ── */}
       <motion.div
         initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.12 }}
+        className="champagne-panel"
         style={{
           display: 'flex',
           flexWrap: 'wrap',
           gap: 10,
-          marginBottom: 14,
+          marginBottom: 16,
           padding: 10,
-          borderRadius: 16,
-          background: T.cardBg,
-          border: '1px solid rgba(74, 58, 52, 0.12)',
+          borderRadius: 20,
+          background: 'rgba(255, 248, 240, 0.65)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.85)',
+          boxShadow: 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85), 0 8px 24px -8px rgba(61, 39, 29, 0.1)',
         }}
       >
-        {/* "Generate from meals" — primary brand brown, always visible
-            when there is any meal history. This is the constructive action. */}
         {mealCount !== null && mealCount > 0 && (
           <motion.button
             type="button"
@@ -396,9 +395,6 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
                 return;
               }
               let added = 0;
-              // Re-fetch the canonical list (now backed by persisted state)
-              // so the dedup check sees everything in groceryState, not
-              // just what the UI happened to render.
               const list = await getGroceryList(profile);
               const existing = new Set(list.groups.flatMap((g) => g.items.map((i) => i.name)));
               for (const name of ingredients) {
@@ -411,7 +407,7 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
                     finalPrice = live.price_bdt;
                   }
                 } catch {
-                  // Fallback to priceInfo
+                  // Fallback
                 }
                 await apiAddItem('Produce', name, finalPrice);
                 existing.add(name);
@@ -425,7 +421,7 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
                 triggerToast(isBn ? 'প্রস্তাবিত সব উপাদান ইতিমধ্যেই তালিকায় রয়েছে' : 'All suggested items already in list');
               }
             }}
-            whileHover={{ y: -1 }}
+            whileHover={{ y: -1, scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
             transition={{ type: 'spring', stiffness: 380, damping: 22 }}
             aria-label={isBn ? 'সাম্প্রতিক খাবারের তালিকা থেকে বাজারের উপাদান তৈরি করুন' : 'Generate grocery items from recent meal pairings'}
@@ -433,27 +429,23 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
               display: 'inline-flex',
               alignItems: 'center',
               gap: 7,
-              padding: '9px 16px',
-              borderRadius: 12,
-              background: T.primary,
-              border: `1px solid ${T.primaryDeep}`,
+              padding: '10px 18px',
+              borderRadius: 999,
+              background: 'linear-gradient(145deg, #42291E 0%, #24140D 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.35)',
               fontFamily: 'Inter',
               fontSize: 12,
               fontWeight: 700,
-              color: '#FFFFFF',
+              color: '#FAF4EC',
               cursor: 'pointer',
-              boxShadow: '0 4px 12px -4px rgba(46, 37, 34, 0.45)',
+              boxShadow: '0 8px 22px -3px rgba(36, 20, 13, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.35)',
               letterSpacing: '0.01em',
             }}
           >
-            <Sparkles size={13} color="#FFFFFF" /> {isBn ? 'খাবার থেকে তৈরি করুন' : 'Generate from meals'}
+            <Sparkles size={13} color="#C87428" /> {isBn ? 'খাবার থেকে তৈরি করুন' : 'Generate from meals'}
           </motion.button>
         )}
 
-        {/* "Clear all" — only visible when there's something to clear. Solid
-            warning red so it's impossible to mistake for the constructive
-            action. Two-tap confirm toggles a deeper "Tap again to confirm"
-            state with a stronger shadow so the user knows they're armed. */}
         {groups.some((g) => g.items.length > 0) && (
           <motion.button
             type="button"
@@ -472,27 +464,28 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
             whileTap={{ scale: 0.96 }}
             transition={{ type: 'spring', stiffness: 380, damping: 22 }}
             aria-label={confirmingClear ? (isBn ? 'নিশ্চিত করতে আবার চাপুন' : 'Tap again to confirm clear all') : (isBn ? 'সব মুছে ফেলুন' : 'Clear all grocery items')}
+            className="champagne-pill"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 7,
-              padding: '9px 16px',
-              borderRadius: 12,
-              background: confirmingClear ? '#A8361A' : T.accentWarn,
-              border: `1px solid ${confirmingClear ? '#7A2412' : '#8A3E1F'}`,
+              padding: '10px 18px',
+              borderRadius: 999,
+              background: confirmingClear ? '#A8361A' : 'rgba(254, 226, 226, 0.72)',
+              border: `1px solid ${confirmingClear ? '#7A2412' : 'rgba(239, 68, 68, 0.35)'}`,
               fontFamily: 'Inter',
               fontSize: 12,
               fontWeight: 700,
-              color: '#FFFFFF',
+              color: confirmingClear ? '#FFFFFF' : '#991B1B',
               cursor: 'pointer',
               letterSpacing: '0.01em',
               boxShadow: confirmingClear
                 ? '0 6px 16px -4px rgba(168, 54, 26, 0.55)'
-                : '0 4px 12px -4px rgba(201, 98, 45, 0.45)',
+                : 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85)',
               transition: 'background 180ms ease, box-shadow 180ms ease, border-color 180ms ease',
             }}
           >
-            <Trash size={13} color="#FFFFFF" />{' '}
+            <Trash size={13} color={confirmingClear ? '#FFFFFF' : '#DC2626'} />{' '}
             {confirmingClear ? (isBn ? 'নিশ্চিত করতে চাপুন' : 'Tap to confirm') : (isBn ? 'সব মুছুন' : 'Clear all')}
           </motion.button>
         )}
@@ -574,15 +567,19 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, x: -40, scale: 0.96 }}
                     transition={{ type: 'spring', stiffness: 320, damping: 22 }}
-                    className="glass-card"
+                    className="champagne-panel"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      borderRadius: 14,
-                      padding: '10px 14px',
-                      marginBottom: 8,
-                      border: '1px solid rgba(74, 58, 52, 0.10)',
+                      borderRadius: 18,
+                      padding: '12px 16px',
+                      marginBottom: 10,
+                      background: 'rgba(255, 248, 240, 0.72)',
+                      backdropFilter: 'blur(20px)',
+                      WebkitBackdropFilter: 'blur(20px)',
+                      border: '1px solid rgba(255, 255, 255, 0.85)',
+                      boxShadow: 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85), 0 6px 18px -6px rgba(61, 39, 29, 0.08)',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
@@ -601,11 +598,13 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
                         style={{
                           width: 22,
                           height: 22,
-                          borderRadius: 6,
-                          background: item.checked ? T.primary : T.cardBg,
+                          borderRadius: 7,
+                          background: item.checked
+                            ? 'linear-gradient(145deg, #42291E 0%, #24140D 100%)'
+                            : 'rgba(255, 250, 244, 0.85)',
                           border: item.checked
-                            ? `1px solid ${T.primary}`
-                            : '1px solid rgba(74, 58, 52, 0.25)',
+                            ? '1px solid rgba(255, 255, 255, 0.4)'
+                            : '1px solid rgba(92, 60, 46, 0.28)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -613,8 +612,8 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
                           cursor: 'pointer',
                           padding: 0,
                           boxShadow: item.checked
-                            ? `0 4px 10px -3px ${T.primary}55`
-                            : 'none',
+                            ? '0 3px 10px -2px rgba(36, 20, 13, 0.5), inset 0 1px 1px rgba(255,255,255,0.4)'
+                            : 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85)',
                         }}
                       >
                         <AnimatePresence>
@@ -627,7 +626,7 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
                               transition={{ duration: 0.18 }}
                               style={{ display: 'inline-flex' }}
                             >
-                              <Check size={14} color="#FFFFFF" strokeWidth={3} />
+                              <Check size={13} color="#FFFFFF" strokeWidth={3} />
                             </motion.span>
                           )}
                         </AnimatePresence>
@@ -636,11 +635,11 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
                       <span
                         style={{
                           fontFamily: 'Inter',
-                          fontSize: 14,
-                          color: item.checked ? T.inkSoft : T.ink,
+                          fontSize: 14.5,
+                          color: item.checked ? '#96735B' : '#2C1A11',
                           fontWeight: item.checked ? 500 : 600,
                           textDecoration: item.checked ? 'line-through' : 'none',
-                          textDecorationColor: T.inkSoft,
+                          textDecorationColor: '#96735B',
                           flex: 1,
                           minWidth: 0,
                           overflow: 'hidden',
@@ -670,9 +669,9 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
                             fontFamily: "'Inter', sans-serif",
                             fontSize: 12,
                             fontWeight: 600,
-                            color: T.ink,
-                            background: T.cardBg,
-                            border: `1px solid ${T.primary}`,
+                            color: '#2C1A11',
+                            background: 'rgba(255, 250, 244, 0.9)',
+                            border: '1.5px solid #C87428',
                             borderRadius: 8,
                             padding: '4px 8px',
                             outline: 'none',
@@ -687,20 +686,22 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
                           whileTap={{ scale: 0.94 }}
                           transition={{ type: 'spring', stiffness: 380, damping: 22 }}
                           aria-label={isBn ? `${foodName(item.name)}-এর দাম পরিবর্তন করুন, বর্তমান দাম ৳${toBengaliDigits(item.price)}` : `Edit price of ${foodName(item.name)}, currently ৳${item.price}`}
-                          className="tnum"
+                          className="tnum champagne-pill"
                           style={{
-                            background: 'none',
-                            border: 'none',
-                            padding: '4px 6px',
+                            background: 'rgba(255, 250, 244, 0.65)',
+                            border: '1px solid rgba(255, 255, 255, 0.85)',
+                            boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.8)',
+                            borderRadius: 8,
+                            padding: '4px 8px',
                             fontFamily: "'Inter', sans-serif",
                             fontSize: 13,
-                            color: item.checked ? T.inkSoft : T.ink,
-                            fontWeight: 600,
+                            color: item.checked ? '#96735B' : '#3D271D',
+                            fontWeight: 700,
                             cursor: 'pointer',
                             minHeight: 28,
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: 4,
+                            gap: 5,
                           }}
                         >
                           <span>৳{isBn ? toBengaliDigits(item.price) : item.price}</span>
@@ -711,18 +712,19 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: 3,
-                                fontSize: 9,
+                                fontSize: 9.5,
                                 fontWeight: 700,
                                 color: '#15803D',
-                                background: 'rgba(34, 197, 94, 0.12)',
-                                padding: '1px 5px',
+                                background: 'rgba(34, 197, 94, 0.14)',
+                                border: '1px solid rgba(34, 197, 94, 0.3)',
+                                padding: '1px 6px',
                                 borderRadius: 6,
                               }}
                             >
                               <span
                                 style={{
-                                  width: 4,
-                                  height: 4,
+                                  width: 5,
+                                  height: 5,
                                   borderRadius: '50%',
                                   background: '#22C55E',
                                   display: 'inline-block',
@@ -742,19 +744,20 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
                         transition={{ type: 'spring', stiffness: 380, damping: 22 }}
                         aria-label={isBn ? `${foodName(item.name)} মুছে ফেলুন` : `Remove ${foodName(item.name)}`}
                         style={{
-                          width: 24,
-                          height: 24,
+                          width: 26,
+                          height: 26,
                           borderRadius: '50%',
-                          background: 'rgba(74, 58, 52, 0.08)',
-                          border: '1px solid rgba(74, 58, 52, 0.12)',
+                          background: 'rgba(255, 250, 244, 0.72)',
+                          border: '1px solid rgba(255, 255, 255, 0.85)',
                           display: 'inline-flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           cursor: 'pointer',
                           padding: 0,
+                          boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.8)',
                         }}
                       >
-                        <Trash2 size={11} color={T.inkSoft} strokeWidth={2} />
+                        <Trash2 size={12} color="#8E674F" strokeWidth={2} />
                       </motion.button>
                     </div>
                   </motion.div>

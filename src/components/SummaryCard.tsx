@@ -52,14 +52,16 @@ export default function SummaryCard({ totals, itemCount, profile }: SummaryCardP
     <LocalizedContent>
     <motion.div
       layout
-      className="glass-card"
+      className="champagne-panel"
       style={{
-        borderRadius: 18,
-        padding: open ? '14px 16px' : '10px 14px',
-        marginBottom: 12,
-        background: 'rgba(255, 255, 255, 0.90)',
-        border: '1px solid rgba(74, 58, 52, 0.14)',
-        boxShadow: '0 6px 20px rgba(46, 37, 34, 0.08)',
+        borderRadius: 22,
+        padding: open ? '16px 18px' : '12px 16px',
+        marginBottom: 14,
+        background: 'rgba(255, 248, 240, 0.68)',
+        backdropFilter: 'blur(28px) saturate(160%)',
+        WebkitBackdropFilter: 'blur(28px) saturate(160%)',
+        border: '1.5px solid rgba(255, 255, 255, 0.85)',
+        boxShadow: 'inset 0 1.5px 2px rgba(255, 255, 255, 0.9), 0 16px 40px -10px rgba(61, 39, 29, 0.16)',
       }}
     >
       <div
@@ -72,21 +74,33 @@ export default function SummaryCard({ totals, itemCount, profile }: SummaryCardP
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           <div
             style={{
-              fontFamily: 'Inter',
-              fontSize: 13,
-              fontWeight: 700,
-              color: T.ink,
+              fontFamily: 'var(--font-serif)',
+              fontSize: 14,
+              fontWeight: 600,
+              color: '#2C1A11',
               whiteSpace: 'nowrap',
+              letterSpacing: '-0.01em',
             }}
           >
             🍽️ {isBn ? toBengaliDigits(itemCount) : itemCount} {isBn ? 'টি খাবার' : itemCount === 1 ? 'item' : 'items'}
           </div>
-          <span style={{ color: T.inkMuted, fontSize: 12 }}>·</span>
+          <span style={{ color: '#96735B', fontSize: 12 }}>·</span>
           <span
-            className="kcal-chip"
-            style={{ fontSize: 12, padding: '3px 8px', fontWeight: 700 }}
+            className="kcal-chip champagne-pill"
+            style={{
+              fontSize: 12,
+              padding: '3px 9px',
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, rgba(200, 116, 40, 0.16) 0%, rgba(200, 116, 40, 0.08) 100%)',
+              border: '1px solid rgba(200, 116, 40, 0.35)',
+              color: '#9C4D11',
+              borderRadius: 999,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
           >
-            <Flame size={11} /> {isBn ? toBengaliDigits(Math.round(kcal)) : Math.round(kcal)} {isBn ? 'কিলোক্যালরি' : 'kcal'}
+            <Flame size={12} color="#C87428" /> {isBn ? toBengaliDigits(Math.round(kcal)) : Math.round(kcal)} {isBn ? 'কিলোক্যালরি' : 'kcal'}
           </span>
         </div>
 
@@ -97,12 +111,14 @@ export default function SummaryCard({ totals, itemCount, profile }: SummaryCardP
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.92 }}
             title={showCurve ? (isBn ? 'ম্যাক্রো বিবরণ দেখুন' : 'View macros') : (isBn ? 'গতিপথ কার্ভ চার্ট দেখুন' : 'View trajectory curve')}
+            className="champagne-pill"
             style={{
-              padding: '4px 8px',
-              borderRadius: 8,
-              background: showCurve ? 'rgba(201, 98, 45, 0.15)' : 'rgba(74, 58, 52, 0.07)',
-              color: showCurve ? T.primary : T.ink,
-              border: 'none',
+              padding: '5px 10px',
+              borderRadius: 999,
+              background: showCurve ? 'linear-gradient(145deg, #42291E 0%, #24140D 100%)' : 'rgba(255, 250, 244, 0.7)',
+              color: showCurve ? '#FAF4EC' : '#3D271D',
+              border: showCurve ? '1px solid rgba(255, 255, 255, 0.35)' : '1px solid rgba(255, 255, 255, 0.85)',
+              boxShadow: showCurve ? '0 4px 12px -2px rgba(36, 20, 13, 0.45)' : 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85)',
               fontFamily: 'Inter',
               fontSize: 11,
               fontWeight: 700,
@@ -123,12 +139,14 @@ export default function SummaryCard({ totals, itemCount, profile }: SummaryCardP
             transition={{ type: 'spring', stiffness: 380, damping: 22 }}
             aria-label={open ? (isBn ? 'সারসংক্ষেপ গুটিয়ে নিন' : 'Collapse summary') : (isBn ? 'সারসংক্ষেপ প্রসারিত করুন' : 'Expand summary')}
             aria-expanded={open}
+            className="champagne-pill"
             style={{
               width: 28,
               height: 28,
               borderRadius: '50%',
-              background: 'rgba(249, 242, 228, 0.7)',
-              border: '1px solid rgba(74, 58, 52, 0.15)',
+              background: 'rgba(255, 250, 244, 0.7)',
+              border: '1px solid rgba(255, 255, 255, 0.85)',
+              boxShadow: 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85)',
               cursor: 'pointer',
               padding: 0,
               display: 'inline-flex',
@@ -187,7 +205,7 @@ export default function SummaryCard({ totals, itemCount, profile }: SummaryCardP
                         fontFamily: 'Inter',
                         fontSize: 11.5,
                         fontWeight: 700,
-                        color: T.ink,
+                        color: '#2C1A11',
                       }}
                     >
                       {m.label}
@@ -195,11 +213,11 @@ export default function SummaryCard({ totals, itemCount, profile }: SummaryCardP
                     <div
                       style={{
                         height: 8,
-                        borderRadius: 4,
-                        background: 'rgba(74, 58, 52, 0.08)',
+                        borderRadius: 999,
+                        background: 'rgba(92, 60, 46, 0.12)',
                         overflow: 'hidden',
-                        border: '1px solid rgba(255, 255, 255, 0.4)',
-                        boxShadow: 'inset 0 1px 2px rgba(46, 37, 34, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.65)',
+                        boxShadow: 'inset 0 1px 2px rgba(61, 39, 29, 0.12)',
                       }}
                     >
                       <motion.div
@@ -208,8 +226,13 @@ export default function SummaryCard({ totals, itemCount, profile }: SummaryCardP
                         transition={{ type: 'spring', stiffness: 100, damping: 18 }}
                         style={{
                           height: '100%',
-                          background: m.color,
-                          borderRadius: 4,
+                          background: m.label.includes('Prot') || m.label.includes('প্রোটিন')
+                            ? 'linear-gradient(90deg, #684A37 0%, #3D271D 100%)'
+                            : m.label.includes('Carb') || m.label.includes('কার্বো')
+                            ? 'linear-gradient(90deg, #E08238 0%, #C87428 100%)'
+                            : 'linear-gradient(90deg, #3B8258 0%, #2D6A4F 100%)',
+                          borderRadius: 999,
+                          boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
                         }}
                       />
                     </div>
@@ -219,7 +242,7 @@ export default function SummaryCard({ totals, itemCount, profile }: SummaryCardP
                         fontFamily: "'Inter', sans-serif",
                         fontSize: 11.5,
                         fontWeight: 700,
-                        color: T.ink,
+                        color: '#3D271D',
                         textAlign: 'right',
                       }}
                     >

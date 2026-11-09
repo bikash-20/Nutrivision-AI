@@ -28,14 +28,16 @@ const Pill = memo(function Pill({
 }: PillProps) {
   const { theme } = useTokens();
   const isDark = theme === 'dark';
-  const activeBg = tone === 'warning' ? T.accentWarn : T.primary;
-  const activeColor = '#FFFFFF';
+  const activeBg = tone === 'warning'
+    ? 'linear-gradient(145deg, #9C3818 0%, #7A240E 100%)'
+    : 'linear-gradient(145deg, #42291E 0%, #24140D 100%)';
+  const activeColor = '#FAF4EC';
 
   return (
     <LocalizedContent>
       <motion.button
         type="button"
-        className="profile-option-pill"
+        className="profile-option-pill champagne-pill"
         onClick={onClick}
         aria-pressed={!!active}
         aria-label={ariaLabel}
@@ -44,26 +46,26 @@ const Pill = memo(function Pill({
         transition={{ type: 'spring', stiffness: 380, damping: 22 }}
         style={{
           position: 'relative',
-          background: active ? activeBg : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(249, 242, 228, 0.7)'),
-          color: active ? activeColor : T.ink,
+          background: active ? activeBg : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 250, 244, 0.72)'),
+          color: active ? activeColor : (isDark ? '#FAF4EC' : '#2C1A11'),
           border: active
-            ? `1px solid ${activeBg}`
+            ? '1px solid rgba(255, 255, 255, 0.35)'
             : isDark
-            ? '1px solid rgba(255, 255, 255, 0.14)'
-            : '1px solid rgba(74, 58, 52, 0.18)',
-          borderRadius: 20,
-          padding: '8px 14px',
+            ? '1px solid rgba(255, 255, 255, 0.16)'
+            : '1px solid rgba(255, 255, 255, 0.85)',
+          borderRadius: 999,
+          padding: '8px 16px',
           fontFamily: 'Inter',
           fontSize: 12.5,
           fontWeight: 600,
           cursor: 'pointer',
           whiteSpace: 'nowrap',
           minHeight: 36,
-          backdropFilter: 'blur(8px) saturate(130%)',
-          WebkitBackdropFilter: 'blur(8px) saturate(130%)',
+          backdropFilter: 'blur(16px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(16px) saturate(140%)',
           boxShadow: active
-            ? `0 6px 14px -4px ${activeBg}80, inset 0 1px 0 rgba(255,255,255,0.35)`
-            : 'inset 0 1px 0 rgba(255,255,255,0.6), 0 2px 6px -3px rgba(46,37,34,0.12)',
+            ? '0 8px 20px -4px rgba(36, 20, 13, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.35)'
+            : 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85), 0 2px 6px -3px rgba(61, 39, 29, 0.08)',
           transition:
             'background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease',
         }}

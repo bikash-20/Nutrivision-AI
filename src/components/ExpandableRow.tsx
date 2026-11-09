@@ -181,21 +181,23 @@ export default function ExpandableRow({
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUpLeave}
       onPointerLeave={onPointerUpLeave}
-      className={pulseHalo ? 'halo-pulse' : ''}
+      className={`champagne-panel ${pulseHalo ? 'halo-pulse' : ''}`}
       style={{
         position: 'relative',
-        borderRadius: 18,
-        background: T.cardBg,
+        borderRadius: 20,
+        background: 'rgba(255, 248, 240, 0.68)',
+        backdropFilter: 'blur(24px) saturate(150%)',
+        WebkitBackdropFilter: 'blur(24px) saturate(150%)',
         border: isSelected
-          ? `1.5px solid ${T.primary}`
-          : `1px solid rgba(74, 58, 52, 0.10)`,
+          ? '1.5px solid #C87428'
+          : '1px solid rgba(255, 255, 255, 0.85)',
         boxShadow: pulseHalo
           ? undefined
-          : '0 6px 18px -8px rgba(46, 37, 34, 0.16)',
+          : 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85), 0 8px 24px -8px rgba(61, 39, 29, 0.12)',
         overflow: 'hidden',
         touchAction: 'pan-y',
         cursor: 'pointer',
-        marginBottom: 8,
+        marginBottom: 10,
       }}
     >
       <div className="swipe-bg left"><Trash2 size={16} /></div>

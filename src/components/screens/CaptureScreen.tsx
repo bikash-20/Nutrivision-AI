@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Camera, Sparkles, ScanLine, RotateCcw, X, Upload, UtensilsCrossed, History, ShoppingBag } from 'lucide-react';
+import { Camera, Sparkles, ScanLine, RotateCcw, X, Upload, UtensilsCrossed, History, ShoppingBag, ChevronRight, Clock } from 'lucide-react';
 import { T, getGreeting, NUTRITION_DB } from '../../data';
 import { useTokens } from '../../theme/useTokens';
 import { getPhotoUploadHashFromBytes, getTodaySummary, getMealHistory } from '../../lib/api';
@@ -42,9 +42,9 @@ function Thumbnail({ meal, emojisByName }: { meal: MealEntry; emojisByName: Reco
     <div
       aria-hidden="true"
       style={{
-        width: 40,
-        height: 40,
-        borderRadius: 10,
+        width: 48,
+        height: 48,
+        borderRadius: 14,
         flexShrink: 0,
         overflow: 'hidden',
         display: 'flex',
@@ -54,7 +54,8 @@ function Thumbnail({ meal, emojisByName }: { meal: MealEntry; emojisByName: Reco
         backgroundColor: meal.photoUrl ? undefined : fallback.bg,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        fontSize: 20,
+        boxShadow: '0 4px 10px rgba(61, 39, 29, 0.15)',
+        fontSize: 22,
         lineHeight: 1,
       }}
     >
@@ -1040,6 +1041,106 @@ export default function CaptureScreen({
         </motion.div>
       )}
 
+      {/* ── Quick Action Pills (Log Meal, Recent, Grocery) ── */}
+      {phase === 'idle' && !captured && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            marginBottom: 16,
+            flexWrap: 'wrap',
+          }}
+        >
+          {/* Log Meal Pill */}
+          <motion.button
+            type="button"
+            onClick={handleTapCard}
+            whileHover={{ y: -1, scale: 1.02 }}
+            whileTap={{ scale: 0.96 }}
+            className="champagne-pill"
+            style={{
+              padding: '9px 18px',
+              borderRadius: 24,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'linear-gradient(180deg, rgba(255, 252, 248, 0.75) 0%, rgba(242, 226, 212, 0.5) 100%)',
+              border: '1.2px solid rgba(255, 255, 255, 0.85)',
+              boxShadow: '0 4px 14px -3px rgba(61, 39, 29, 0.10), inset 0 1px 1.5px rgba(255, 255, 255, 0.95)',
+              color: '#3D271D',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            <UtensilsCrossed size={16} strokeWidth={2.2} color="#5C3C2E" />
+            <span>{isBn ? 'খাবার যোগ করুন' : 'Log Meal'}</span>
+          </motion.button>
+
+          {/* Recent Pill */}
+          <motion.button
+            type="button"
+            onClick={() => {
+              const el = document.getElementById('recent-meals-section');
+              el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            whileHover={{ y: -1, scale: 1.02 }}
+            whileTap={{ scale: 0.96 }}
+            className="champagne-pill"
+            style={{
+              padding: '9px 18px',
+              borderRadius: 24,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'linear-gradient(180deg, rgba(255, 252, 248, 0.75) 0%, rgba(242, 226, 212, 0.5) 100%)',
+              border: '1.2px solid rgba(255, 255, 255, 0.85)',
+              boxShadow: '0 4px 14px -3px rgba(61, 39, 29, 0.10), inset 0 1px 1.5px rgba(255, 255, 255, 0.95)',
+              color: '#3D271D',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            <History size={16} strokeWidth={2.2} color="#C87428" />
+            <span>{isBn ? 'সাম্প্রতিক' : 'Recent'}</span>
+          </motion.button>
+
+          {/* Grocery Pill */}
+          <motion.button
+            type="button"
+            onClick={() => onNavigateTab?.(TAB_GROCERY)}
+            whileHover={{ y: -1, scale: 1.02 }}
+            whileTap={{ scale: 0.96 }}
+            className="champagne-pill"
+            style={{
+              padding: '9px 18px',
+              borderRadius: 24,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'linear-gradient(180deg, rgba(255, 252, 248, 0.75) 0%, rgba(242, 226, 212, 0.5) 100%)',
+              border: '1.2px solid rgba(255, 255, 255, 0.85)',
+              boxShadow: '0 4px 14px -3px rgba(61, 39, 29, 0.10), inset 0 1px 1.5px rgba(255, 255, 255, 0.95)',
+              color: '#3D271D',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            <ShoppingBag size={16} strokeWidth={2.2} color="#2D7A4F" />
+            <span>{isBn ? 'বাজার' : 'Grocery'}</span>
+          </motion.button>
+        </motion.div>
+      )}
+
       {/* ── Today's Revenue-Style Trajectory Chart ──────────────── */}
       {phase === 'idle' && !captured && todaySummary && (
         <div style={{ marginTop: 16 }}>
@@ -1116,31 +1217,41 @@ export default function CaptureScreen({
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: 0.35 }}
-          style={{ marginTop: 18, scrollMarginTop: 90 }}
+          style={{ marginTop: 20, scrollMarginTop: 90 }}
         >
-          <div style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, color: T.inkSoft, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
-            {isBn ? 'সাম্প্রতিক খাবার' : 'Recent Meals'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <span style={{ width: 4, height: 14, borderRadius: 2, background: '#8E674F' }} />
+            <span
+              style={{
+                fontFamily: 'var(--font-sans)',
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#7C5A44',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+              }}
+            >
+              {isBn ? 'সাম্প্রতিক খাবার' : 'Recent Meals'}
+            </span>
           </div>
 
-          {/* Empty state — only render after we've confirmed history is
-              loaded and truly empty. While loading, the skeleton above holds
-              the slot so we don't flash. */}
+          {/* Empty state */}
           {!historyLoading && recentMeals.length === 0 && (
             <div
-              className="glass-card"
+              className="glass-card champagne-panel"
               style={{
-                borderRadius: 14,
-                padding: '14px 16px',
+                borderRadius: 18,
+                padding: '16px 18px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 10,
-                color: T.inkSoft,
-                fontFamily: 'Inter',
-                fontSize: 13,
+                gap: 12,
+                color: '#684A37',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 13.5,
                 lineHeight: 1.4,
               }}
             >
-              <History size={16} color={T.inkMuted} strokeWidth={1.8} />
+              <History size={18} color="#96735B" strokeWidth={1.8} />
               <span>
                 {isBn ? 'খাবার নথিভুক্ত করা হলে তা এখানে দেখা যাবে।' : 'Your last few meals will appear here once you log them.'}
               </span>
@@ -1148,32 +1259,84 @@ export default function CaptureScreen({
           )}
 
           {recentMeals.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {recentMeals.map((meal) => (
                 <motion.div
                   key={meal.id}
-                  className="glass-card"
+                  className="glass-card champagne-panel"
+                  whileHover={{ y: -2 }}
+                  transition={{ type: 'spring', stiffness: 380, damping: 24 }}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 10,
-                    borderRadius: 14,
-                    padding: '8px 14px 8px 8px',
+                    gap: 12,
+                    borderRadius: 20,
+                    padding: '10px 14px 10px 10px',
+                    background: 'linear-gradient(135deg, rgba(255, 250, 244, 0.65) 0%, rgba(246, 234, 222, 0.45) 100%)',
+                    border: '1.2px solid rgba(255, 255, 255, 0.85)',
+                    boxShadow: '0 8px 24px -6px rgba(61, 39, 29, 0.10), inset 0 1px 1.5px rgba(255, 255, 255, 0.9)',
                   }}
                 >
                   <Thumbnail meal={meal} emojisByName={descriptorEmojiMap} />
 
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: T.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div
+                      style={{
+                        fontFamily: 'var(--font-sans)',
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: '#2C1A11',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       {meal.items.map((item) => foodName(item.name, item.name_bn)).join(', ') || meal.label}
                     </div>
-                    <div style={{ fontFamily: 'Inter', fontSize: 11, color: T.inkSoft, marginTop: 2 }}>
-                      {formatRelative(meal.date, new Date(), isBn ? 'bn' : 'en')} · {isBn ? toBengaliDigits(meal.items.length) : meal.items.length} {isBn ? 'টি খাবার' : meal.items.length === 1 ? 'item' : 'items'}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        fontFamily: 'var(--font-sans)',
+                        fontSize: 11.5,
+                        color: '#7C5A44',
+                        marginTop: 3,
+                      }}
+                    >
+                      <Clock size={12} strokeWidth={2} />
+                      <span>
+                        {formatRelative(meal.date, new Date(), isBn ? 'bn' : 'en')} · {isBn ? toBengaliDigits(meal.items.length) : meal.items.length} {isBn ? 'টি উপাদান' : meal.items.length === 1 ? 'item' : 'items'}
+                      </span>
                     </div>
                   </div>
-                  <div className="tnum" style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: T.accentAmber, flexShrink: 0, marginLeft: 8 }}>
-                    {isBn ? toBengaliDigits(Math.round(meal.totals.kcal)) : Math.round(meal.totals.kcal)}
-                    <span style={{ fontSize: 10, fontWeight: 500, color: T.inkSoft }}> {isBn ? 'কিলোক্যালরি' : 'kcal'}</span>
+
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: '6px 12px',
+                      borderRadius: 20,
+                      background: 'linear-gradient(180deg, rgba(255, 250, 244, 0.85) 0%, rgba(242, 226, 212, 0.65) 100%)',
+                      border: '1px solid rgba(255, 255, 255, 0.9)',
+                      boxShadow: '0 2px 8px -2px rgba(61, 39, 29, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span
+                      className="tnum"
+                      style={{
+                        fontFamily: 'var(--font-sans)',
+                        fontSize: 13.5,
+                        fontWeight: 700,
+                        color: '#3D271D',
+                      }}
+                    >
+                      {isBn ? toBengaliDigits(Math.round(meal.totals.kcal)) : Math.round(meal.totals.kcal)}
+                      <span style={{ fontSize: 10, fontWeight: 500, color: '#7C5A44' }}> {isBn ? 'কিলোক্যালরি' : 'kcal'}</span>
+                    </span>
+                    <ChevronRight size={14} color="#8E674F" strokeWidth={2.4} />
                   </div>
                 </motion.div>
               ))}

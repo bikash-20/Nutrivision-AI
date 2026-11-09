@@ -46,18 +46,19 @@ export default function StepDots({ active, onChange }: StepDotsProps) {
             <motion.div
               initial={false}
               animate={{
-                width: isActive ? 20 : 8,
-                backgroundColor: isActive ? T.earth6 : 'rgba(249, 242, 228, 0.45)',
+                width: isActive ? 22 : 6,
+                borderRadius: isActive ? 4 : '50%',
+                backgroundColor: isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.42)',
+                boxShadow: isActive ? '0 0 10px rgba(255, 255, 255, 0.75)' : 'none',
               }}
               whileHover={
                 !isActive
-                  ? { backgroundColor: 'rgba(249, 242, 228, 0.85)' }
+                  ? { backgroundColor: 'rgba(255, 255, 255, 0.85)' }
                   : {}
               }
               transition={{ type: 'spring', stiffness: 320, damping: 26 }}
               style={{
-                height: 4,
-                borderRadius: 2,
+                height: 5,
               }}
             />
 

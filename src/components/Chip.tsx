@@ -41,31 +41,36 @@ const Chip = memo(function Chip({
         whileHover={{ y: -1, scale: 1.03 }}
         whileTap={{ scale: 0.94 }}
         transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+        className="champagne-pill"
         style={{
           position: 'relative',
           display: 'inline-flex',
           alignItems: 'center',
           gap: 6,
           padding,
-          borderRadius: 18,
-          background: active ? T.primary : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(249, 242, 228, 0.7)'),
-          border: active
-            ? `1px solid ${T.primary}`
+          borderRadius: 999,
+          background: active
+            ? 'linear-gradient(145deg, #42291E 0%, #24140D 100%)'
             : isDark
-            ? '1px solid rgba(255, 255, 255, 0.14)'
-            : '1px solid rgba(74, 58, 52, 0.15)',
+            ? 'rgba(255, 255, 255, 0.08)'
+            : 'rgba(255, 250, 244, 0.72)',
+          border: active
+            ? '1px solid rgba(255, 255, 255, 0.35)'
+            : isDark
+            ? '1px solid rgba(255, 255, 255, 0.16)'
+            : '1px solid rgba(255, 255, 255, 0.85)',
           boxShadow: active
-            ? `0 6px 14px -4px ${T.primary}66, inset 0 1px 0 rgba(255,255,255,0.30)`
-            : 'inset 0 1px 0 rgba(255,255,255,0.6), 0 2px 6px -3px rgba(46,37,34,0.10)',
+            ? '0 8px 20px -4px rgba(36, 20, 13, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.35)'
+            : 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85), 0 2px 6px -3px rgba(61, 39, 29, 0.08)',
           cursor: 'pointer',
           fontFamily: 'Inter',
           fontSize,
           fontWeight: 600,
-          color: active ? '#FFFFFF' : T.ink,
+          color: active ? '#FAF4EC' : (isDark ? '#FAF4EC' : '#2C1A11'),
           whiteSpace: 'nowrap',
           minHeight: 36,
-          backdropFilter: 'blur(8px) saturate(130%)',
-          WebkitBackdropFilter: 'blur(8px) saturate(130%)',
+          backdropFilter: 'blur(16px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(16px) saturate(140%)',
           transition:
             'background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease',
         }}

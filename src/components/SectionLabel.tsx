@@ -26,9 +26,9 @@ export default function SectionLabel({ children, action, onAction }: SectionLabe
         <div
           style={{
             fontFamily: 'Inter',
-            fontSize: 11,
-            fontWeight: 600,
-            color: T.inkSoft,
+            fontSize: 11.5,
+            fontWeight: 700,
+            color: isDark ? '#D8C4B6' : '#7C5A44',
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
           }}
@@ -40,27 +40,29 @@ export default function SectionLabel({ children, action, onAction }: SectionLabe
             type="button"
             onClick={onAction}
             aria-label={typeof action === 'string' ? action : 'Action'}
+            className="champagne-pill"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 4,
-              background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(74, 58, 52, 0.08)',
-              border: isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1px solid rgba(74, 58, 52, 0.18)',
-              padding: '5px 10px',
+              background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 250, 244, 0.75)',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.16)' : '1px solid rgba(255, 255, 255, 0.85)',
+              boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.8)',
+              padding: '5px 12px',
               borderRadius: 999,
               fontFamily: 'Inter',
               fontSize: 11,
-              fontWeight: 600,
-              color: T.primary,
+              fontWeight: 700,
+              color: isDark ? '#FAF4EC' : '#3D271D',
               cursor: 'pointer',
               minHeight: 28,
               transition: 'background 160ms ease, transform 160ms ease, box-shadow 160ms ease',
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(74, 58, 52, 0.14)';
+              (e.currentTarget as HTMLButtonElement).style.background = isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(255, 255, 255, 0.9)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(74, 58, 52, 0.08)';
+              (e.currentTarget as HTMLButtonElement).style.background = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 250, 244, 0.75)';
             }}
           >
             {action}

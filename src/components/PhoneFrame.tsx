@@ -79,23 +79,27 @@ export default function PhoneFrame({ children, headerRight, footer }: PhoneFrame
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
+              gap: 10,
             }}
           >
             <img
               src="/icon-96.png"
               alt=""
               aria-hidden="true"
-              width={24}
-              height={24}
-              style={{ borderRadius: 6 }}
+              width={28}
+              height={28}
+              style={{
+                borderRadius: 8,
+                boxShadow: '0 4px 12px rgba(61, 39, 29, 0.22)',
+              }}
             />
             <span
               style={{
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "var(--font-serif)",
                 fontWeight: 600,
-                fontSize: 20,
-                color: T.earth6,
+                fontSize: 22,
+                color: T.ink,
+                letterSpacing: '-0.015em',
               }}
             >
               {isBn ? 'নিউট্রিভিশন' : 'NutriVision'}

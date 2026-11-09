@@ -19,13 +19,14 @@ export default function StepIndicator({ step, onStep }: StepIndicatorProps) {
   return (
     <LocalizedContent>
     <div
-      className="results-step-indicator"
+      className="results-step-indicator champagne-pill"
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 6,
-        padding: '4px 0 2px',
+        gap: 8,
+        padding: '5px 12px',
         width: '100%',
+        borderRadius: 999,
       }}
       role="progressbar"
       aria-valuemin={1}
@@ -54,7 +55,7 @@ export default function StepIndicator({ step, onStep }: StepIndicatorProps) {
               className="results-step-button"
               type="button"
               onClick={() => onStep?.(i)}
-              whileHover={{ y: -1 }}
+              whileHover={{ y: -1, scale: 1.05 }}
               whileTap={{ scale: 0.92 }}
               transition={{ type: 'spring', stiffness: 380, damping: 22 }}
               aria-label={`Go to step ${i + 1}: ${displayLabel}`}
@@ -63,24 +64,34 @@ export default function StepIndicator({ step, onStep }: StepIndicatorProps) {
                 width: 24,
                 height: 24,
                 borderRadius: '50%',
-                border: 'none',
+                border: current
+                  ? '1px solid rgba(255, 255, 255, 0.45)'
+                  : done
+                  ? '1px solid rgba(46, 125, 50, 0.35)'
+                  : '1px solid rgba(255, 255, 255, 0.7)',
                 cursor: 'pointer',
                 padding: 0,
-                background: done || current ? T.primary : 'rgba(249, 242, 228, 0.8)',
+                background: current
+                  ? 'linear-gradient(145deg, #42291E 0%, #24140D 100%)'
+                  : done
+                  ? 'linear-gradient(145deg, #166534 0%, #0F4522 100%)'
+                  : 'rgba(255, 250, 244, 0.7)',
                 boxShadow: current
-                  ? `0 4px 10px -3px ${T.primary}66, inset 0 1px 0 rgba(255,255,255,0.4)`
-                  : 'inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 3px rgba(46,37,34,0.1)',
+                  ? '0 4px 12px -2px rgba(36, 20, 13, 0.5), inset 0 1px 1px rgba(255,255,255,0.45)'
+                  : done
+                  ? '0 3px 8px -2px rgba(22, 101, 52, 0.35)'
+                  : 'inset 0 1px 1px rgba(255,255,255,0.8)',
               }}
             >
               {done ? (
-                <Check size={12} color="#FFFFFF" strokeWidth={3} />
+                <Check size={11} color="#FFFFFF" strokeWidth={3} />
               ) : (
                 <span
                   style={{
                     fontFamily: 'Inter',
                     fontSize: 11,
                     fontWeight: 700,
-                    color: current ? '#FFFFFF' : T.inkSoft,
+                    color: current ? '#FFFFFF' : '#684A37',
                   }}
                 >
                   {isBn ? toBengaliDigits(i + 1) : i + 1}
@@ -94,11 +105,12 @@ export default function StepIndicator({ step, onStep }: StepIndicatorProps) {
                 fontFamily: 'Inter',
                 fontSize: 11,
                 fontWeight: current ? 700 : 500,
-                color: current ? T.ink : T.inkSoft,
+                color: current ? '#2C1A11' : '#8E674F',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 cursor: 'pointer',
+                letterSpacing: '-0.01em',
               }}
             >
               {displayLabel}
@@ -107,13 +119,15 @@ export default function StepIndicator({ step, onStep }: StepIndicatorProps) {
             {i < STEP_LABELS.length - 1 && (
               <motion.span
                 className="results-step-separator"
-                animate={{ opacity: done ? 1 : 0.35 }}
+                animate={{ opacity: done ? 1 : 0.4 }}
                 transition={{ duration: 0.2 }}
                 style={{
                   flex: 1,
                   height: 1.5,
                   borderRadius: 1,
-                  background: done ? T.primary : 'rgba(74, 58, 52, 0.20)',
+                  background: done
+                    ? 'linear-gradient(90deg, #166534 0%, #3D271D 100%)'
+                    : 'rgba(92, 60, 46, 0.2)',
                   marginLeft: 2,
                   marginRight: 4,
                 }}

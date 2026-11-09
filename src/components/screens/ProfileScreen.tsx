@@ -522,11 +522,11 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
         >
           <h2
             style={{
-              fontFamily: 'Inter',
+              fontFamily: 'var(--font-serif)',
               fontSize: 24,
-              fontWeight: 700,
-              color: isDark ? '#F9F2E4' : T.ink,
-              letterSpacing: '-0.02em',
+              fontWeight: 600,
+              color: isDark ? '#FAF4EC' : '#2C1A11',
+              letterSpacing: '-0.015em',
             }}
           >
             {isBn ? 'আপনার স্বাস্থ্য প্রোফাইল' : 'Your health profile'}
@@ -540,18 +540,20 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
               whileTap={{ scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 380, damping: 22 }}
               aria-label={isBn ? 'প্রোফাইলের ডিফল্ট সেটিংস ফিরিয়ে আনুন' : 'Reset profile to defaults'}
+              className="champagne-pill"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 4,
-                padding: '6px 10px',
-                borderRadius: 10,
-                background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(74, 58, 52, 0.08)',
-                border: isDark ? '1px solid rgba(255, 255, 255, 0.16)' : '1px solid rgba(74, 58, 52, 0.18)',
+                padding: '6px 12px',
+                borderRadius: 999,
+                background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 250, 244, 0.75)',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.16)' : '1px solid rgba(255, 255, 255, 0.85)',
+                boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.8)',
                 fontFamily: 'Inter',
                 fontSize: 11,
                 fontWeight: 700,
-                color: isDark ? '#F9F2E4' : T.ink,
+                color: isDark ? '#FAF4EC' : '#3D271D',
                 cursor: 'pointer',
                 minHeight: 28,
               }}
@@ -566,21 +568,22 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
                 whileTap={{ scale: 0.96 }}
                 transition={{ type: 'spring', stiffness: 380, damping: 22 }}
                 aria-label={isBn ? 'নিউট্রিভিশন থেকে সাইন আউট করুন' : 'Sign out of NutriVision'}
+                className="champagne-pill"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 5,
-                  padding: '6px 10px',
-                  borderRadius: 10,
-                  background: T.accentWarn,
-                  border: `1px solid ${T.accentWarn}`,
-                  color: '#FFFFFF',
+                  padding: '6px 12px',
+                  borderRadius: 999,
+                  background: 'rgba(254, 226, 226, 0.75)',
+                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                  color: '#991B1B',
                   fontFamily: 'Inter',
                   fontSize: 11,
                   fontWeight: 700,
                   cursor: 'pointer',
                   minHeight: 28,
-                  boxShadow: '0 4px 12px -4px rgba(201, 98, 45, 0.55)',
+                  boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.8)',
                 }}
               >
                 <LogOut size={12} strokeWidth={2.5} /> {isBn ? 'সাইন আউট' : 'Sign out'}
@@ -593,9 +596,10 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
           style={{
             fontFamily: 'Inter',
             fontSize: 13,
-            color: isDark ? 'rgba(249, 242, 228, 0.78)' : T.inkSoft,
+            color: isDark ? '#D8C4B6' : '#684A37',
             margin: '4px 0 16px',
             lineHeight: 1.4,
+            fontWeight: 500,
           }}
         >
           {isBn ? `হ্যালো ${name} — এগুলো আপনার দেখা প্রতিটি সতর্কতা ও পরামর্শ নির্ধারণ করে।` : `Hi ${name} — these shape every flag and swap you see.`}
@@ -606,11 +610,14 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.05 }}
-          className="glass-card"
+          className="champagne-panel"
           style={{
-            borderRadius: 18,
-            padding: '14px 16px',
+            borderRadius: 22,
+            padding: '16px 18px',
             marginBottom: 22,
+            background: isDark ? 'rgba(42, 32, 27, 0.92)' : 'rgba(255, 248, 240, 0.72)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1.5px solid rgba(255, 255, 255, 0.85)',
+            boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.4)' : 'inset 0 1.5px 2px rgba(255, 255, 255, 0.85), 0 16px 40px -10px rgba(61, 39, 29, 0.16)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -768,49 +775,52 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.08 }}
-            className="glass-card"
+            className="champagne-panel"
             style={{
-              borderRadius: 18,
-              padding: '14px 16px',
+              borderRadius: 22,
+              padding: '16px 18px',
               marginBottom: 22,
               display: 'flex',
               gap: 12,
-              background: isDark ? 'rgba(42, 32, 27, 0.92)' : T.cardBg,
-              border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : `1px solid ${T.cardBorderSoft}`,
+              background: isDark ? 'rgba(42, 32, 27, 0.92)' : 'rgba(255, 248, 240, 0.72)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1.5px solid rgba(255, 255, 255, 0.85)',
+              boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.4)' : 'inset 0 1.5px 2px rgba(255, 255, 255, 0.85), 0 16px 40px -10px rgba(61, 39, 29, 0.16)',
             }}
           >
             <div style={{ flex: 1, textAlign: 'center' }}>
-              <div className="tnum" style={{ fontFamily: 'Inter', fontSize: 18, fontWeight: 700, color: isDark ? '#F9F2E4' : T.ink }}>
+              <div className="tnum" style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700, color: isDark ? '#FAF4EC' : '#2C1A11' }}>
                 {isBn ? toBengaliDigits(stats?.totalMeals ?? 0) : (stats?.totalMeals ?? 0)}
               </div>
-              <div style={{ fontFamily: 'Inter', fontSize: 10, color: isDark ? 'rgba(249, 242, 228, 0.70)' : T.inkSoft, marginTop: 2 }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: 600, color: isDark ? '#D8C4B6' : '#8E674F', marginTop: 2 }}>
                 {isBn ? 'নথিভুক্ত খাবার' : 'meals logged'}
               </div>
             </div>
-            <div style={{ width: 1, background: isDark ? 'rgba(255, 255, 255, 0.12)' : T.cardBorder, alignSelf: 'stretch' }} />
+            <div style={{ width: 1, background: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(92, 60, 46, 0.15)', alignSelf: 'stretch' }} />
             <div style={{ flex: 1, textAlign: 'center' }}>
-              <div className="tnum" style={{ fontFamily: 'Inter', fontSize: 18, fontWeight: 700, color: isDark ? '#F9F2E4' : T.ink }}>
+              <div className="tnum" style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700, color: isDark ? '#FAF4EC' : '#2C1A11' }}>
                 {isBn ? toBengaliDigits(stats?.totalDaysActive ?? 0) : (stats?.totalDaysActive ?? 0)}
               </div>
-              <div style={{ fontFamily: 'Inter', fontSize: 10, color: isDark ? 'rgba(249, 242, 228, 0.70)' : T.inkSoft, marginTop: 2 }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: 600, color: isDark ? '#D8C4B6' : '#8E674F', marginTop: 2 }}>
                 {isBn ? 'সক্রিয় দিন' : 'days active'}
               </div>
             </div>
-            <div style={{ width: 1, background: isDark ? 'rgba(255, 255, 255, 0.12)' : T.cardBorder, alignSelf: 'stretch' }} />
+            <div style={{ width: 1, background: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(92, 60, 46, 0.15)', alignSelf: 'stretch' }} />
             <div style={{ flex: 1, textAlign: 'center' }}>
-              <div className="tnum" style={{ fontFamily: 'Inter', fontSize: 18, fontWeight: 700, color: isDark ? '#E8C49A' : T.accentAmber }}>
+              <div className="tnum" style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700, color: isDark ? '#E8C49A' : '#C87428' }}>
                 {isBn ? toBengaliDigits(stats?.streakDays ?? 0) : (stats?.streakDays ?? 0)}
               </div>
-              <div style={{ fontFamily: 'Inter', fontSize: 10, color: isDark ? 'rgba(249, 242, 228, 0.70)' : T.inkSoft, marginTop: 2 }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: 600, color: isDark ? '#D8C4B6' : '#8E674F', marginTop: 2 }}>
                 {isBn ? 'টানা ধারা (দিন)' : 'streak days'}
               </div>
             </div>
-            <div style={{ width: 1, background: isDark ? 'rgba(255, 255, 255, 0.12)' : T.cardBorder, alignSelf: 'stretch' }} />
+            <div style={{ width: 1, background: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(92, 60, 46, 0.15)', alignSelf: 'stretch' }} />
             <div style={{ flex: 1, textAlign: 'center' }}>
-              <div className="tnum" style={{ fontFamily: 'Inter', fontSize: 18, fontWeight: 700, color: isDark ? '#D0AE92' : T.primary }}>
+              <div className="tnum" style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700, color: isDark ? '#D0AE92' : '#3D271D' }}>
                 {isBn ? toBengaliDigits(stats?.avgDailyKcal ?? 0) : (stats?.avgDailyKcal ?? 0)}
               </div>
-              <div style={{ fontFamily: 'Inter', fontSize: 10, color: isDark ? 'rgba(249, 242, 228, 0.70)' : T.inkSoft, marginTop: 2 }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: 600, color: isDark ? '#D8C4B6' : '#8E674F', marginTop: 2 }}>
                 {isBn ? 'গড় ক্যালরি/দিন' : 'avg kcal/day'}
               </div>
             </div>
@@ -1281,20 +1291,23 @@ function StepperRow({ valueLabel, onDec, onInc, decLabel, incLabel, hint }: Step
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="glass-card"
+          className="champagne-panel"
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 14,
-            borderRadius: 18,
-            padding: '12px 16px',
-            background: isDark ? 'rgba(42, 32, 27, 0.92)' : T.cardBg,
-            border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : `1px solid ${T.cardBorderSoft}`,
+            borderRadius: 20,
+            padding: '12px 18px',
+            background: isDark ? 'rgba(42, 32, 27, 0.92)' : 'rgba(255, 248, 240, 0.72)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1.5px solid rgba(255, 255, 255, 0.85)',
+            boxShadow: isDark ? '0 4px 16px rgba(0,0,0,0.3)' : 'inset 0 1.5px 2px rgba(255, 255, 255, 0.85), 0 8px 24px -8px rgba(61, 39, 29, 0.12)',
           }}
         >
           <motion.button
             type="button"
-            className="profile-stepper-button"
+            className="profile-stepper-button champagne-pill"
             onClick={onDec}
             aria-label={decLabel}
             whileHover={!reduceMotion ? { scale: 1.08 } : {}}
@@ -1304,28 +1317,28 @@ function StepperRow({ valueLabel, onDec, onInc, decLabel, incLabel, hint }: Step
               width: 36,
               height: 36,
               borderRadius: '50%',
-              border: isDark ? '1px solid rgba(255, 255, 255, 0.16)' : `1px solid ${T.cardBorderSoft}`,
-              background: isDark ? 'rgba(255, 255, 255, 0.08)' : T.cardBg,
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.16)' : '1px solid rgba(255, 255, 255, 0.85)',
+              background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 250, 244, 0.85)',
+              boxShadow: 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
               padding: 0,
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
             }}
           >
-            <Minus size={14} color={isDark ? '#F9F2E4' : T.ink} strokeWidth={2.2} />
+            <Minus size={14} color={isDark ? '#F9F2E4' : '#3D271D'} strokeWidth={2.4} />
           </motion.button>
 
           <div
             style={{
               flex: 1,
               textAlign: 'center',
-              fontFamily: "'Inter', sans-serif",
-              fontSize: 18,
+              fontFamily: 'var(--font-serif)',
+              fontSize: 20,
               fontWeight: 700,
-              color: isDark ? '#F9F2E4' : T.ink,
+              color: isDark ? '#FAF4EC' : '#2C1A11',
+              letterSpacing: '-0.01em',
               overflow: 'hidden',
               minHeight: 28,
               position: 'relative',
@@ -1350,7 +1363,7 @@ function StepperRow({ valueLabel, onDec, onInc, decLabel, incLabel, hint }: Step
 
           <motion.button
             type="button"
-            className="profile-stepper-button"
+            className="profile-stepper-button champagne-pill"
             onClick={onInc}
             aria-label={incLabel}
             whileHover={!reduceMotion ? { scale: 1.08 } : {}}
@@ -1360,18 +1373,17 @@ function StepperRow({ valueLabel, onDec, onInc, decLabel, incLabel, hint }: Step
               width: 36,
               height: 36,
               borderRadius: '50%',
-              border: isDark ? '1px solid rgba(255, 255, 255, 0.16)' : `1px solid ${T.cardBorderSoft}`,
-              background: isDark ? 'rgba(255, 255, 255, 0.08)' : T.cardBg,
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.16)' : '1px solid rgba(255, 255, 255, 0.85)',
+              background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 250, 244, 0.85)',
+              boxShadow: 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
               padding: 0,
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
             }}
           >
-            <Plus size={14} color={isDark ? '#F9F2E4' : T.ink} strokeWidth={2.2} />
+            <Plus size={14} color={isDark ? '#F9F2E4' : '#3D271D'} strokeWidth={2.4} />
           </motion.button>
         </motion.div>
         <div
