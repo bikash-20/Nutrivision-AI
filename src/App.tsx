@@ -122,7 +122,8 @@ function AppShell() {
  * styling — just wrapped in a typed component now.
  */
 function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () => void }) {
-  useTokens();
+  const { theme } = useTokens();
+  const isDark = theme === 'dark';
   const { language, translate } = useLanguage();
   const [tab, setTab] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -428,12 +429,14 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
                 width: 38,
                 height: 38,
                 borderRadius: '50%',
-                border: '1.2px solid rgba(255, 255, 255, 0.75)',
-                background: 'rgba(255, 248, 240, 0.55)',
-                backdropFilter: 'blur(18px)',
-                WebkitBackdropFilter: 'blur(18px)',
-                boxShadow: '0 4px 14px -2px rgba(61, 39, 29, 0.12), inset 0 1px 1.5px rgba(255, 255, 255, 0.9)',
-                color: T.ink,
+                border: isDark ? '1.2px solid rgba(255, 255, 255, 0.2)' : '1.2px solid rgba(255, 255, 255, 0.55)',
+                background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 245, 235, 0.25)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                boxShadow: isDark
+                  ? '0 4px 14px rgba(0, 0, 0, 0.4)'
+                  : '0 4px 14px rgba(0, 0, 0, 0.15), inset 0 1px 1.5px rgba(255, 255, 255, 0.6)',
+                color: isDark ? '#F9F2E4' : '#FFF7EE',
                 cursor: 'pointer',
                 transition: 'transform 160ms ease, box-shadow 160ms ease',
               }}

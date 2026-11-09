@@ -21,6 +21,7 @@ import { useTokens } from '../../theme/useTokens';
 import { getEffectiveNutrition, getDynamicTargets } from '../../lib/personalize';
 import { getContextAwarePairings } from '../../lib/foodAliases';
 import { addGroceryItem, addGroceryItemsBatch, getGroceryList, removeGroceryItem, updateLatestMeal } from '../../lib/api';
+import { resolveMarketPrice } from '../../lib/marketPrices';
 import { triggerHaptic } from '../../lib/haptics';
 import { checkDietConflicts, CLINICAL_DISCLAIMER_BN, CLINICAL_DISCLAIMER_EN } from '../../lib/dietConflict';
 import type { DetectedItem, UserProfile, AnalyzeResult } from '../../types/schemas';
@@ -347,11 +348,14 @@ export default function ResultsScreen({
     try {
       setIsAddingMissingGrocery((prev) => ({ ...prev, [recipeIdx]: true }));
       triggerHaptic('light');
-      const itemsToSync = items.map((item) => ({
-        category: 'Pantry',
-        name: item,
-        price: 60,
-      }));
+      const itemsToSync = items.map((item) => {
+        const market = resolveMarketPrice(item);
+        return {
+          category: 'Pantry',
+          name: item,
+          price: market.matched ? market.unitPrice : 60,
+        };
+      });
       await addGroceryItemsBatch(itemsToSync);
       setAddedGroceryIds((prev) => ({ ...prev, [recipeIdx]: true }));
       triggerHaptic('success');
@@ -397,11 +401,14 @@ export default function ResultsScreen({
     setIsAddingDetectedGrocery(true);
 
     try {
-      const itemsToSync = detected.map((item) => ({
-        category: NUTRITION_DB[item.name]?.category || 'Produce',
-        name: item.name,
-        price: 60,
-      }));
+      const itemsToSync = detected.map((item) => {
+        const market = resolveMarketPrice(item.name);
+        return {
+          category: NUTRITION_DB[item.name]?.category || 'Produce',
+          name: item.name,
+          price: market.matched ? market.unitPrice : 60,
+        };
+      });
 
       const created = await addGroceryItemsBatch(itemsToSync);
       const newMap = { ...groceryItemMap };
@@ -454,10 +461,11 @@ export default function ResultsScreen({
     } else {
       triggerHaptic('light');
       try {
+        const market = resolveMarketPrice(name);
         const item = await addGroceryItem(
           NUTRITION_DB[name]?.category || 'Produce',
           name,
-          60,
+          market.matched ? market.unitPrice : 60,
         );
         setGroceryItemMap((prev) => ({ ...prev, [key]: item.id }));
         triggerHaptic('success');
@@ -506,8 +514,10 @@ export default function ResultsScreen({
           paddingTop: 6,
           paddingBottom: 8,
           background: isDark
-            ? 'linear-gradient(180deg, var(--bg-gradient-end) 0%, rgba(27,20,17,0.96) 88%, rgba(27,20,17,0) 100%)'
-            : 'linear-gradient(180deg, var(--bg-gradient-end) 0%, rgba(249,242,228,0.96) 88%, rgba(249,242,228,0) 100%)',
+            ? 'linear-gradient(180deg, rgba(27, 20, 17, 0.92) 0%, rgba(27, 20, 17, 0.4) 75%, rgba(27, 20, 17, 0) 100%)'
+            : 'linear-gradient(180deg, rgba(72, 43, 27, 0.92) 0%, rgba(72, 43, 27, 0.4) 75%, rgba(72, 43, 27, 0) 100%)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
           marginInline: -16,
           paddingInline: 16,
           display: 'flex',
@@ -1047,21 +1057,26 @@ export default function ResultsScreen({
       {analysisResult?.source === 'precomputed_reference' && (
         <div
           role="note"
+          className="champagne-pill"
           style={{
             display: 'flex',
             alignItems: 'flex-start',
             gap: 8,
             margin: '0 0 16px',
             padding: '12px 14px',
-            borderRadius: 14,
-            background: isDark ? 'rgba(255, 190, 80, 0.12)' : 'rgba(255, 190, 80, 0.18)',
-            color: T.ink,
+            borderRadius: 16,
+            background: isDark ? 'rgba(255, 180, 50, 0.12)' : 'rgba(255, 245, 235, 0.25)',
+            border: isDark ? '1px solid rgba(255, 180, 50, 0.3)' : '1px solid rgba(255, 255, 255, 0.55)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            color: isDark ? '#F9F2E4' : '#FFF0E2',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)',
             fontFamily: 'Inter',
             fontSize: 12,
             lineHeight: 1.5,
           }}
         >
-          <AlertTriangle size={16} aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }} />
+          <AlertTriangle size={16} aria-hidden="true" style={{ flexShrink: 0, marginTop: 1, color: isDark ? '#F59E0B' : '#FFD29D' }} />
           <span>
             {isBn
               ? 'এটি আগে থেকে প্রস্তুত ছবির রেফারেন্স—লাইভ ভিশন বিশ্লেষণ নয়। খাবারের লেবেল নির্ধারিত; পরিমাণ ও পুষ্টির মান আনুমানিক।'
@@ -1082,9 +1097,6 @@ export default function ResultsScreen({
             marginBottom: 24,
             padding: '24px 20px',
             borderRadius: 24,
-            background: 'rgba(255, 248, 240, 0.75)',
-            border: '1.5px solid rgba(255, 255, 255, 0.85)',
-            boxShadow: 'inset 0 1.5px 2px rgba(255, 255, 255, 0.9), 0 20px 48px -12px rgba(61, 39, 29, 0.18)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
@@ -1105,7 +1117,7 @@ export default function ResultsScreen({
               <CheckCircle2 size={24} strokeWidth={2.4} />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#2C1A11', fontFamily: 'var(--font-serif)', letterSpacing: '-0.015em' }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: isDark ? '#F9F2E4' : '#24130A', fontFamily: 'var(--font-serif)', letterSpacing: '-0.015em' }}>
                 {isBn ? 'খাবার নিশ্চিতকরণ' : 'Confirm Your Meal'}
               </h3>
               <p style={{ margin: '3px 0 0', fontSize: 12, color: '#684A37', fontFamily: 'Inter' }}>
@@ -1182,8 +1194,6 @@ export default function ResultsScreen({
             style={{
               padding: '12px 14px',
               borderRadius: 16,
-              background: 'linear-gradient(180deg, rgba(255, 248, 240, 0.8) 0%, rgba(240, 222, 204, 0.6) 100%)',
-              border: '1px solid rgba(255, 255, 255, 0.85)',
               marginBottom: 18,
               display: 'flex',
               justifyContent: 'space-around',
@@ -1192,34 +1202,34 @@ export default function ResultsScreen({
             }}
           >
             <div>
-              <div style={{ fontSize: 10, color: '#8E674F', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <div style={{ fontSize: 10, color: isDark ? 'rgba(249, 242, 228, 0.65)' : '#6E4A35', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {isBn ? 'ক্যালরি' : 'Calories'}
               </div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#2C1A11', marginTop: 2 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#F9F2E4' : '#24130A', marginTop: 2 }}>
                 {isBn ? `${toBengaliDigits(Math.round(totals.kcal))} কিলোক্যালরি` : `${Math.round(totals.kcal)} kcal`}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 10, color: '#8E674F', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <div style={{ fontSize: 10, color: isDark ? 'rgba(249, 242, 228, 0.65)' : '#6E4A35', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {isBn ? 'প্রোটিন' : 'Protein'}
               </div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#2C1A11', marginTop: 2 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#F9F2E4' : '#24130A', marginTop: 2 }}>
                 {isBn ? `${toBengaliDigits(Math.round(totals.protein))} গ্রাম` : `${Math.round(totals.protein)}g`}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 10, color: '#8E674F', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <div style={{ fontSize: 10, color: isDark ? 'rgba(249, 242, 228, 0.65)' : '#6E4A35', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {isBn ? 'কার্বোহাইড্রেট' : 'Carbs'}
               </div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#2C1A11', marginTop: 2 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#F9F2E4' : '#24130A', marginTop: 2 }}>
                 {isBn ? `${toBengaliDigits(Math.round(totals.carbs))} গ্রাম` : `${Math.round(totals.carbs)}g`}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 10, color: '#8E674F', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <div style={{ fontSize: 10, color: isDark ? 'rgba(249, 242, 228, 0.65)' : '#6E4A35', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {isBn ? 'চর্বি' : 'Fat'}
               </div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#2C1A11', marginTop: 2 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#F9F2E4' : '#24130A', marginTop: 2 }}>
                 {isBn ? `${toBengaliDigits(Math.round(totals.fat))} গ্রাম` : `${Math.round(totals.fat)}g`}
               </div>
             </div>
@@ -1237,9 +1247,7 @@ export default function ResultsScreen({
                 flex: 1,
                 padding: '13px 14px',
                 borderRadius: 999,
-                background: 'rgba(255, 250, 244, 0.72)',
-                border: '1px solid rgba(255, 255, 255, 0.85)',
-                color: '#2C1A11',
+                color: isDark ? '#F9F2E4' : '#24130A',
                 fontFamily: 'Inter',
                 fontSize: 12.5,
                 fontWeight: 600,
@@ -1639,9 +1647,7 @@ export default function ResultsScreen({
                 flex: 1,
                 padding: '13px 14px',
                 borderRadius: 999,
-                background: 'rgba(255, 250, 244, 0.72)',
-                border: '1px solid rgba(255, 255, 255, 0.85)',
-                color: '#2C1A11',
+                color: isDark ? '#F9F2E4' : '#24130A',
                 fontFamily: 'Inter',
                 fontSize: 12.5,
                 fontWeight: 600,

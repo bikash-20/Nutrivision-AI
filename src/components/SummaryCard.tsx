@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Flame, TrendingUp, BarChart2 } from 'lucide-react';
 import { T } from '../data';
+import { useTokens } from '../theme/useTokens';
 import useCountUp from './useCountUp';
 import { LocalizedContent, useLanguage } from '../i18n/LanguageContext';
 import { toBengaliDigits } from '../lib/format';
@@ -27,6 +28,8 @@ interface SummaryCardProps {
  * Revenue-Style trajectory curve and high-contrast macro gauges.
  */
 export default function SummaryCard({ totals, itemCount, profile }: SummaryCardProps) {
+  const { theme } = useTokens();
+  const isDark = theme === 'dark';
   const [open, setOpen] = useState(true);
   const [showCurve, setShowCurve] = useState(false);
   const { language } = useLanguage();
@@ -54,14 +57,9 @@ export default function SummaryCard({ totals, itemCount, profile }: SummaryCardP
       layout
       className="champagne-panel"
       style={{
-        borderRadius: 22,
+        borderRadius: 24,
         padding: open ? '16px 18px' : '12px 16px',
         marginBottom: 14,
-        background: 'rgba(255, 248, 240, 0.68)',
-        backdropFilter: 'blur(28px) saturate(160%)',
-        WebkitBackdropFilter: 'blur(28px) saturate(160%)',
-        border: '1.5px solid rgba(255, 255, 255, 0.85)',
-        boxShadow: 'inset 0 1.5px 2px rgba(255, 255, 255, 0.9), 0 16px 40px -10px rgba(61, 39, 29, 0.16)',
       }}
     >
       <div
@@ -75,9 +73,9 @@ export default function SummaryCard({ totals, itemCount, profile }: SummaryCardP
           <div
             style={{
               fontFamily: 'var(--font-serif)',
-              fontSize: 14,
-              fontWeight: 600,
-              color: '#2C1A11',
+              fontSize: 15,
+              fontWeight: 700,
+              color: isDark ? '#F9F2E4' : '#24130A',
               whiteSpace: 'nowrap',
               letterSpacing: '-0.01em',
             }}
@@ -93,7 +91,7 @@ export default function SummaryCard({ totals, itemCount, profile }: SummaryCardP
               fontWeight: 700,
               background: 'linear-gradient(135deg, rgba(200, 116, 40, 0.16) 0%, rgba(200, 116, 40, 0.08) 100%)',
               border: '1px solid rgba(200, 116, 40, 0.35)',
-              color: '#9C4D11',
+              color: isDark ? '#F5C28C' : '#9C4D11',
               borderRadius: 999,
               display: 'inline-flex',
               alignItems: 'center',
@@ -115,9 +113,17 @@ export default function SummaryCard({ totals, itemCount, profile }: SummaryCardP
             style={{
               padding: '5px 10px',
               borderRadius: 999,
-              background: showCurve ? 'linear-gradient(145deg, #42291E 0%, #24140D 100%)' : 'rgba(255, 250, 244, 0.7)',
-              color: showCurve ? '#FAF4EC' : '#3D271D',
-              border: showCurve ? '1px solid rgba(255, 255, 255, 0.35)' : '1px solid rgba(255, 255, 255, 0.85)',
+              background: showCurve
+                ? 'linear-gradient(145deg, #42291E 0%, #24140D 100%)'
+                : isDark
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'rgba(255, 250, 244, 0.7)',
+              color: showCurve ? '#FAF4EC' : isDark ? '#F9F2E4' : '#24130A',
+              border: showCurve
+                ? '1px solid rgba(255, 255, 255, 0.35)'
+                : isDark
+                ? '1px solid rgba(255, 255, 255, 0.16)'
+                : '1px solid rgba(255, 255, 255, 0.85)',
               boxShadow: showCurve ? '0 4px 12px -2px rgba(36, 20, 13, 0.45)' : 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85)',
               fontFamily: 'Inter',
               fontSize: 11,

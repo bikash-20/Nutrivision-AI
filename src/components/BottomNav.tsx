@@ -144,8 +144,8 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                     style={{
                       position: 'absolute',
                       inset: -2,
-                      borderRadius: '50%',
-                      background: 'linear-gradient(145deg, #42291E 0%, #24140D 100%)',
+                      borderRadius: 999,
+                      background: 'linear-gradient(145deg, #42291E 0%, #22120A 100%)',
                       boxShadow:
                         '0 8px 22px -3px rgba(36, 20, 13, 0.55), inset 0 1.5px 1px rgba(255, 255, 255, 0.4)',
                     }}
@@ -158,7 +158,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                     position: 'relative',
                     zIndex: 1,
                     display: 'inline-flex',
-                    color: isActive ? '#FFFFFF' : (isDark ? '#D0AE92' : '#5C3C2E'),
+                    color: isActive ? '#FFFFFF' : (isDark ? '#D0AE92' : '#4A2E1F'),
                     transition: 'color 200ms ease',
                   }}
                 >
@@ -195,8 +195,8 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                 style={{
                   fontFamily: 'var(--font-sans)',
                   fontSize: 11,
-                  fontWeight: isActive ? 700 : 500,
-                  color: isActive ? (isDark ? '#F9F2E4' : '#3D271D') : (isDark ? 'rgba(249, 242, 228, 0.65)' : '#7C5A44'),
+                  fontWeight: isActive ? 700 : 600,
+                  color: isActive ? (isDark ? '#F9F2E4' : '#24130A') : (isDark ? 'rgba(249, 242, 228, 0.72)' : '#4A2E1F'),
                   letterSpacing: '0.01em',
                   whiteSpace: 'nowrap',
                   transition: 'color 200ms ease, font-weight 200ms ease',

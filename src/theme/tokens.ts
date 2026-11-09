@@ -56,41 +56,41 @@ export interface TokenShape {
 }
 
 export const lightTokens: TokenShape = {
-  earth1: '#3D271D',
-  earth2: '#5C3C2E',
-  earth3: '#8E674F',
-  earth4: '#CBA787',
+  earth1: '#24130A',
+  earth2: '#3D2214',
+  earth3: '#6B442C',
+  earth4: '#B48564',
   earth5: '#E8D4C1',
   earth6: '#FAF4EC',
 
-  primary:        '#3D271D',
-  primaryLight:   '#5C3C2E',
-  primaryDeep:    '#251610',
+  primary:        '#24130A',
+  primaryLight:   '#422618',
+  primaryDeep:    '#1A0C06',
 
-  cardBg:        'rgba(255, 248, 240, 0.58)',
-  cardBorder:    'rgba(255, 255, 255, 0.75)',
-  cardBorderSoft:'rgba(255, 255, 255, 0.45)',
+  cardBg:        'linear-gradient(145deg, rgba(255, 248, 238, 0.68) 0%, rgba(248, 232, 216, 0.45) 50%, rgba(238, 216, 192, 0.55) 100%)',
+  cardBorder:    'rgba(255, 255, 255, 0.82)',
+  cardBorderSoft:'rgba(255, 255, 255, 0.55)',
 
-  ink:            '#2C1A11',
-  inkSoft:        '#684A37',
-  inkMuted:       '#96735B',
+  ink:            '#24130A',
+  inkSoft:        '#5C3A27',
+  inkMuted:       '#855C41',
 
   accentWarn:     '#C45B28',
   accentAmber:    '#C87428',
-  accentGood:     '#2D7A4F',
+  accentGood:     '#1C6635',
 
-  surface:        'rgba(255, 248, 240, 0.65)',
+  surface:        'rgba(255, 248, 238, 0.65)',
   surface2:       'rgba(240, 222, 204, 0.55)',
   delight:        '#C87428',
   warning:        '#C45B28',
-  good:           '#2D7A4F',
-  accent:         '#3D271D',
-  accentDeep:     '#251610',
-  bg:             '#DBBC9E',
+  good:           '#1C6635',
+  accent:         '#24130A',
+  accentDeep:     '#1A0C06',
+  bg:             '#5F3924',
 
-  gradientStart:  '#EAD7C4',
-  gradientMid:    '#DBBC9E',
-  gradientEnd:    '#BA9270',
+  gradientStart:  '#482B1B',
+  gradientMid:    '#754A32',
+  gradientEnd:    '#341A0D',
 } as const;
 
 /**

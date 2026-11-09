@@ -1124,9 +1124,6 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
           padding: '22px 18px',
           borderRadius: 24,
           marginBottom: 18,
-          background: 'rgba(255, 248, 240, 0.72)',
-          border: '1.5px solid rgba(255, 255, 255, 0.85)',
-          boxShadow: 'inset 0 1.5px 2px rgba(255, 255, 255, 0.85), 0 20px 48px -12px rgba(61, 39, 29, 0.16)',
         }}
       >
         <motion.div
@@ -1186,9 +1183,6 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
           borderRadius: 24,
           padding: '18px 20px',
           marginBottom: 18,
-          background: 'rgba(255, 248, 240, 0.72)',
-          border: '1.5px solid rgba(255, 255, 255, 0.85)',
-          boxShadow: 'inset 0 1.5px 2px rgba(255, 255, 255, 0.85), 0 20px 48px -12px rgba(61, 39, 29, 0.16)',
         }}
       >
         <div
@@ -1393,9 +1387,6 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
             marginBottom: 20,
             borderRadius: 24,
             padding: '22px 20px',
-            background: 'rgba(255, 248, 240, 0.75)',
-            border: '1.5px solid rgba(255, 255, 255, 0.85)',
-            boxShadow: 'inset 0 1.5px 2px rgba(255, 255, 255, 0.9), 0 20px 48px -12px rgba(61, 39, 29, 0.16)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
@@ -1416,10 +1407,10 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
               <Sparkles size={16} />
             </span>
             <div>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#2C1A11', fontFamily: 'var(--font-serif)', letterSpacing: '-0.015em' }}>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: isDark ? '#F9F2E4' : '#24130A', fontFamily: 'var(--font-serif)', letterSpacing: '-0.015em' }}>
                 {language === 'bn' ? '💡 খাদ্যাভ্যাস পরিবর্তন ও স্মার্ট বাজার' : '💡 Smart Dietary Pivot & Market Intelligence'}
               </h3>
-              <p style={{ margin: '3px 0 0', fontSize: 11.5, color: '#684A37', fontWeight: 500 }}>
+              <p style={{ margin: '3px 0 0', fontSize: 11.5, color: isDark ? 'rgba(249, 242, 228, 0.65)' : '#684A37', fontWeight: 500 }}>
                 {language === 'bn' ? 'ক্লিনিক্যাল লক্ষ্য ও স্থানীয় বাজারদরের সুনির্দিষ্ট সমন্বয়' : 'Tailored meal swap with exact macro & BDT market deltas'}
               </p>
             </div>

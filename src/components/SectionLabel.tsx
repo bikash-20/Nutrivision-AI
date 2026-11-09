@@ -28,7 +28,7 @@ export default function SectionLabel({ children, action, onAction }: SectionLabe
             fontFamily: 'Inter',
             fontSize: 11.5,
             fontWeight: 700,
-            color: isDark ? '#D8C4B6' : '#7C5A44',
+            color: isDark ? '#D8C4B6' : '#FFF0E2',
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
           }}

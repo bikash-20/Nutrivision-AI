@@ -67,10 +67,10 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
         items: g.items.map((it) => ({ ...it })),
       }));
 
-      for (const g of updatedGroups) {
-        for (const it of g.items) {
+      const probePromises = updatedGroups.flatMap((g) =>
+        g.items.map(async (it) => {
           const itemKey = `${it.id}:${it.name}`;
-          if (probedRef.current.has(itemKey)) continue;
+          if (probedRef.current.has(itemKey)) return;
 
           try {
             const res = await fetchLivePrice(it.name);
@@ -86,8 +86,11 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
           } catch {
             // graceful fallback
           }
-        }
-      }
+        }),
+      );
+
+      await Promise.all(probePromises);
+
       if (!isCurrent) return;
       if (Object.keys(statusMap).length > 0) {
         setLivePriceMap((prev) => ({ ...prev, ...statusMap }));
@@ -342,19 +345,16 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
             display: 'inline-flex',
             alignItems: 'center',
             gap: 5,
-            background: 'rgba(255, 250, 244, 0.72)',
-            border: '1px solid rgba(255, 255, 255, 0.85)',
-            boxShadow: 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85)',
             padding: '5px 12px',
             borderRadius: 999,
             fontFamily: 'Inter',
             fontSize: 11.5,
             fontWeight: 600,
-            color: '#3D271D',
+            color: isDark ? '#F9F2E4' : '#24130A',
             cursor: 'pointer',
           }}
         >
-          <Share2 size={12} color="#8E674F" /> {isBn ? 'তালিকা শেয়ার করুন' : 'Share list'}
+          <Share2 size={12} color={isDark ? '#E8C49A' : '#6E4A35'} /> {isBn ? 'তালিকা শেয়ার করুন' : 'Share list'}
         </motion.button>
       </motion.div>
 
@@ -371,10 +371,6 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
           marginBottom: 16,
           padding: 10,
           borderRadius: 20,
-          background: 'rgba(255, 248, 240, 0.65)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.85)',
-          boxShadow: 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85), 0 8px 24px -8px rgba(61, 39, 29, 0.1)',
         }}
       >
         {mealCount !== null && mealCount > 0 && (
@@ -400,7 +396,7 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
               for (const name of ingredients) {
                 if (existing.has(name)) continue;
                 const priceInfo = resolveMarketPrice(name);
-                let finalPrice = priceInfo.estimatedCost;
+                let finalPrice = priceInfo.matched ? priceInfo.unitPrice : priceInfo.estimatedCost;
                 try {
                   const live = await fetchLivePrice(name);
                   if (live && live.is_live_price && live.price_bdt > 0) {
@@ -575,11 +571,6 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
                       borderRadius: 18,
                       padding: '12px 16px',
                       marginBottom: 10,
-                      background: 'rgba(255, 248, 240, 0.72)',
-                      backdropFilter: 'blur(20px)',
-                      WebkitBackdropFilter: 'blur(20px)',
-                      border: '1px solid rgba(255, 255, 255, 0.85)',
-                      boxShadow: 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85), 0 6px 18px -6px rgba(61, 39, 29, 0.08)',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
@@ -601,9 +592,13 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
                           borderRadius: 7,
                           background: item.checked
                             ? 'linear-gradient(145deg, #42291E 0%, #24140D 100%)'
+                            : isDark
+                            ? 'rgba(255, 255, 255, 0.08)'
                             : 'rgba(255, 250, 244, 0.85)',
                           border: item.checked
                             ? '1px solid rgba(255, 255, 255, 0.4)'
+                            : isDark
+                            ? '1px solid rgba(255, 255, 255, 0.16)'
                             : '1px solid rgba(92, 60, 46, 0.28)',
                           display: 'flex',
                           alignItems: 'center',
@@ -636,7 +631,7 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
                         style={{
                           fontFamily: 'Inter',
                           fontSize: 14.5,
-                          color: item.checked ? '#96735B' : '#2C1A11',
+                          color: item.checked ? (isDark ? 'rgba(249, 242, 228, 0.45)' : '#96735B') : (isDark ? '#F9F2E4' : '#24130A'),
                           fontWeight: item.checked ? 500 : 600,
                           textDecoration: item.checked ? 'line-through' : 'none',
                           textDecorationColor: '#96735B',
@@ -688,14 +683,11 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
                           aria-label={isBn ? `${foodName(item.name)}-এর দাম পরিবর্তন করুন, বর্তমান দাম ৳${toBengaliDigits(item.price)}` : `Edit price of ${foodName(item.name)}, currently ৳${item.price}`}
                           className="tnum champagne-pill"
                           style={{
-                            background: 'rgba(255, 250, 244, 0.65)',
-                            border: '1px solid rgba(255, 255, 255, 0.85)',
-                            boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.8)',
                             borderRadius: 8,
                             padding: '4px 8px',
                             fontFamily: "'Inter', sans-serif",
                             fontSize: 13,
-                            color: item.checked ? '#96735B' : '#3D271D',
+                            color: item.checked ? (isDark ? 'rgba(249, 242, 228, 0.45)' : '#96735B') : (isDark ? '#F9F2E4' : '#24130A'),
                             fontWeight: 700,
                             cursor: 'pointer',
                             minHeight: 28,
@@ -821,7 +813,7 @@ function AddItemForm({ onSubmit, onCancel }: AddItemFormProps) {
   const { language } = useLanguage();
   const isBn = language === 'bn';
   const [name, setName] = useState('');
-  const [price, setPrice] = useState(60);
+  const [price, setPrice] = useState(40);
   const [error, setError] = useState<string | null>(null);
   const [shake, setShake] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -876,7 +868,7 @@ function AddItemForm({ onSubmit, onCancel }: AddItemFormProps) {
           if (error) setError(null);
           const market = resolveMarketPrice(val);
           if (market.matched) {
-            setPrice(market.estimatedCost);
+            setPrice(market.unitPrice);
           }
           if (val.trim().length >= 3) {
             fetchLivePrice(val).then((live) => {

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { T, STEP_LABELS } from '../data';
+import { useTokens } from '../theme/useTokens';
 import { LocalizedContent, useLanguage } from '../i18n/LanguageContext';
 import { toBengaliDigits } from '../lib/format';
 
@@ -13,6 +14,8 @@ const STEP_LABELS_BN = ['পর্যালোচনা', 'সমন্বয়
 
 /** 3-step horizontal indicator (Review → Adjust → Confirm). */
 export default function StepIndicator({ step, onStep }: StepIndicatorProps) {
+  const { theme } = useTokens();
+  const isDark = theme === 'dark';
   const { language } = useLanguage();
   const isBn = language === 'bn';
 
@@ -68,13 +71,17 @@ export default function StepIndicator({ step, onStep }: StepIndicatorProps) {
                   ? '1px solid rgba(255, 255, 255, 0.45)'
                   : done
                   ? '1px solid rgba(46, 125, 50, 0.35)'
+                  : isDark
+                  ? '1px solid rgba(255, 255, 255, 0.15)'
                   : '1px solid rgba(255, 255, 255, 0.7)',
                 cursor: 'pointer',
                 padding: 0,
                 background: current
-                  ? 'linear-gradient(145deg, #42291E 0%, #24140D 100%)'
+                  ? 'linear-gradient(145deg, #42291E 0%, #22120A 100%)'
                   : done
                   ? 'linear-gradient(145deg, #166534 0%, #0F4522 100%)'
+                  : isDark
+                  ? 'rgba(255, 255, 255, 0.08)'
                   : 'rgba(255, 250, 244, 0.7)',
                 boxShadow: current
                   ? '0 4px 12px -2px rgba(36, 20, 13, 0.5), inset 0 1px 1px rgba(255,255,255,0.45)'
@@ -91,7 +98,7 @@ export default function StepIndicator({ step, onStep }: StepIndicatorProps) {
                     fontFamily: 'Inter',
                     fontSize: 11,
                     fontWeight: 700,
-                    color: current ? '#FFFFFF' : '#684A37',
+                    color: current ? '#FFFFFF' : isDark ? '#D8C4B6' : '#684A37',
                   }}
                 >
                   {isBn ? toBengaliDigits(i + 1) : i + 1}
@@ -105,7 +112,7 @@ export default function StepIndicator({ step, onStep }: StepIndicatorProps) {
                 fontFamily: 'Inter',
                 fontSize: 11,
                 fontWeight: current ? 700 : 500,
-                color: current ? '#2C1A11' : '#8E674F',
+                color: current ? (isDark ? '#F9F2E4' : '#24130A') : (isDark ? 'rgba(249, 242, 228, 0.65)' : '#6E4A35'),
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',

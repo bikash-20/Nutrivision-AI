@@ -1068,17 +1068,21 @@ export default function CaptureScreen({
               display: 'inline-flex',
               alignItems: 'center',
               gap: 8,
-              background: 'linear-gradient(180deg, rgba(255, 252, 248, 0.75) 0%, rgba(242, 226, 212, 0.5) 100%)',
-              border: '1.2px solid rgba(255, 255, 255, 0.85)',
-              boxShadow: '0 4px 14px -3px rgba(61, 39, 29, 0.10), inset 0 1px 1.5px rgba(255, 255, 255, 0.95)',
-              color: '#3D271D',
+              background: isDark
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'linear-gradient(180deg, rgba(255, 252, 248, 0.85) 0%, rgba(246, 234, 222, 0.65) 100%)',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1.2px solid rgba(255, 255, 255, 0.9)',
+              boxShadow: isDark
+                ? '0 4px 14px rgba(0,0,0,0.4)'
+                : '0 6px 16px -2px rgba(44, 24, 14, 0.16), inset 0 1px 1.5px rgba(255, 255, 255, 0.95)',
+              color: isDark ? '#F9F2E4' : '#24130A',
               fontFamily: 'var(--font-sans)',
               fontSize: 13,
               fontWeight: 600,
               cursor: 'pointer',
             }}
           >
-            <UtensilsCrossed size={16} strokeWidth={2.2} color="#5C3C2E" />
+            <UtensilsCrossed size={16} strokeWidth={2.2} color={isDark ? '#E8C49A' : '#3D2214'} />
             <span>{isBn ? 'খাবার যোগ করুন' : 'Log Meal'}</span>
           </motion.button>
 
@@ -1098,10 +1102,14 @@ export default function CaptureScreen({
               display: 'inline-flex',
               alignItems: 'center',
               gap: 8,
-              background: 'linear-gradient(180deg, rgba(255, 252, 248, 0.75) 0%, rgba(242, 226, 212, 0.5) 100%)',
-              border: '1.2px solid rgba(255, 255, 255, 0.85)',
-              boxShadow: '0 4px 14px -3px rgba(61, 39, 29, 0.10), inset 0 1px 1.5px rgba(255, 255, 255, 0.95)',
-              color: '#3D271D',
+              background: isDark
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'linear-gradient(180deg, rgba(255, 252, 248, 0.85) 0%, rgba(246, 234, 222, 0.65) 100%)',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1.2px solid rgba(255, 255, 255, 0.9)',
+              boxShadow: isDark
+                ? '0 4px 14px rgba(0,0,0,0.4)'
+                : '0 6px 16px -2px rgba(44, 24, 14, 0.16), inset 0 1px 1.5px rgba(255, 255, 255, 0.95)',
+              color: isDark ? '#F9F2E4' : '#24130A',
               fontFamily: 'var(--font-sans)',
               fontSize: 13,
               fontWeight: 600,
@@ -1125,10 +1133,14 @@ export default function CaptureScreen({
               display: 'inline-flex',
               alignItems: 'center',
               gap: 8,
-              background: 'linear-gradient(180deg, rgba(255, 252, 248, 0.75) 0%, rgba(242, 226, 212, 0.5) 100%)',
-              border: '1.2px solid rgba(255, 255, 255, 0.85)',
-              boxShadow: '0 4px 14px -3px rgba(61, 39, 29, 0.10), inset 0 1px 1.5px rgba(255, 255, 255, 0.95)',
-              color: '#3D271D',
+              background: isDark
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'linear-gradient(180deg, rgba(255, 252, 248, 0.85) 0%, rgba(246, 234, 222, 0.65) 100%)',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1.2px solid rgba(255, 255, 255, 0.9)',
+              boxShadow: isDark
+                ? '0 4px 14px rgba(0,0,0,0.4)'
+                : '0 6px 16px -2px rgba(44, 24, 14, 0.16), inset 0 1px 1.5px rgba(255, 255, 255, 0.95)',
+              color: isDark ? '#F9F2E4' : '#24130A',
               fontFamily: 'var(--font-sans)',
               fontSize: 13,
               fontWeight: 600,
@@ -1220,13 +1232,13 @@ export default function CaptureScreen({
           style={{ marginTop: 20, scrollMarginTop: 90 }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <span style={{ width: 4, height: 14, borderRadius: 2, background: '#8E674F' }} />
+            <span style={{ width: 4, height: 14, borderRadius: 2, background: '#C87428' }} />
             <span
               style={{
                 fontFamily: 'var(--font-sans)',
                 fontSize: 12,
                 fontWeight: 700,
-                color: '#7C5A44',
+                color: isDark ? 'rgba(249, 242, 228, 0.85)' : '#FFF0E2',
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em',
               }}
@@ -1272,9 +1284,6 @@ export default function CaptureScreen({
                     gap: 12,
                     borderRadius: 20,
                     padding: '10px 14px 10px 10px',
-                    background: 'linear-gradient(135deg, rgba(255, 250, 244, 0.65) 0%, rgba(246, 234, 222, 0.45) 100%)',
-                    border: '1.2px solid rgba(255, 255, 255, 0.85)',
-                    boxShadow: '0 8px 24px -6px rgba(61, 39, 29, 0.10), inset 0 1px 1.5px rgba(255, 255, 255, 0.9)',
                   }}
                 >
                   <Thumbnail meal={meal} emojisByName={descriptorEmojiMap} />
@@ -1285,7 +1294,7 @@ export default function CaptureScreen({
                         fontFamily: 'var(--font-sans)',
                         fontSize: 14,
                         fontWeight: 600,
-                        color: '#2C1A11',
+                        color: isDark ? '#F9F2E4' : '#24130A',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
@@ -1300,7 +1309,7 @@ export default function CaptureScreen({
                         gap: 5,
                         fontFamily: 'var(--font-sans)',
                         fontSize: 11.5,
-                        color: '#7C5A44',
+                        color: isDark ? 'rgba(249, 242, 228, 0.65)' : '#6E4A35',
                         marginTop: 3,
                       }}
                     >
@@ -1312,15 +1321,13 @@ export default function CaptureScreen({
                   </div>
 
                   <div
+                    className="champagne-pill"
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 4,
                       padding: '6px 12px',
                       borderRadius: 20,
-                      background: 'linear-gradient(180deg, rgba(255, 250, 244, 0.85) 0%, rgba(242, 226, 212, 0.65) 100%)',
-                      border: '1px solid rgba(255, 255, 255, 0.9)',
-                      boxShadow: '0 2px 8px -2px rgba(61, 39, 29, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95)',
                       flexShrink: 0,
                     }}
                   >
@@ -1330,13 +1337,13 @@ export default function CaptureScreen({
                         fontFamily: 'var(--font-sans)',
                         fontSize: 13.5,
                         fontWeight: 700,
-                        color: '#3D271D',
+                        color: isDark ? '#F9F2E4' : '#24130A',
                       }}
                     >
                       {isBn ? toBengaliDigits(Math.round(meal.totals.kcal)) : Math.round(meal.totals.kcal)}
-                      <span style={{ fontSize: 10, fontWeight: 500, color: '#7C5A44' }}> {isBn ? 'কিলোক্যালরি' : 'kcal'}</span>
+                      <span style={{ fontSize: 10, fontWeight: 500, color: isDark ? 'rgba(249, 242, 228, 0.65)' : '#6E4A35' }}> {isBn ? 'কিলোক্যালরি' : 'kcal'}</span>
                     </span>
-                    <ChevronRight size={14} color="#8E674F" strokeWidth={2.4} />
+                    <ChevronRight size={14} color={isDark ? '#E8C49A' : '#6E4A35'} strokeWidth={2.4} />
                   </div>
                 </motion.div>
               ))}

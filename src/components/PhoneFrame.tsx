@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { T } from '../data';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useTokens } from '../theme/useTokens';
 
 interface PhoneFrameProps {
   children: React.ReactNode;
@@ -16,6 +17,8 @@ interface PhoneFrameProps {
  * - Desktop (>820px): full-width workspace shell
  */
 export default function PhoneFrame({ children, headerRight, footer }: PhoneFrameProps) {
+  const { theme } = useTokens();
+  const isDark = theme === 'dark';
   const { language } = useLanguage();
   const isBn = language === 'bn';
   const [isMobile, setIsMobile] = useState(() => {
@@ -98,7 +101,7 @@ export default function PhoneFrame({ children, headerRight, footer }: PhoneFrame
                 fontFamily: "var(--font-serif)",
                 fontWeight: 600,
                 fontSize: 22,
-                color: T.ink,
+                color: isDark ? '#F9F2E4' : '#FFF7EE',
                 letterSpacing: '-0.015em',
               }}
             >

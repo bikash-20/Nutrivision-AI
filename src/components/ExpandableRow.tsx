@@ -185,15 +185,9 @@ export default function ExpandableRow({
       style={{
         position: 'relative',
         borderRadius: 20,
-        background: 'rgba(255, 248, 240, 0.68)',
-        backdropFilter: 'blur(24px) saturate(150%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(150%)',
         border: isSelected
           ? '1.5px solid #C87428'
-          : '1px solid rgba(255, 255, 255, 0.85)',
-        boxShadow: pulseHalo
-          ? undefined
-          : 'inset 0 1px 1.5px rgba(255, 255, 255, 0.85), 0 8px 24px -8px rgba(61, 39, 29, 0.12)',
+          : undefined,
         overflow: 'hidden',
         touchAction: 'pan-y',
         cursor: 'pointer',

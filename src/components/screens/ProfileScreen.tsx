@@ -525,7 +525,7 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
               fontFamily: 'var(--font-serif)',
               fontSize: 24,
               fontWeight: 600,
-              color: isDark ? '#FAF4EC' : '#2C1A11',
+              color: isDark ? '#FAF4EC' : '#FFF7EE',
               letterSpacing: '-0.015em',
             }}
           >
@@ -1337,7 +1337,7 @@ function StepperRow({ valueLabel, onDec, onInc, decLabel, incLabel, hint }: Step
               fontFamily: 'var(--font-serif)',
               fontSize: 20,
               fontWeight: 700,
-              color: isDark ? '#FAF4EC' : '#2C1A11',
+              color: isDark ? '#FAF4EC' : '#FFF7EE',
               letterSpacing: '-0.01em',
               overflow: 'hidden',
               minHeight: 28,

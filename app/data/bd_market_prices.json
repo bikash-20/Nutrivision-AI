@@ -598,7 +598,7 @@
       "paka tomato"
     ],
     "category": "Produce",
-    "unit": "kg",
+    "unit": "500 gm",
     "price_bdt": 99.0,
     "default_pack_g": 500
   },
@@ -611,7 +611,7 @@
       "salad cucumber"
     ],
     "category": "Produce",
-    "unit": "kg",
+    "unit": "500 gm",
     "price_bdt": 39.0,
     "default_pack_g": 500
   },
