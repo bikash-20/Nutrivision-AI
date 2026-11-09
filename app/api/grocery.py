@@ -39,11 +39,13 @@ _EMPTY_BUCKETS: list[GroceryGroup] = [
 
 def _bucket_grocery_by_category(items: list[GroceryItem]) -> list[GroceryGroup]:
     """Mirror of the frontend's `bucketGroceryByCategory`."""
+    category_norm: dict[str, str] = {g.category.lower(): g.category for g in DEFAULT_GROCERY_GROUPS}
     by_cat: dict[str, list[GroceryItem]] = {g.category: [] for g in DEFAULT_GROCERY_GROUPS}
     other: list[GroceryItem] = []
     for item in items:
-        cat = _SEEDED_ID_TO_CATEGORY.get(item.id)
-        bucket = by_cat.get(cat) if cat is not None else None
+        cat_key = item.category or _SEEDED_ID_TO_CATEGORY.get(item.id)
+        canonical = category_norm.get(cat_key.lower()) if cat_key else None
+        bucket = by_cat.get(canonical) if canonical else None
         (bucket if bucket is not None else other).append(item)
     out = [GroceryGroup(category=g.category, items=by_cat[g.category]) for g in DEFAULT_GROCERY_GROUPS]
     if other:
@@ -57,11 +59,7 @@ def _bucket_grocery_by_category(items: list[GroceryItem]) -> list[GroceryGroup]:
 class AddGroceryRequest(BaseModel):
     name: str
     price: float = Field(ge=0)
-    # Category is informational only — backend doesn't bucket new items
-    # by it; they always land in `Other` until re-categorized. Kept on
-    # the request so the frontend's existing call shape works without
-    # any frontend edits.
-    category: str = "Other"
+    category: str = "Produce"
 
 
 class UpdatePriceRequest(BaseModel):
@@ -93,7 +91,7 @@ def add_grocery_item(
     state: State = Depends(get_state),
 ) -> GroceryItem:
     """Add a new custom item for the authenticated user."""
-    return state.add_user_grocery(current_user.email, body.name, body.price)
+    return state.add_user_grocery(current_user.email, body.name, body.price, body.category)
 
 
 @router.post(
@@ -107,7 +105,7 @@ def add_grocery_items_batch(
     state: State = Depends(get_state),
 ) -> list[GroceryItem]:
     """Add multiple grocery items in a single atomic transaction for the authenticated user."""
-    items_to_add = [(i.name, i.price) for i in items]
+    items_to_add = [(i.name, i.price, i.category) for i in items]
     return state.add_user_grocery_bulk(current_user.email, items_to_add)
 
 

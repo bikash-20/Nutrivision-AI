@@ -56,3 +56,30 @@ def test_api_market_price_endpoint(client: TestClient) -> None:
     assert "unit" in data
     assert "is_live_price" in data
     assert data["price_bdt"] > 0
+
+
+def test_scraper_live_chaldal_cucumber() -> None:
+    scraper = PriceScraper()
+    res = scraper.fetch_live_price("Cucumber")
+    assert res.price_bdt == 39.0
+    assert res.is_live_price is True
+    assert "Chaldal" in res.source
+
+
+def test_scraper_live_chaldal_produce_basket() -> None:
+    scraper = PriceScraper()
+    for item in ["Potato", "Onion", "Green Chilli"]:
+        res = scraper.fetch_live_price(item)
+        assert res.price_bdt > 0
+        assert res.is_live_price is True
+        assert "Chaldal" in res.source
+
+
+def test_scraper_live_bengali_query() -> None:
+    scraper = PriceScraper()
+    res = scraper.fetch_live_price("শসা")
+    assert res.price_bdt == 39.0
+    assert res.is_live_price is True
+    assert "Chaldal" in res.source
+
+

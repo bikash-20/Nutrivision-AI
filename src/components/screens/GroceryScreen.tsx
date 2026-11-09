@@ -54,26 +54,46 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
   const [mealCount, setMealCount] = useState<number | null>(null);
   const [livePriceMap, setLivePriceMap] = useState<Record<string, boolean>>({});
   const nextIdRef = useRef(100);
+  const probedRef = useRef<Set<string>>(new Set());
 
-  // Probe live market prices asynchronously with 3s timeout
+  // Probe live market prices asynchronously with 3s timeout and update item price
   useEffect(() => {
     let isCurrent = true;
     const probeLive = async () => {
+      let pricesUpdated = false;
       const statusMap: Record<string, boolean> = {};
-      for (const g of groups) {
+      const updatedGroups = groups.map((g) => ({
+        ...g,
+        items: g.items.map((it) => ({ ...it })),
+      }));
+
+      for (const g of updatedGroups) {
         for (const it of g.items) {
+          const itemKey = `${it.id}:${it.name}`;
+          if (probedRef.current.has(itemKey)) continue;
+          probedRef.current.add(itemKey);
+
           try {
             const res = await fetchLivePrice(it.name);
-            if (res.is_live_price) {
+            if (res.is_live_price && res.price_bdt > 0) {
               statusMap[it.id] = true;
+              if (it.price !== res.price_bdt) {
+                it.price = res.price_bdt;
+                pricesUpdated = true;
+                apiUpdatePrice(it.id, res.price_bdt).catch(() => {});
+              }
             }
           } catch {
             // graceful fallback
           }
         }
       }
-      if (isCurrent && Object.keys(statusMap).length > 0) {
-        setLivePriceMap(statusMap);
+      if (!isCurrent) return;
+      if (Object.keys(statusMap).length > 0) {
+        setLivePriceMap((prev) => ({ ...prev, ...statusMap }));
+      }
+      if (pricesUpdated) {
+        setGroups(updatedGroups);
       }
     };
     if (groups.length > 0) {
@@ -384,7 +404,16 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
               for (const name of ingredients) {
                 if (existing.has(name)) continue;
                 const priceInfo = resolveMarketPrice(name);
-                await apiAddItem('Produce', name, priceInfo.estimatedCost);
+                let finalPrice = priceInfo.estimatedCost;
+                try {
+                  const live = await fetchLivePrice(name);
+                  if (live && live.is_live_price && live.price_bdt > 0) {
+                    finalPrice = live.price_bdt;
+                  }
+                } catch {
+                  // Fallback to priceInfo
+                }
+                await apiAddItem('Produce', name, finalPrice);
                 existing.add(name);
                 added++;
               }
@@ -845,6 +874,13 @@ function AddItemForm({ onSubmit, onCancel }: AddItemFormProps) {
           const market = resolveMarketPrice(val);
           if (market.matched) {
             setPrice(market.estimatedCost);
+          }
+          if (val.trim().length >= 3) {
+            fetchLivePrice(val).then((live) => {
+              if (live.is_live_price && live.price_bdt > 0) {
+                setPrice(live.price_bdt);
+              }
+            }).catch(() => {});
           }
         }}
         onKeyDown={(e) => {

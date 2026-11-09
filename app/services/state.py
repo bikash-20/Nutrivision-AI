@@ -1064,7 +1064,13 @@ class State:
                 return [g.model_copy(deep=True) for g in user.grocery.items]
             return []
 
-    def add_user_grocery(self, email: str, name: str, price: float) -> GroceryItem:
+    def add_user_grocery(
+        self,
+        email: str,
+        name: str,
+        price: float,
+        category: str | None = None,
+    ) -> GroceryItem:
         clean_email = email.lower().strip()
 
         def op() -> GroceryItem:
@@ -1079,6 +1085,7 @@ class State:
             item = GroceryItem(
                 id=f"g-new-{max_n + 1}",
                 name=name,
+                category=category,
                 price=max(0.0, price),
                 checked=False,
             )
@@ -1087,7 +1094,11 @@ class State:
 
         return self._mutate(op)  # type: ignore[return-value]
 
-    def add_user_grocery_bulk(self, email: str, items: list[tuple[str, float]]) -> list[GroceryItem]:
+    def add_user_grocery_bulk(
+        self,
+        email: str,
+        items: list[tuple[str, float] | tuple[str, float, str]],
+    ) -> list[GroceryItem]:
         clean_email = email.lower().strip()
 
         def op() -> list[GroceryItem]:
@@ -1100,11 +1111,15 @@ class State:
                 (int("".join(c for c in g.id if c.isdigit()) or 0) for g in user.grocery.items),
                 default=0,
             )
-            for name, price in items:
+            for entry in items:
                 max_n += 1
+                name = entry[0]
+                price = entry[1]
+                category = entry[2] if len(entry) > 2 else None
                 item = GroceryItem(
                     id=f"g-new-{max_n}",
                     name=name,
+                    category=category,
                     price=max(0.0, price),
                     checked=False,
                 )
