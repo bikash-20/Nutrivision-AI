@@ -363,17 +363,19 @@ export default function CaptureScreen({
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        className="glass-soft"
+        className="champagne-pill"
         style={{
           display: 'inline-flex',
           alignSelf: 'flex-start',
           marginBottom: 12,
-          padding: '6px 12px',
+          padding: '6px 14px',
           borderRadius: 999,
           fontFamily: 'Inter',
           fontSize: 12,
-          fontWeight: 600,
-          color: T.ink,
+          fontWeight: 700,
+          background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 250, 244, 0.82)',
+          border: isDark ? '1px solid rgba(255, 255, 255, 0.16)' : '1px solid rgba(255, 255, 255, 0.85)',
+          color: isDark ? '#FAF4EC' : '#2C1A11',
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
         }}
@@ -386,10 +388,10 @@ export default function CaptureScreen({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
         style={{
-          fontFamily: 'Inter',
-          fontSize: 36,
-          fontWeight: 600,
-          color: T.ink,
+          fontFamily: 'var(--font-serif)',
+          fontSize: 32,
+          fontWeight: 700,
+          color: isDark ? '#FAF4EC' : '#FFF0E2',
           margin: '8px 0 8px',
           lineHeight: 1.15,
           letterSpacing: '-0.02em',
@@ -404,8 +406,8 @@ export default function CaptureScreen({
         transition={{ duration: 0.4, delay: 0.15 }}
         style={{
           fontFamily: 'Inter',
-          fontSize: 16,
-          color: T.inkSoft,
+          fontSize: 15,
+          color: isDark ? '#D8C4B6' : 'rgba(255, 240, 226, 0.85)',
           margin: '0 0 28px',
           lineHeight: 1.4,
         }}
@@ -515,10 +517,10 @@ export default function CaptureScreen({
               >
                 <Camera size={26} color="#FFFFFF" strokeWidth={2} />
               </motion.div>
-              <div style={{ fontFamily: 'Inter', fontWeight: 600, fontSize: 18, color: T.ink }}>
+              <div style={{ fontFamily: 'Inter', fontWeight: 600, fontSize: 18, color: isDark ? '#FAF4EC' : '#24130A' }}>
                 {isBn ? 'ক্যামেরা চালু করতে চাপুন' : 'Tap to open camera'}
               </div>
-              <div style={{ fontFamily: 'Inter', fontSize: 14, color: T.inkSoft, marginTop: 6 }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 14, color: isDark ? '#D8C4B6' : '#5C3A27', marginTop: 6 }}>
                 {isBn ? 'থালা, উপাদান বা মেনু — যেকোনো ছবিই চলবে' : 'Plate, ingredients, or a menu — all work'}
               </div>
             </motion.button>
@@ -537,12 +539,12 @@ export default function CaptureScreen({
                 gap: 6,
                 padding: '8px 14px',
                 borderRadius: 14,
-                background: 'rgba(74, 58, 52, 0.08)',
-                border: '1px solid rgba(74, 58, 52, 0.18)',
+                background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(74, 58, 52, 0.08)',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.16)' : '1px solid rgba(74, 58, 52, 0.18)',
                 fontFamily: 'Inter',
                 fontSize: 12,
                 fontWeight: 600,
-                color: T.inkSoft,
+                color: isDark ? '#FAF4EC' : '#2C1A11',
                 cursor: 'pointer',
               }}
             >
@@ -916,7 +918,7 @@ export default function CaptureScreen({
               marginTop: 16,
               fontFamily: 'Inter',
               fontSize: 12,
-              color: T.inkSoft,
+              color: isDark ? '#D8C4B6' : '#FFF0E2',
               textAlign: 'center',
             }}
           >
@@ -933,7 +935,7 @@ export default function CaptureScreen({
               marginTop: 16,
               fontFamily: 'Inter',
               fontSize: 12,
-              color: T.inkSoft,
+              color: isDark ? '#D8C4B6' : '#FFF0E2',
               textAlign: 'center',
             }}
           >
@@ -994,18 +996,19 @@ export default function CaptureScreen({
               whileHover={{ y: -1, scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+              className="champagne-pill"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
                 padding: '8px 14px',
-                borderRadius: 14,
-                background: T.cardBg,
-                border: '1px solid rgba(74, 58, 52, 0.15)',
+                borderRadius: 999,
+                background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 250, 244, 0.85)',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.16)' : '1px solid rgba(255, 255, 255, 0.85)',
                 fontFamily: 'Inter',
                 fontSize: 12,
                 fontWeight: 600,
-                color: T.ink,
+                color: isDark ? '#FAF4EC' : '#2C1A11',
                 cursor: 'pointer',
                 flexShrink: 0,
                 whiteSpace: 'nowrap',
@@ -1162,21 +1165,23 @@ export default function CaptureScreen({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.3 }}
-              className="glass-card"
+              className="champagne-panel"
               style={{
                 borderRadius: 20,
                 padding: '16px 18px',
-                background: 'rgba(255, 255, 255, 0.88)',
-                border: '1px solid rgba(74, 58, 52, 0.12)',
+                background: isDark
+                  ? 'linear-gradient(145deg, rgba(46, 26, 17, 0.85) 0%, rgba(28, 15, 9, 0.92) 100%)'
+                  : 'linear-gradient(145deg, rgba(255, 250, 244, 0.95) 0%, rgba(246, 235, 222, 0.92) 100%)',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1.5px solid rgba(255, 255, 255, 0.85)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: T.inkSoft, fontFamily: 'Inter', fontSize: 13, lineHeight: 1.4 }}>
-                <UtensilsCrossed size={18} color={T.primary} strokeWidth={2} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: isDark ? '#D8C4B6' : '#5C3A27', fontFamily: 'Inter', fontSize: 13, lineHeight: 1.4 }}>
+                <UtensilsCrossed size={18} color={isDark ? '#E8C49A' : '#C87428'} strokeWidth={2} />
                 <span>
                   {isBn ? (
-                    <>আজকের কোনো খাবার এখনো যুক্ত হয়নি — ট্র্যাকিং শুরু করতে <strong style={{ color: T.ink }}>প্রথম খাবারের ছবি তুলুন</strong>।</>
+                    <>আজকের কোনো খাবার এখনো যুক্ত হয়নি — ট্র্যাকিং শুরু করতে <strong style={{ color: isDark ? '#FAF4EC' : '#24130A' }}>প্রথম খাবারের ছবি তুলুন</strong>।</>
                   ) : (
-                    <>No meals logged yet today — <strong style={{ color: T.ink }}>snap your first plate</strong> to start tracking.</>
+                    <>No meals logged yet today — <strong style={{ color: isDark ? '#FAF4EC' : '#24130A' }}>snap your first plate</strong> to start tracking.</>
                   )}
                 </span>
               </div>

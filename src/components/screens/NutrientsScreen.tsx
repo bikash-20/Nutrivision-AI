@@ -901,7 +901,7 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
             fontFamily: 'Inter',
             fontSize: 12,
             fontWeight: 600,
-            color: isDark ? 'rgba(249, 242, 228, 0.78)' : T.inkSoft,
+            color: isDark ? 'rgba(249, 242, 228, 0.78)' : '#FFF0E2',
             cursor: 'pointer',
             marginBottom: 8,
           }}
@@ -1277,17 +1277,19 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
           padding: '6px 2px',
         }}
       >
-        <span style={{ fontSize: 10.5, fontWeight: 700, color: T.inkSoft, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        <span style={{ fontSize: 10.5, fontWeight: 700, color: isDark ? 'rgba(250, 244, 236, 0.85)' : '#FFF0E2', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
           {language === 'bn' ? 'তথ্যসূত্র ও গাইডলাইন:' : 'Citations:'}
         </span>
         <span
           style={{
             fontSize: 10,
             fontWeight: 600,
-            padding: '2px 8px',
-            borderRadius: 6,
-            background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(74, 58, 52, 0.08)',
-            color: T.ink,
+            padding: '4px 10px',
+            borderRadius: 8,
+            background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 245, 235, 0.18)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.35)',
+            color: isDark ? '#FAF4EC' : '#FFF7EE',
+            backdropFilter: 'blur(10px)',
           }}
         >
           {language === 'bn' ? '[উৎস: INFS/BIRDEM গাইডলাইন]' : '[Source: INFS/BIRDEM Guidelines]'}
@@ -1296,10 +1298,12 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
           style={{
             fontSize: 10,
             fontWeight: 600,
-            padding: '2px 8px',
-            borderRadius: 6,
-            background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(74, 58, 52, 0.08)',
-            color: T.ink,
+            padding: '4px 10px',
+            borderRadius: 8,
+            background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 245, 235, 0.18)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.35)',
+            color: isDark ? '#FAF4EC' : '#FFF7EE',
+            backdropFilter: 'blur(10px)',
           }}
         >
           {language === 'bn' ? '[উৎস: ICMR/WHO প্রটোকল]' : '[Source: ICMR/WHO Protocols]'}
@@ -1308,10 +1312,12 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
           style={{
             fontSize: 10,
             fontWeight: 600,
-            padding: '2px 8px',
-            borderRadius: 6,
-            background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(74, 58, 52, 0.08)',
-            color: T.ink,
+            padding: '4px 10px',
+            borderRadius: 8,
+            background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 245, 235, 0.18)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.35)',
+            color: isDark ? '#FAF4EC' : '#FFF7EE',
+            backdropFilter: 'blur(10px)',
           }}
         >
           {language === 'bn' ? '[উৎস: দাম/TCB বাজারদর]' : '[Source: DAM/TCB Market Benchmarks]'}
@@ -1705,27 +1711,31 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
 
       {/* Clinical & Medical Safety Disclaimer */}
       <div
+        className="champagne-panel"
         style={{
           marginTop: 24,
           marginBottom: 32,
-          padding: '12px 16px',
-          borderRadius: 14,
-          background: 'rgba(74, 58, 52, 0.05)',
-          border: '1px solid rgba(74, 58, 52, 0.12)',
+          padding: '14px 18px',
+          borderRadius: 16,
+          background: isDark
+            ? 'linear-gradient(145deg, rgba(46, 26, 17, 0.85) 0%, rgba(28, 15, 9, 0.92) 100%)'
+            : 'linear-gradient(145deg, rgba(255, 250, 244, 0.92) 0%, rgba(246, 235, 222, 0.90) 100%)',
+          border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1.5px solid rgba(255, 255, 255, 0.85)',
+          boxShadow: isDark ? '0 4px 16px rgba(0,0,0,0.3)' : 'inset 0 1.5px 2px rgba(255, 255, 255, 0.85), 0 8px 24px -8px rgba(61, 39, 29, 0.12)',
           display: 'flex',
-          gap: 10,
+          gap: 12,
           alignItems: 'flex-start',
         }}
       >
-        <Info size={16} color={T.inkSoft} style={{ flexShrink: 0, marginTop: 2 }} />
-        <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.5, color: T.inkSoft }}>
+        <Info size={18} color={isDark ? '#E8C49A' : '#C87428'} style={{ flexShrink: 0, marginTop: 2 }} />
+        <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.55, color: isDark ? 'rgba(250, 244, 236, 0.9)' : '#3E2519' }}>
           {language === 'bn' ? (
             <>
-              <b>চিকিৎসা সতর্কতা:</b> নিউট্রিভিশন এআই শুধুমাত্র খাদ্য ও পুষ্টির সাধারণ ধারণার জন্য হিসাব প্রদান করে। এটি কোনো সরাসরি চিকিৎসা পরামর্শ বা রোগ নির্ণয় নয়। ডায়াবেটিস, রক্তচাপ বা কিডনি সমস্যা থাকলে যেকোনো উল্লেখযোগ্য ডায়েট পরিবর্তনের আগে বিশেষজ্ঞ চিকিৎসকের পরামর্শ নিন।
+              <b style={{ color: isDark ? '#FAF4EC' : '#24130A' }}>চিকিৎসা সতর্কতা:</b> নিউট্রিভিশন এআই শুধুমাত্র খাদ্য ও পুষ্টির সাধারণ ধারণার জন্য হিসাব প্রদান করে। এটি কোনো সরাসরি চিকিৎসা পরামর্শ বা রোগ নির্ণয় নয়। ডায়াবেটিস, রক্তচাপ বা কিডনি সমস্যা থাকলে যেকোনো উল্লেখযোগ্য ডায়েট পরিবর্তনের আগে বিশেষজ্ঞ চিকিৎসকের পরামর্শ নিন।
             </>
           ) : (
             <>
-              <b>Medical Disclaimer:</b> NutriVision AI provides nutritional guidance for educational purposes only. It is not intended as medical advice or clinical diagnosis. If you manage medical conditions (e.g. diabetes, hypertension, renal issues), always consult a certified physician or dietitian before making major dietary adjustments.
+              <b style={{ color: isDark ? '#FAF4EC' : '#24130A' }}>Medical Disclaimer:</b> NutriVision AI provides nutritional guidance for educational purposes only. It is not intended as medical advice or clinical diagnosis. If you manage medical conditions (e.g. diabetes, hypertension, renal issues), always consult a certified physician or dietitian before making major dietary adjustments.
             </>
           )}
         </p>

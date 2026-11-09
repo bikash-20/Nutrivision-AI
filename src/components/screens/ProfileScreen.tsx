@@ -865,12 +865,17 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
                   fontSize: 11,
                   fontFamily: 'Inter',
                   fontWeight: 700,
-                  padding: '3px 8px',
+                  padding: '4px 10px',
                   borderRadius: 8,
-                  border: 'none',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.45)',
                   cursor: 'pointer',
-                  background: heightUnit === 'cm' ? T.primary : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(74, 58, 52, 0.08)'),
-                  color: heightUnit === 'cm' ? '#FFFFFF' : T.inkSoft,
+                  background: heightUnit === 'cm'
+                    ? (isDark ? '#FAF4EC' : '#24130A')
+                    : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 245, 235, 0.22)'),
+                  color: heightUnit === 'cm'
+                    ? (isDark ? '#1F1008' : '#FFFFFF')
+                    : (isDark ? '#D8C4B6' : '#FFF0E2'),
+                  boxShadow: heightUnit === 'cm' ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none',
                 }}
               >
                 {isBn ? 'সেমি' : 'cm'}
@@ -882,12 +887,17 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
                   fontSize: 11,
                   fontFamily: 'Inter',
                   fontWeight: 700,
-                  padding: '3px 8px',
+                  padding: '4px 10px',
                   borderRadius: 8,
-                  border: 'none',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.45)',
                   cursor: 'pointer',
-                  background: heightUnit === 'ft_in' ? T.primary : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(74, 58, 52, 0.08)'),
-                  color: heightUnit === 'ft_in' ? '#FFFFFF' : T.inkSoft,
+                  background: heightUnit === 'ft_in'
+                    ? (isDark ? '#FAF4EC' : '#24130A')
+                    : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 245, 235, 0.22)'),
+                  color: heightUnit === 'ft_in'
+                    ? (isDark ? '#1F1008' : '#FFFFFF')
+                    : (isDark ? '#D8C4B6' : '#FFF0E2'),
+                  boxShadow: heightUnit === 'ft_in' ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none',
                 }}
               >
                 {isBn ? 'ফুট · ইঞ্চি' : 'ft · in'}
@@ -916,12 +926,17 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
                   fontSize: 11,
                   fontFamily: 'Inter',
                   fontWeight: 700,
-                  padding: '3px 8px',
+                  padding: '4px 10px',
                   borderRadius: 8,
-                  border: 'none',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.45)',
                   cursor: 'pointer',
-                  background: weightUnit === 'kg' ? T.primary : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(74, 58, 52, 0.08)'),
-                  color: weightUnit === 'kg' ? '#FFFFFF' : T.inkSoft,
+                  background: weightUnit === 'kg'
+                    ? (isDark ? '#FAF4EC' : '#24130A')
+                    : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 245, 235, 0.22)'),
+                  color: weightUnit === 'kg'
+                    ? (isDark ? '#1F1008' : '#FFFFFF')
+                    : (isDark ? '#D8C4B6' : '#FFF0E2'),
+                  boxShadow: weightUnit === 'kg' ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none',
                 }}
               >
                 {isBn ? 'কেজি' : 'kg'}
@@ -933,12 +948,17 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
                   fontSize: 11,
                   fontFamily: 'Inter',
                   fontWeight: 700,
-                  padding: '3px 8px',
+                  padding: '4px 10px',
                   borderRadius: 8,
-                  border: 'none',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.45)',
                   cursor: 'pointer',
-                  background: weightUnit === 'lb' ? T.primary : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(74, 58, 52, 0.08)'),
-                  color: weightUnit === 'lb' ? '#FFFFFF' : T.inkSoft,
+                  background: weightUnit === 'lb'
+                    ? (isDark ? '#FAF4EC' : '#24130A')
+                    : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 245, 235, 0.22)'),
+                  color: weightUnit === 'lb'
+                    ? (isDark ? '#1F1008' : '#FFFFFF')
+                    : (isDark ? '#D8C4B6' : '#FFF0E2'),
+                  boxShadow: weightUnit === 'lb' ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none',
                 }}
               >
                 {isBn ? 'পাউন্ড' : 'lb'}
@@ -990,7 +1010,7 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
 
           {goal !== 'maintain' && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: T.inkSoft, marginBottom: 6 }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: isDark ? '#D8C4B6' : '#FFF0E2', marginBottom: 6 }}>
                 {isBn ? 'সাপ্তাহিক পরিবর্তনের হার (কেজি/সপ্তাহ)' : 'Target rate (kg/wk)'}
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -1005,9 +1025,15 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
                       fontWeight: 700,
                       padding: '5px 10px',
                       borderRadius: 8,
-                      border: targetRate === rate.value ? `1px solid ${T.primary}` : `1px solid ${T.cardBorderSoft}`,
-                      background: targetRate === rate.value ? T.primary : T.cardBg,
-                      color: targetRate === rate.value ? '#FFFFFF' : T.ink,
+                      border: targetRate === rate.value
+                        ? (isDark ? '1px solid rgba(255, 255, 255, 0.45)' : '1px solid rgba(255, 255, 255, 0.65)')
+                        : (isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.35)'),
+                      background: targetRate === rate.value
+                        ? (isDark ? '#FAF4EC' : '#24130A')
+                        : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 245, 235, 0.22)'),
+                      color: targetRate === rate.value
+                        ? (isDark ? '#1F1008' : '#FFFFFF')
+                        : (isDark ? '#D8C4B6' : '#FFF0E2'),
                       cursor: 'pointer',
                     }}
                   >
@@ -1024,53 +1050,58 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.16 }}
-          className="glass-card"
+          className="champagne-panel"
           style={{
-            borderRadius: 18,
+            borderRadius: 20,
             padding: '16px',
             marginTop: 18,
             marginBottom: 24,
-            background: 'rgba(201, 98, 45, 0.05)',
-            border: '1px solid rgba(201, 98, 45, 0.2)',
+            background: isDark
+              ? 'linear-gradient(145deg, rgba(46, 26, 17, 0.85) 0%, rgba(28, 15, 9, 0.92) 100%)'
+              : 'linear-gradient(145deg, rgba(255, 250, 244, 0.95) 0%, rgba(246, 235, 222, 0.92) 100%)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1.5px solid rgba(255, 255, 255, 0.85)',
+            boxShadow: isDark
+              ? '0 6px 20px rgba(0, 0, 0, 0.4)'
+              : 'inset 0 1.5px 2px rgba(255, 255, 255, 0.85), 0 8px 24px -8px rgba(61, 39, 29, 0.15)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: T.accentAmber }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 700, color: isDark ? '#FAF4EC' : '#24130A' }}>
               {isBn ? 'বিপাকীয় হিসাব (মিফলিন-সেন্ট জিওর)' : 'Metabolic Estimate (Mifflin-St Jeor)'}
             </span>
-            <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: T.inkSoft }}>
+            <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: isDark ? 'rgba(250, 244, 236, 0.75)' : '#6E4A35' }}>
               {isBn ? 'টিডিইই = বিএমআর × সক্রিয়তা' : 'TDEE = BMR × Activity'}
             </span>
           </div>
 
           <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-            <div style={{ flex: 1, textAlign: 'center', padding: '10px 6px', borderRadius: 12, background: T.cardBg, border: `1px solid ${T.cardBorderSoft}` }}>
-              <div className="tnum" style={{ fontFamily: 'Inter', fontSize: 18, fontWeight: 700, color: T.ink }}>
+            <div style={{ flex: 1, textAlign: 'center', padding: '10px 6px', borderRadius: 12, background: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.75)', border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(210, 185, 160, 0.35)' }}>
+              <div className="tnum" style={{ fontFamily: 'var(--font-serif)', fontSize: 18, fontWeight: 700, color: isDark ? '#FAF4EC' : '#24130A' }}>
                 {isBn ? toBengaliDigits(breakdown.bmr) : breakdown.bmr}
               </div>
-              <div style={{ fontFamily: 'Inter', fontSize: 10, color: T.inkSoft, marginTop: 2 }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 600, color: isDark ? '#D8C4B6' : '#5C3A27', marginTop: 2 }}>
                 {isBn ? 'বিশ্রামরত ব্যয় (বিএমআর)' : 'Resting burn (BMR)'}
               </div>
             </div>
-            <div style={{ flex: 1, textAlign: 'center', padding: '10px 6px', borderRadius: 12, background: T.cardBg, border: `1px solid ${T.cardBorderSoft}` }}>
-              <div className="tnum" style={{ fontFamily: 'Inter', fontSize: 18, fontWeight: 700, color: T.accentAmber }}>
+            <div style={{ flex: 1, textAlign: 'center', padding: '10px 6px', borderRadius: 12, background: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.75)', border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(210, 185, 160, 0.35)' }}>
+              <div className="tnum" style={{ fontFamily: 'var(--font-serif)', fontSize: 18, fontWeight: 700, color: '#C87428' }}>
                 {isBn ? toBengaliDigits(breakdown.tdee) : breakdown.tdee}
               </div>
-              <div style={{ fontFamily: 'Inter', fontSize: 10, color: T.inkSoft, marginTop: 2 }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 600, color: isDark ? '#D8C4B6' : '#5C3A27', marginTop: 2 }}>
                 {isBn ? 'দৈনিক মোট ব্যয় (টিডিইই)' : 'Daily burn (TDEE)'}
               </div>
             </div>
-            <div style={{ flex: 1, textAlign: 'center', padding: '10px 6px', borderRadius: 12, background: T.cardBg, border: `1px solid ${T.cardBorderSoft}` }}>
-              <div className="tnum" style={{ fontFamily: 'Inter', fontSize: 18, fontWeight: 700, color: T.primary }}>
+            <div style={{ flex: 1, textAlign: 'center', padding: '10px 6px', borderRadius: 12, background: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.75)', border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(210, 185, 160, 0.35)' }}>
+              <div className="tnum" style={{ fontFamily: 'var(--font-serif)', fontSize: 18, fontWeight: 700, color: isDark ? '#4ADE80' : '#1C6635' }}>
                 {isBn ? toBengaliDigits(breakdown.recommendedKcal) : breakdown.recommendedKcal}
               </div>
-              <div style={{ fontFamily: 'Inter', fontSize: 10, color: T.inkSoft, marginTop: 2 }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 600, color: isDark ? '#D8C4B6' : '#5C3A27', marginTop: 2 }}>
                 {isBn ? 'নিরাপদ দৈনিক লক্ষ্য' : 'Safe Target'}
               </div>
             </div>
           </div>
 
-          <div style={{ fontFamily: 'Inter', fontSize: 11, color: T.inkSoft, marginBottom: 12, lineHeight: 1.45 }}>
+          <div style={{ fontFamily: 'Inter', fontSize: 11, color: isDark ? 'rgba(250, 244, 236, 0.85)' : '#42281A', marginBottom: 12, lineHeight: 1.45 }}>
             {breakdown.explanation}
           </div>
 
@@ -1088,19 +1119,19 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
               alignItems: 'center',
               justifyContent: 'center',
               gap: 6,
-              padding: '9px 14px',
+              padding: '10px 14px',
               borderRadius: 12,
-              background: T.primary,
-              color: '#FFFFFF',
+              background: 'linear-gradient(135deg, #8E431B 0%, #5C270C 100%)',
+              color: '#FAF4EC',
               fontFamily: 'Inter',
               fontSize: 12,
               fontWeight: 700,
-              border: 'none',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
               cursor: 'pointer',
-              boxShadow: '0 4px 12px -2px rgba(46, 37, 34, 0.25)',
+              boxShadow: '0 4px 14px rgba(92, 39, 12, 0.35)',
             }}
           >
-            <Zap size={13} fill="#FFFFFF" />
+            <Zap size={13} fill="#FAF4EC" />
             {isBn
               ? `⚡ হিসাবকৃত লক্ষ্য প্রয়োগ করুন (${toBengaliDigits(breakdown.recommendedKcal)} কিলোক্যালরি)`
               : `⚡ Apply calculated target (${breakdown.recommendedKcal} kcal)`}
@@ -1113,7 +1144,7 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
 
           {/* Subgroup A: Dietary Rules */}
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, color: T.inkSoft, marginBottom: 8 }}>
+            <div style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, color: isDark ? '#D8C4B6' : '#FFF0E2', marginBottom: 8 }}>
               {isBn ? 'খাদ্যাভ্যাসের বিধি (Dietary Rules)' : 'Dietary Rules'}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -1139,7 +1170,7 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
 
           {/* Subgroup B: Clinical / Health Goals */}
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, color: T.inkSoft, marginBottom: 8 }}>
+            <div style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, color: isDark ? '#D8C4B6' : '#FFF0E2', marginBottom: 8 }}>
               {isBn ? 'ক্লিনিক্যাল ও স্বাস্থ্য লক্ষ্য (Clinical & Health Goals)' : 'Clinical & Health Goals'}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -1159,7 +1190,7 @@ export default function ProfileScreen({ profile, onProfileChange, session, onSig
 
           {/* Subgroup C: Allergens to Avoid */}
           <div style={{ marginBottom: 10 }}>
-            <div style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, color: T.inkSoft, marginBottom: 8 }}>
+            <div style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, color: isDark ? '#D8C4B6' : '#FFF0E2', marginBottom: 8 }}>
               {isBn ? 'যেসব অ্যালার্জি এড়াবেন (Allergens to Avoid)' : 'Allergens to Avoid'}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -1337,7 +1368,7 @@ function StepperRow({ valueLabel, onDec, onInc, decLabel, incLabel, hint }: Step
               fontFamily: 'var(--font-serif)',
               fontSize: 20,
               fontWeight: 700,
-              color: isDark ? '#FAF4EC' : '#FFF7EE',
+              color: isDark ? '#FAF4EC' : '#24130A',
               letterSpacing: '-0.01em',
               overflow: 'hidden',
               minHeight: 28,
@@ -1390,7 +1421,7 @@ function StepperRow({ valueLabel, onDec, onInc, decLabel, incLabel, hint }: Step
           style={{
             fontFamily: 'Inter',
             fontSize: 11,
-            color: isDark ? 'rgba(249, 242, 228, 0.70)' : T.inkSoft,
+            color: isDark ? 'rgba(249, 242, 228, 0.78)' : '#E8D4C1',
             marginTop: 6,
             textAlign: 'center',
           }}

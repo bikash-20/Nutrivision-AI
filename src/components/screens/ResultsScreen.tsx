@@ -1299,16 +1299,16 @@ export default function ResultsScreen({
               style={{
                 padding: '10px 14px',
                 borderRadius: 12,
-                background: 'rgba(201, 98, 45, 0.08)',
-                border: '1px solid rgba(201, 98, 45, 0.22)',
+                background: isDark ? 'rgba(201, 98, 45, 0.16)' : 'rgba(255, 245, 235, 0.22)',
+                border: isDark ? '1px solid rgba(201, 98, 45, 0.35)' : '1px solid rgba(255, 255, 255, 0.45)',
                 margin: '12px 0',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 10,
               }}
             >
-              <SlidersHorizontal size={18} color={T.primary} style={{ flexShrink: 0 }} />
-              <span style={{ fontSize: 12, color: T.ink, lineHeight: 1.4, fontFamily: 'Inter' }}>
+              <SlidersHorizontal size={18} color={isDark ? '#F39C12' : '#F7B074'} style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: isDark ? '#FAF4EC' : '#FFF0E2', lineHeight: 1.4, fontFamily: 'Inter' }}>
                 {isBn
                   ? 'খাবারের অংশ বা ওজন (গ্রাম) সমন্বয় করুন। নতুন খাবার যোগ করতে নিচে + চাপুন বা এডিট করুন।'
                   : 'Fine-tune portion sizes or item weights below. Tap Edit or + to adjust your meal.'}
@@ -1334,9 +1334,10 @@ export default function ResultsScreen({
                 fontFamily: 'Inter',
                 fontSize: 10,
                 fontWeight: 600,
-                color: T.inkSoft,
-                background: 'rgba(74, 58, 52, 0.08)',
-                padding: '3px 7px',
+                color: isDark ? '#FAF4EC' : '#FFF0E2',
+                background: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 245, 235, 0.22)',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.16)' : '1px solid rgba(255, 255, 255, 0.45)',
+                padding: '4px 8px',
                 borderRadius: 999,
                 letterSpacing: '0.02em',
               }}
@@ -1362,7 +1363,7 @@ export default function ResultsScreen({
               fontFamily: 'Inter',
               fontSize: 11.5,
               fontWeight: 600,
-              color: T.primary,
+              color: isDark ? '#FAF4EC' : '#FFF0E2',
               cursor: 'pointer',
               minHeight: 32,
             }}
@@ -1387,16 +1388,16 @@ export default function ResultsScreen({
               gap: 5,
               background: addedDetectedToGrocery
                 ? (isDark ? 'rgba(76, 175, 80, 0.22)' : 'rgba(46, 125, 50, 0.12)')
-                : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(74, 58, 52, 0.07)'),
+                : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 245, 235, 0.22)'),
               border: addedDetectedToGrocery
                 ? (isDark ? '1px solid rgba(76, 175, 80, 0.50)' : '1px solid rgba(46, 125, 50, 0.38)')
-                : '1px solid rgba(74, 58, 52, 0.14)',
+                : (isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1px solid rgba(255, 255, 255, 0.45)'),
               borderRadius: 8,
               padding: '4px 9px',
               fontFamily: 'Inter',
               fontSize: 11,
               fontWeight: 600,
-              color: addedDetectedToGrocery ? (isDark ? '#81C784' : '#2E7D32') : T.ink,
+              color: addedDetectedToGrocery ? (isDark ? '#81C784' : '#2E7D32') : (isDark ? '#FAF4EC' : '#FFF0E2'),
               cursor: isAddingDetectedGrocery ? 'wait' : 'pointer',
               minHeight: 28,
               transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -1504,7 +1505,7 @@ export default function ResultsScreen({
                 fontFamily: 'Inter',
                 fontSize: 11,
                 fontWeight: 600,
-                color: T.inkSoft,
+                color: isDark ? '#D8C4B6' : '#FFF0E2',
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em',
                 marginBottom: 8,
@@ -1532,25 +1533,26 @@ export default function ResultsScreen({
                   whileTap={{ scale: 0.95 }}
                   transition={{ type: 'spring', stiffness: 380, damping: 22 }}
                   aria-label={isBn ? `${isBn ? h.name_bn : h.name} যোগ করুন` : `Add ${h.name}`}
+                  className="champagne-pill"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 5,
                     padding: '6px 12px',
                     borderRadius: 999,
-                    background: T.cardBg,
-                    border: '1px solid rgba(74, 58, 52, 0.18)',
+                    background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 250, 244, 0.85)',
+                    border: isDark ? '1px solid rgba(255, 255, 255, 0.16)' : '1px solid rgba(255, 255, 255, 0.85)',
                     fontFamily: 'Inter',
                     fontSize: 11,
                     fontWeight: 600,
-                    color: T.ink,
+                    color: isDark ? '#FAF4EC' : '#2C1A11',
                     cursor: 'pointer',
                     minHeight: 32,
                   }}
                 >
                   <span aria-hidden="true">{h.emoji}</span>
                   <span>{isBn ? h.name_bn : h.name}</span>
-                  <span style={{ color: T.primary, fontWeight: 700 }}>+</span>
+                  <span style={{ color: isDark ? '#E8C49A' : T.primary, fontWeight: 700 }}>+</span>
                 </motion.button>
               ))}
             </div>
@@ -1562,7 +1564,7 @@ export default function ResultsScreen({
             style={{
               padding: '32px 16px',
               textAlign: 'center',
-              color: T.inkSoft,
+              color: isDark ? 'rgba(249, 242, 228, 0.78)' : '#FFF0E2',
               fontFamily: 'Inter',
               fontSize: 13,
             }}

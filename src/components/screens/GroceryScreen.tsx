@@ -512,12 +512,12 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
             justifyContent: 'center',
             margin: '0 auto 16px',
           }}>
-            <ShoppingBag size={24} color={T.inkMuted} />
+            <ShoppingBag size={24} color={isDark ? '#E8C49A' : '#C87428'} />
           </div>
-          <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 600, color: T.ink, marginBottom: 8 }}>
+          <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: isDark ? '#FAF4EC' : '#24130A', marginBottom: 8 }}>
             {isBn ? 'আপনার বাজারের তালিকা খালি' : 'Your grocery list is empty'}
           </div>
-          <div style={{ fontFamily: 'Inter', fontSize: 13, color: T.inkSoft, lineHeight: 1.4 }}>
+          <div style={{ fontFamily: 'Inter', fontSize: 13, color: isDark ? '#D8C4B6' : '#5C3A27', lineHeight: 1.4 }}>
             {isBn ? 'খাবারের ছবি তুলুন অথবা সরাসরি উপাদান যোগ করুন' : 'Snap a meal or add items manually'}
           </div>
         </motion.div>
@@ -811,6 +811,8 @@ interface AddItemFormProps {
 }
 
 function AddItemForm({ onSubmit, onCancel }: AddItemFormProps) {
+  const { theme } = useTokens();
+  const isDark = theme === 'dark';
   const { language } = useLanguage();
   const isBn = language === 'bn';
   const [name, setName] = useState('');
@@ -855,7 +857,7 @@ function AddItemForm({ onSubmit, onCancel }: AddItemFormProps) {
         borderRadius: 14,
         padding: '8px 10px',
         marginBottom: 8,
-        border: `1px dashed ${error ? T.accentWarn : T.primary}`,
+        border: `1px dashed ${error ? T.accentWarn : (isDark ? '#E8C49A' : T.primary)}`,
         flexDirection: 'column',
       }}
     >
@@ -892,7 +894,7 @@ function AddItemForm({ onSubmit, onCancel }: AddItemFormProps) {
           minWidth: 0,
           fontFamily: 'Inter',
           fontSize: 13,
-          color: T.ink,
+          color: isDark ? '#FAF4EC' : '#24130A',
           background: 'transparent',
           border: 'none',
           outline: 'none',
@@ -914,9 +916,9 @@ function AddItemForm({ onSubmit, onCancel }: AddItemFormProps) {
           fontFamily: 'Inter',
           fontSize: 12,
           fontWeight: 600,
-          color: T.ink,
-          background: T.cardBg,
-          border: '1px solid rgba(74, 58, 52, 0.15)',
+          color: isDark ? '#FAF4EC' : '#24130A',
+          background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.85)',
+          border: isDark ? '1px solid rgba(255, 255, 255, 0.16)' : '1px solid rgba(74, 58, 52, 0.25)',
           borderRadius: 8,
           padding: '4px 6px',
           outline: 'none',
@@ -934,7 +936,7 @@ function AddItemForm({ onSubmit, onCancel }: AddItemFormProps) {
           width: 30,
           height: 30,
           borderRadius: '50%',
-          background: T.primary,
+          background: isDark ? '#FAF4EC' : '#24130A',
           border: 'none',
           display: 'inline-flex',
           alignItems: 'center',
@@ -945,7 +947,7 @@ function AddItemForm({ onSubmit, onCancel }: AddItemFormProps) {
           flexShrink: 0,
         }}
       >
-        <Plus size={14} color="#FFFFFF" strokeWidth={2.5} />
+        <Plus size={14} color={isDark ? '#24130A' : '#FFFFFF'} strokeWidth={2.5} />
       </motion.button>
       <motion.button
         type="button"
@@ -958,7 +960,7 @@ function AddItemForm({ onSubmit, onCancel }: AddItemFormProps) {
           width: 28,
           height: 28,
           borderRadius: '50%',
-          background: 'rgba(74, 58, 52, 0.08)',
+          background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(74, 58, 52, 0.08)',
           border: 'none',
           display: 'inline-flex',
           alignItems: 'center',
@@ -968,7 +970,7 @@ function AddItemForm({ onSubmit, onCancel }: AddItemFormProps) {
           flexShrink: 0,
         }}
       >
-        <X size={12} color={T.inkSoft} strokeWidth={2.5} />
+        <X size={12} color={isDark ? '#FAF4EC' : '#3D271D'} strokeWidth={2.5} />
       </motion.button>
       </div>
       {error && (
