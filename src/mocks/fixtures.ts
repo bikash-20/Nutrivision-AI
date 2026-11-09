@@ -114,9 +114,9 @@ export const MOCK_GROCERY_GROUPS: GroceryGroup[] = [
   {
     category: 'Produce',
     items: [
-      { id: 'g-1-0', name: 'Cucumber',     price: 20, checked: false },
+      { id: 'g-1-0', name: 'Cucumber',     price: 39, checked: false },
       { id: 'g-1-1', name: 'Spinach',      price: 25, checked: false },
-      { id: 'g-1-2', name: 'Tomato',       price: 30, checked: false },
+      { id: 'g-1-2', name: 'Tomato',       price: 99, checked: false },
     ],
   },
   {

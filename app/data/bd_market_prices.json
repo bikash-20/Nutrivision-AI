@@ -599,8 +599,8 @@
     ],
     "category": "Produce",
     "unit": "kg",
-    "price_bdt": 60.0,
-    "default_pack_g": 1000
+    "price_bdt": 99.0,
+    "default_pack_g": 500
   },
   {
     "name": "Cucumber (Shosha)",
@@ -612,8 +612,8 @@
     ],
     "category": "Produce",
     "unit": "kg",
-    "price_bdt": 50.0,
-    "default_pack_g": 1000
+    "price_bdt": 39.0,
+    "default_pack_g": 500
   },
   {
     "name": "Green Chili (Kacha morich)",

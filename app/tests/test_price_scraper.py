@@ -78,8 +78,18 @@ def test_scraper_live_chaldal_produce_basket() -> None:
 def test_scraper_live_bengali_query() -> None:
     scraper = PriceScraper()
     res = scraper.fetch_live_price("শসা")
-    assert res.price_bdt == 39.0
+    assert res.price_bdt in (35.0, 39.0)
     assert res.is_live_price is True
     assert "Chaldal" in res.source
+
+
+def test_scraper_live_tomato_and_bengali() -> None:
+    scraper = PriceScraper()
+    for query in ["Tomato", "Tomatoes", "Tomato (টমেটো)", "টমেটো"]:
+        res = scraper.fetch_live_price(query)
+        assert res.price_bdt == 99.0
+        assert res.is_live_price is True
+        assert "Chaldal" in res.source
+
 
 

@@ -112,9 +112,9 @@ DEFAULT_GROCERY_GROUPS: list[GroceryGroup] = [
     GroceryGroup(
         category="Produce",
         items=[
-            GroceryItem(id="g-1-0", name="Cucumber", price=20, checked=False),
+            GroceryItem(id="g-1-0", name="Cucumber", price=39, checked=False),
             GroceryItem(id="g-1-1", name="Spinach", price=25, checked=False),
-            GroceryItem(id="g-1-2", name="Tomato", price=30, checked=False),
+            GroceryItem(id="g-1-2", name="Tomato", price=99, checked=False),
         ],
     ),
     GroceryGroup(

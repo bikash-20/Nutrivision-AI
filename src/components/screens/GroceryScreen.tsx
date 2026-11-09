@@ -71,11 +71,11 @@ export default function GroceryScreen({ profile }: GroceryScreenProps) {
         for (const it of g.items) {
           const itemKey = `${it.id}:${it.name}`;
           if (probedRef.current.has(itemKey)) continue;
-          probedRef.current.add(itemKey);
 
           try {
             const res = await fetchLivePrice(it.name);
             if (res.is_live_price && res.price_bdt > 0) {
+              probedRef.current.add(itemKey);
               statusMap[it.id] = true;
               if (it.price !== res.price_bdt) {
                 it.price = res.price_bdt;

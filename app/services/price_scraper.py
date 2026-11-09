@@ -50,13 +50,17 @@ NON_GROCERY_TERMS = {
     "cat litter", "litter", "air freshener", "condom", "diaper", "repellent", "spray",
     "handwash", "hand wash", "toothpaste", "toothbrush", "sanitary", "napkin", "wipe", "wipes",
     "washing bar", "dish washing", "powder", "hair oil",
-    "gear oil", "engine oil", "motor oil", "brake fluid", "lubricant", "car & bike", "bike"
+    "gear oil", "engine oil", "motor oil", "brake fluid", "lubricant", "car & bike", "bike",
+    "sauce", "ketchup", "puree"
 }
 
 CULINARY_MODIFIERS = {
     "slice", "slices", "sliced", "peeled", "chopped", "diced", "cut",
     "pieces", "piece", "pcs", "fresh", "raw", "boiled", "cooked", "fried",
-    "mashed", "curry", "raita", "bhaji", "vorta", "bhorta", "salad"
+    "mashed", "curry", "raita", "bhaji", "vorta", "bhorta", "salad",
+    "wedge", "wedges", "soup", "stew", "gravy", "roast", "paste", "leaves",
+    "টুকরা", "টুকরো", "ফালি", "কুচি", "কাটা", "সিদ্ধ", "ভাজি", "ভর্তা", "ঝোল",
+    "রান্না", "ভাত", "সালাদ", "পোড়া", "পিস", "পাতলা", "দম"
 }
 
 SPELLING_MAP = {
@@ -174,36 +178,59 @@ class PriceScraper:
         if not clean:
             return candidates
 
-        # Check if query is in Bengali — if so, try to get English hint from fallback db
-        has_bengali = any(ord(c) >= 0x0980 and ord(c) <= 0x09FF for c in clean)
-        if has_bengali:
-            fb = self.get_fallback_price("", clean)
-            if fb.item_name_en and fb.item_name_en != clean:
-                # Strip parenthetical English name, e.g. "Potato (Alu)" -> "Potato"
+        def stem_token(w: str) -> str:
+            if any(0x0980 <= ord(c) <= 0x09FF for c in w):
+                if w.endswith("ের") and len(w) > 3:
+                    return w[:-2]
+                if w.endswith("র") and len(w) > 2:
+                    return w[:-1]
+            return w
+
+        # 1. Base clean without parenthetical translations, e.g. "Tomato (টমেটো)" -> "Tomato"
+        without_parens = re.sub(r"\(.*?\)", "", clean).strip()
+
+        without_parens_all = re.sub(r"[\(\)\[\]]", " ", clean).strip()
+        parts = [p.strip() for p in re.split(r"[\s,/-]+", without_parens_all) if len(p.strip()) > 1]
+        stemmed_parts = [stem_token(p) for p in parts]
+
+        # Prioritize base words when culinary modifiers are present (e.g. Lemon Slice -> Lemon, লেবুর টুকরা -> লেবু)
+        base_words = [p for p in stemmed_parts if p.lower() not in CULINARY_MODIFIERS]
+        if base_words and len(base_words) < len(parts):
+            base_clean = " ".join(base_words)
+            if base_clean and base_clean not in candidates:
+                candidates.append(base_clean)
+
+        if without_parens and without_parens not in candidates:
+            candidates.append(without_parens)
+
+        # 2. Text inside parentheses, e.g. "Tomato (টমেটো)" -> "টমেটো"
+        inside_parens = re.findall(r"\((.*?)\)", clean)
+        for p in inside_parens:
+            p_clean = p.strip()
+            if p_clean and p_clean not in candidates:
+                candidates.append(p_clean)
+
+        # 3. Check Bengali tokens for English translation in fallback DB
+        bengali_tokens = [stem_token(w) for w in re.split(r"[\s,()/-]+", clean) if any(0x0980 <= ord(c) <= 0x09FF for c in w)]
+        for bn_token in (bengali_tokens or ([clean] if any(0x0980 <= ord(c) <= 0x09FF for c in clean) else [])):
+            fb = self.get_fallback_price("", bn_token)
+            if fb.item_name_en and fb.item_name_en != bn_token:
                 en_hint = re.sub(r"\(.*?\)", "", fb.item_name_en).strip()
                 if en_hint and en_hint not in candidates:
                     candidates.append(en_hint)
 
-        without_parens = re.sub(r"[\(\)\[\]]", " ", clean).strip()
-        parts = [p.strip() for p in re.split(r"[\s,/-]+", without_parens) if len(p.strip()) > 1]
-
         # Check spelling substitutions (e.g. soybean -> soyabean)
-        for p in parts:
+        for p in stemmed_parts:
             p_lower = p.lower()
             if p_lower in SPELLING_MAP:
                 sub = SPELLING_MAP[p_lower]
                 if sub not in candidates:
                     candidates.append(sub)
 
-        # Base words with culinary modifiers removed (e.g. Lemon Slice -> Lemon)
-        base_words = [p for p in parts if p.lower() not in CULINARY_MODIFIERS]
-        if base_words and len(base_words) < len(parts):
-            base_clean = " ".join(base_words)
-            if base_clean and base_clean not in candidates:
-                candidates.append(base_clean)
-            for w in base_words:
-                if len(w) > 2 and w not in candidates:
-                    candidates.append(w)
+        # Add individual base words if multi-word
+        for w in base_words:
+            if len(w) > 2 and w not in candidates:
+                candidates.append(w)
 
         # Add the full original query
         if clean not in candidates:

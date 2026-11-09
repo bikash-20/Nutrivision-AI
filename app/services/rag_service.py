@@ -294,7 +294,7 @@ COLLECTION_SEEDS: dict[str, list[dict[str, Any]]] = {
             "document": (
                 "Winter Harvest (শীতকালীন শাকসবজি): November to February brings peak harvest for cauliflower "
                 "(Phulkopi ৳35-45/pc), cabbage (Badhakopi ৳30-40/pc), country flat beans (Shim ৳60-75/kg), "
-                "spinach (Palong Shak ৳20-25/bundle), and fresh tomatoes (৳50-60/kg). Best seasonal window "
+                "spinach (Palong Shak ৳20-25/bundle), cucumber (Deshi Shosha ৳39/500g), and fresh tomatoes (৳90-100/kg; Chaldal live: ৳99/500g). Best seasonal window "
                 "for low-cost, high-fiber, low-calorie dietary pivots."
             ),
             "metadata": {

@@ -21,7 +21,7 @@ export interface LivePriceResult {
 
 import { getApiBase } from './config';
 
-const SCRAPER_TIMEOUT_MS = 3000;
+const SCRAPER_TIMEOUT_MS = 6000;
 
 // In-memory cache to keep demo snappy and prevent duplicate hits
 const priceCache = new Map<string, LivePriceResult>();
@@ -70,7 +70,8 @@ export async function fetchLivePrice(
   const timeoutId = setTimeout(() => controller.abort(), SCRAPER_TIMEOUT_MS);
 
   try {
-    const params = new URLSearchParams({ q: query });
+    const cleanQuery = query.replace(/\(.*?\)/g, '').trim() || query;
+    const params = new URLSearchParams({ q: cleanQuery });
     if (itemNameBn) params.append('name_bn', itemNameBn);
     const apiBase = getApiBase();
     const res = await fetch(`${apiBase}/api/market/price?${params.toString()}`, {
@@ -95,7 +96,6 @@ export async function fetchLivePrice(
     clearTimeout(timeoutId);
   }
 
-  // If live scrape didn't resolve or timed out, save & return fallback
-  priceCache.set(cacheKey, fallbackResult);
+  // If live scrape didn't resolve or timed out, return fallback without poisoning cache
   return fallbackResult;
 }

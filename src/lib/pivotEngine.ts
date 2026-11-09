@@ -343,9 +343,9 @@ export function generateDietaryPivots(
       },
       glycemic_reduction_pct: 10,
       grocery_items_to_add: [
-        { name: 'Cucumber (Shosha)', name_bn: 'শসা', price_bdt: 50, category: 'Produce' },
-        { name: 'Tomato (টমেটো)', name_bn: 'টমেটো', price_bdt: 40, category: 'Produce' },
-        { name: 'Lemon (Kagoji lebu)', name_bn: 'কাগজি লেবু', price_bdt: 25, category: 'Produce' },
+        { name: 'Cucumber (Shosha)', name_bn: 'শসা', price_bdt: 39, category: 'Produce' },
+        { name: 'Tomato (টমেটো)', name_bn: 'টমেটো', price_bdt: 99, category: 'Produce' },
+        { name: 'Lemon (Kagoji lebu)', name_bn: 'কাগজি লেবু', price_bdt: 29, category: 'Produce' },
       ],
       is_live_price: false,
       price_source: 'TCB/DAM Benchmark',
