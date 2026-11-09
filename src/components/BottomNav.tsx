@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import {
   Camera, ScanLine, Activity, User, ShoppingBag, Bot,
 } from 'lucide-react';
-import { T, TABS } from '../data';
+import { TABS } from '../data';
 import { useTokens } from '../theme/useTokens';
 import { LocalizedContent, useLanguage } from '../i18n/LanguageContext';
 

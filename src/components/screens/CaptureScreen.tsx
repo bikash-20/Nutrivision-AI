@@ -82,7 +82,8 @@ export default function CaptureScreen({
   photoUploadMessage,
   userName,
 }: CaptureScreenProps) {
-  useTokens();
+  const { theme } = useTokens();
+  const isDark = theme === 'dark';
   const { foodName, language } = useLanguage();
   const isBn = language === 'bn';
   const displayName = userName?.trim() || (isBn ? 'বন্ধু' : 'Friend');

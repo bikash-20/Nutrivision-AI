@@ -1,4 +1,3 @@
-import { T } from '../data';
 import { useTokens } from '../theme/useTokens';
 import { LocalizedContent } from '../i18n/LanguageContext';
 

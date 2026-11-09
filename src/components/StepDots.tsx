@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { T, TABS } from '../data';
+import { TABS } from '../data';
 import { LocalizedContent } from '../i18n/LanguageContext';
 
 interface StepDotsProps {

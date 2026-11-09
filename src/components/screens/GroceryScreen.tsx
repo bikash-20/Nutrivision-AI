@@ -41,7 +41,8 @@ interface GroceryScreenProps {
 }
 
 export default function GroceryScreen({ profile }: GroceryScreenProps) {
-  useTokens();
+  const { theme } = useTokens();
+  const isDark = theme === 'dark';
   const { foodName, language } = useLanguage();
   const isBn = language === 'bn';
   const [groups, setGroups] = useState<DisplayGroup[]>([]);

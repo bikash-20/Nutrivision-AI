@@ -1,7 +1,6 @@
 import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check } from 'lucide-react';
-import { T } from '../data';
 import { useTokens } from '../theme/useTokens';
 import { LocalizedContent } from '../i18n/LanguageContext';
 

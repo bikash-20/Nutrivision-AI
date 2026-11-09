@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { T } from '../data';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTokens } from '../theme/useTokens';
 

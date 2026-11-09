@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Dumbbell, Wheat, Droplets, Target } from 'lucide-react';
+import { TrendingUp, Dumbbell, Wheat, Droplets } from 'lucide-react';
 import { T } from '../data';
 import { useTokens } from '../theme/useTokens';
 import { useLanguage, LocalizedContent } from '../i18n/LanguageContext';

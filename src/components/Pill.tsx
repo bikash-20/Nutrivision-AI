@@ -1,6 +1,5 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { T } from '../data';
 import { useTokens } from '../theme/useTokens';
 import { LocalizedContent } from '../i18n/LanguageContext';
 

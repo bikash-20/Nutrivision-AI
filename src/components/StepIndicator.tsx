@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
-import { T, STEP_LABELS } from '../data';
+import { STEP_LABELS } from '../data';
 import { useTokens } from '../theme/useTokens';
 import { LocalizedContent, useLanguage } from '../i18n/LanguageContext';
 import { toBengaliDigits } from '../lib/format';
