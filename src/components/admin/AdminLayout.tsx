@@ -18,6 +18,7 @@ export type AdminTab = 'overview' | 'users' | 'popular' | 'review';
 interface AdminLayoutProps {
   session: AuthSession;
   children?: React.ReactNode;
+  onLogoClick?: () => void;
 }
 
 /**
@@ -25,7 +26,7 @@ interface AdminLayoutProps {
  * Supports Overview, Users, Popular Foods, and Review Queue tabs.
  * Dark mode and light mode are seamlessly supported with earth-tone palettes.
  */
-export default function AdminLayout({ session }: AdminLayoutProps) {
+export default function AdminLayout({ session, onLogoClick }: AdminLayoutProps) {
   useTokens();
   const { language } = useLanguage();
   const isBn = language === 'bn';
@@ -92,7 +93,21 @@ export default function AdminLayout({ session }: AdminLayoutProps) {
               gap: 12,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              type="button"
+              onClick={onLogoClick}
+              aria-label={isBn ? 'হোম পেজে যান' : 'Go to landing page'}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: 0,
+                border: 'none',
+                background: 'transparent',
+                textAlign: 'left',
+                cursor: onLogoClick ? 'pointer' : 'default',
+              }}
+            >
               <div
                 aria-hidden="true"
                 style={{
@@ -127,7 +142,7 @@ export default function AdminLayout({ session }: AdminLayoutProps) {
                   {isBn ? currentTabLabel?.labelBn : currentTabLabel?.labelEn}
                 </div>
               </div>
-            </div>
+            </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <ThemeToggle />
@@ -343,7 +358,22 @@ export default function AdminLayout({ session }: AdminLayoutProps) {
           }}
         >
           {/* Brand header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+          <button
+            type="button"
+            onClick={onLogoClick}
+            aria-label={isBn ? 'হোম পেজে যান' : 'Go to landing page'}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              marginBottom: 20,
+              padding: 0,
+              border: 'none',
+              background: 'transparent',
+              textAlign: 'left',
+              cursor: onLogoClick ? 'pointer' : 'default',
+            }}
+          >
             <div
               aria-hidden="true"
               style={{
@@ -379,7 +409,7 @@ export default function AdminLayout({ session }: AdminLayoutProps) {
                 Admin
               </div>
             </div>
-          </div>
+          </button>
 
           {/* Theme & Language Toggles */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>

@@ -7,6 +7,7 @@ interface PhoneFrameProps {
   children: React.ReactNode;
   headerRight?: React.ReactNode;
   footer?: React.ReactNode;
+  onLogoClick?: () => void;
 }
 
 /**
@@ -15,7 +16,7 @@ interface PhoneFrameProps {
  * - Mobile (≤820px): fills the viewport like a native app
  * - Desktop (>820px): full-width workspace shell
  */
-export default function PhoneFrame({ children, headerRight, footer }: PhoneFrameProps) {
+export default function PhoneFrame({ children, headerRight, footer, onLogoClick }: PhoneFrameProps) {
   const { theme } = useTokens();
   const isDark = theme === 'dark';
   const { language } = useLanguage();
@@ -77,11 +78,18 @@ export default function PhoneFrame({ children, headerRight, footer }: PhoneFrame
             flexShrink: 0,
           }}
         >
-          <div
+          <button
+            type="button"
+            onClick={onLogoClick}
+            aria-label={isBn ? 'হোম পেজে যান' : 'Go to landing page'}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 10,
+              padding: 0,
+              border: 'none',
+              background: 'transparent',
+              cursor: onLogoClick ? 'pointer' : 'default',
             }}
           >
             <img
@@ -106,7 +114,7 @@ export default function PhoneFrame({ children, headerRight, footer }: PhoneFrame
             >
               {isBn ? 'নিউট্রিভিশন' : 'NutriVision'}
             </span>
-          </div>
+          </button>
           {headerRight}
         </div>
 
@@ -142,7 +150,12 @@ export default function PhoneFrame({ children, headerRight, footer }: PhoneFrame
       <div className="sage-bg" />
 
       <header className="app-desktop-header">
-        <div className="app-desktop-brand">
+        <button
+          type="button"
+          className="app-desktop-brand"
+          onClick={onLogoClick}
+          aria-label={isBn ? 'হোম পেজে যান' : 'Go to landing page'}
+        >
           <img
             src="/icon-96.png"
             alt=""
@@ -151,7 +164,7 @@ export default function PhoneFrame({ children, headerRight, footer }: PhoneFrame
             height={28}
           />
           <span>{isBn ? 'নিউট্রিভিশন' : 'NutriVision'}</span>
-        </div>
+        </button>
         {headerRight}
       </header>
 

@@ -252,11 +252,24 @@ p { margin: 0; }
   flex: 0 0 auto;
   align-items: center;
   gap: 12px;
+  padding: 0;
+  border: none;
+  background: transparent;
   color: #FFF7EE;
   font-family: var(--font-serif);
   font-size: 22px;
   font-weight: 600;
   letter-spacing: -0.015em;
+  cursor: pointer;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.app-desktop-brand:hover {
+  opacity: 0.9;
+}
+
+.app-desktop-brand:active {
+  transform: scale(0.98);
 }
 
 .app-desktop-brand img {

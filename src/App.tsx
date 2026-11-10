@@ -59,6 +59,7 @@ export default function App() {
 function AppShell() {
   useTokens();
   const [session, setSession] = useState<AuthSession | null>(null);
+  const [showLanding, setShowLanding] = useState(false);
   // Tracks whether we've finished reading localStorage so we don't flash
   // the login screen on every page reload while restoring a session.
   const [authReady, setAuthReady] = useState(false);
@@ -70,6 +71,9 @@ function AppShell() {
     const handleAuthChanged = (e: Event) => {
       const customEvent = e as CustomEvent<AuthSession | null>;
       setSession(customEvent.detail ?? null);
+      if (!customEvent.detail) {
+        setShowLanding(false);
+      }
     };
 
     window.addEventListener('auth-changed', handleAuthChanged);
@@ -77,6 +81,16 @@ function AppShell() {
       window.removeEventListener('auth-changed', handleAuthChanged);
     };
   }, []);
+
+  const goToLanding = () => {
+    setShowLanding(true);
+    if (typeof window !== 'undefined') {
+      if (window.location.hash === '#login') {
+        window.history.pushState(null, '', window.location.pathname + window.location.search);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   // While restoring, render a quiet placeholder so the page doesn't flash
   // a login screen to someone who is actually signed in.
@@ -95,15 +109,24 @@ function AppShell() {
     );
   }
 
-  if (!session) {
-    return <LoginScreen onSignedIn={setSession} />;
+  if (!session || showLanding) {
+    return (
+      <LoginScreen
+        onSignedIn={(nextSession) => {
+          setSession(nextSession);
+          setShowLanding(false);
+        }}
+        isSignedIn={Boolean(session)}
+        onReturnToApp={() => setShowLanding(false)}
+      />
+    );
   }
 
   if (session.role === 'admin') {
     return (
       <>
         <PwaInstallBanner />
-        <AdminLayout session={session}>
+        <AdminLayout session={session} onLogoClick={goToLanding}>
           <AdminOverview session={session} />
         </AdminLayout>
       </>
@@ -114,9 +137,11 @@ function AppShell() {
     <UserApp
       key={session.email}
       session={session}
+      onGoToLanding={goToLanding}
       onSignOut={() => {
         void logoutRoomsRemote(session.email);
         logout();
+        setShowLanding(false);
         setSession(null);
       }}
     />
@@ -128,7 +153,15 @@ function AppShell() {
  * gate above can stay readable. Same tabs, same screens, same phone-frame
  * styling — just wrapped in a typed component now.
  */
-function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () => void }) {
+function UserApp({
+  session,
+  onSignOut,
+  onGoToLanding,
+}: {
+  session: AuthSession;
+  onSignOut: () => void;
+  onGoToLanding: () => void;
+}) {
   const { theme } = useTokens();
   const isDark = theme === 'dark';
   const { language, translate } = useLanguage();
@@ -437,6 +470,7 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
     <>
       <PwaInstallBanner />
       <PhoneFrame
+        onLogoClick={onGoToLanding}
         headerRight={
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <LanguageToggle />

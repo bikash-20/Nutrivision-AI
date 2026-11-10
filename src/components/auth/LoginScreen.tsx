@@ -27,6 +27,10 @@ import { GUIDE_STEPS } from './landingGuideSteps';
 interface LoginScreenProps {
   /** Called with the new session once login succeeds. */
   onSignedIn: (session: AuthSession) => void;
+  /** True when the user is already signed in and navigated to the landing page via the logo. */
+  isSignedIn?: boolean;
+  /** Called to return directly to the active app session when already signed in. */
+  onReturnToApp?: () => void;
 }
 
 const GOOGLE_CLIENT_ID: string = (
@@ -37,13 +41,13 @@ const GOOGLE_CLIENT_ID: string = (
 
 type AuthView = 'landing' | 'login';
 
-export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
+export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnToApp }: LoginScreenProps) {
   const { language } = useLanguage();
   const isBn = language === 'bn';
   const reduceMotion = useReducedMotion();
 
   const [view, setView] = useState<AuthView>(() => {
-    if (typeof window !== 'undefined' && window.location.hash === '#login') {
+    if (!isSignedIn && typeof window !== 'undefined' && window.location.hash === '#login') {
       return 'login';
     }
     return 'landing';
@@ -97,6 +101,22 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
       window.scrollTo({ top: 0 });
     }
   }, []);
+
+  const scrollToLandingTop = useCallback(() => {
+    if (lenisRef.current) {
+      lenisRef.current.scrollTo(0);
+    } else if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, []);
+
+  const handlePrimaryAction = useCallback(() => {
+    if (isSignedIn && onReturnToApp) {
+      onReturnToApp();
+      return;
+    }
+    openLoginPage();
+  }, [isSignedIn, onReturnToApp, openLoginPage]);
 
   // Heavy Lenis smooth inertia scroll on the Landing Page
   useEffect(() => {
@@ -262,8 +282,11 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
               flexWrap: 'wrap',
             }}
           >
-            {/* Brand mark */}
-            <div
+            {/* Brand mark — redirects to landing page */}
+            <button
+              type="button"
+              onClick={backToLanding}
+              aria-label={isBn ? 'হোম পেজে যান' : 'Go to landing page'}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -275,6 +298,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
                 boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
+                cursor: 'pointer',
               }}
             >
               <img
@@ -313,7 +337,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
               >
                 {isBn ? 'এআই' : 'AI'}
               </span>
-            </div>
+            </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <button
@@ -753,7 +777,20 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
               gap: 12,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              type="button"
+              onClick={scrollToLandingTop}
+              aria-label={isBn ? 'হোম পেজের শুরুতে যান' : 'Scroll to top of landing page'}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: 0,
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+              }}
+            >
               <img
                 src="/icon-96.png"
                 alt=""
@@ -776,13 +813,13 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
               >
                 {isBn ? 'নিউট্রিভিশন' : 'NutriVision'}
               </span>
-            </div>
+            </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <LanguageToggle />
               <motion.button
                 type="button"
-                onClick={openLoginPage}
+                onClick={handlePrimaryAction}
                 whileTap={{ scale: 0.96 }}
                 style={{
                   display: 'inline-flex',
@@ -803,7 +840,15 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                 }}
               >
                 <LogIn size={15} />
-                <span>{isBn ? 'লগইন' : 'Login'}</span>
+                <span>
+                  {isSignedIn
+                    ? isBn
+                      ? 'অ্যাপে ফিরুন'
+                      : 'Open App'
+                    : isBn
+                    ? 'লগইন'
+                    : 'Login'}
+                </span>
               </motion.button>
             </div>
           </div>
@@ -902,7 +947,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
               >
                 <motion.button
                   type="button"
-                  onClick={openLoginPage}
+                  onClick={handlePrimaryAction}
                   whileHover={reduceMotion ? {} : { y: -1 }}
                   whileTap={{ scale: 0.97 }}
                   style={{
@@ -922,7 +967,15 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                   }}
                 >
                   <LogIn size={16} />
-                  <span>{isBn ? 'লগইন পেজে যান' : 'Go to Login Page'}</span>
+                  <span>
+                    {isSignedIn
+                      ? isBn
+                        ? 'অ্যাপে ফিরুন'
+                        : 'Open App'
+                      : isBn
+                      ? 'লগইন পেজে যান'
+                      : 'Go to Login Page'}
+                  </span>
                 </motion.button>
 
                 <button
@@ -1676,7 +1729,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
           </span>
           <button
             type="button"
-            onClick={openLoginPage}
+            onClick={handlePrimaryAction}
             style={{
               padding: '9px 18px',
               borderRadius: 999,
@@ -1689,7 +1742,13 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
               cursor: 'pointer',
             }}
           >
-            {isBn ? 'লগইন পেজে প্রবেশ করুন →' : 'Proceed to Login →'}
+            {isSignedIn
+              ? isBn
+                ? 'অ্যাপে ফিরে যান →'
+                : 'Back to App →'
+              : isBn
+              ? 'লগইন পেজে প্রবেশ করুন →'
+              : 'Proceed to Login →'}
           </button>
         </footer>
       </div>
