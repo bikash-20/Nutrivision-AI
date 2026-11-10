@@ -809,65 +809,35 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
           </div>
         </header>
 
-        {/* ── 1. Full-Bleed Hero Section ONLY (uses /landing hero background.png) ── */}
+        {/* ── 1. Full-Viewport Hero Section ONLY (clean titles & CTAs over hero photo) ── */}
         <section
+          className="landing-hero-section"
           aria-label={isBn ? 'পরিচিতি' : 'Welcome'}
-          style={{
-            position: 'relative',
-            zIndex: 2,
-            overflow: 'hidden',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
-          }}
         >
-          {/* Hero-only culinary background image (scoped exclusively to this section) */}
-          <div
-            aria-hidden="true"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 0,
-              backgroundImage: 'url("/landing%20hero%20background.png")',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center center',
-              backgroundRepeat: 'no-repeat',
-              transform: 'scale(1.02)',
-            }}
-          />
+          {/* Hero-only culinary background image (never shown outside this section) */}
+          <div aria-hidden="true" className="landing-hero-bg" />
 
-          {/* Directional espresso contrast scrim + smooth bottom fade so every font is crisp */}
-          <div
-            aria-hidden="true"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 1,
-              background:
-                'linear-gradient(90deg, rgba(16, 8, 4, 0.88) 0%, rgba(22, 11, 5, 0.72) 50%, rgba(24, 12, 6, 0.44) 100%), linear-gradient(180deg, rgba(16, 8, 4, 0.36) 0%, rgba(16, 8, 4, 0.14) 58%, rgba(44, 24, 14, 0.92) 94%, rgba(56, 31, 19, 1) 100%)',
-              pointerEvents: 'none',
-            }}
-          />
+          {/* Responsive directional espresso contrast scrim */}
+          <div aria-hidden="true" className="landing-hero-scrim" />
 
           <div
             style={{
               position: 'relative',
               zIndex: 2,
+              width: '100%',
               maxWidth: 1180,
               margin: '0 auto',
-              padding: 'clamp(32px, 5.5vw, 68px) clamp(16px, 4vw, 32px) clamp(40px, 6.5vw, 72px)',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: 'clamp(24px, 4vw, 44px)',
-              alignItems: 'center',
+              padding: 'clamp(44px, 7vw, 88px) clamp(18px, 4.5vw, 36px) clamp(48px, 8vw, 88px)',
             }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18, maxWidth: 640 }}>
               <div
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 8,
                   alignSelf: 'flex-start',
-                  padding: '6px 13px',
+                  padding: '6px 14px',
                   borderRadius: 999,
                   background: 'rgba(20, 10, 5, 0.72)',
                   border: '1px solid rgba(255, 228, 196, 0.36)',
@@ -892,12 +862,12 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                 style={{
                   margin: 0,
                   fontFamily: isBn ? "'Hind Siliguri', Georgia, serif" : 'var(--font-serif)',
-                  fontSize: 'clamp(30px, 4.6vw, 48px)',
+                  fontSize: 'clamp(34px, 5vw, 56px)',
                   fontWeight: 700,
-                  lineHeight: 1.14,
+                  lineHeight: 1.12,
                   letterSpacing: '-0.025em',
                   color: '#FFF8F0',
-                  textShadow: '0 2px 16px rgba(10, 4, 2, 0.75)',
+                  textShadow: '0 3px 18px rgba(10, 4, 2, 0.8)',
                 }}
               >
                 {isBn
@@ -908,11 +878,11 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
               <p
                 style={{
                   margin: 0,
-                  fontSize: 'clamp(15px, 2vw, 17px)',
-                  lineHeight: 1.6,
+                  fontSize: 'clamp(15.5px, 2vw, 18px)',
+                  lineHeight: 1.65,
                   color: '#FAF0E4',
                   maxWidth: 560,
-                  textShadow: '0 1px 10px rgba(10, 4, 2, 0.8)',
+                  textShadow: '0 2px 12px rgba(10, 4, 2, 0.85)',
                 }}
               >
                 {isBn
@@ -920,7 +890,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                   : 'NutriVision analyzes meal photos via our culinary RAG and vision pipeline, detects dietary conflicts, syncs live Chaldal market prices, supports 24h live chat rooms, and runs locally with Ollama, Whisper, and Piper.'}
               </p>
 
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, paddingTop: 4 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, paddingTop: 6 }}>
                 <motion.button
                   type="button"
                   onClick={openLoginPage}
@@ -939,7 +909,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                     fontSize: 14.5,
                     fontWeight: 700,
                     cursor: 'pointer',
-                    boxShadow: '0 12px 28px rgba(0, 0, 0, 0.42)',
+                    boxShadow: '0 12px 28px rgba(0, 0, 0, 0.45)',
                   }}
                 >
                   <LogIn size={16} />
@@ -956,7 +926,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                     padding: '13px 20px',
                     borderRadius: 999,
                     border: '1px solid rgba(255, 255, 255, 0.44)',
-                    background: 'rgba(20, 10, 5, 0.62)',
+                    background: 'rgba(20, 10, 5, 0.65)',
                     color: '#FFF8F0',
                     fontFamily: 'inherit',
                     fontSize: 14,
@@ -971,14 +941,28 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                 </button>
               </div>
             </div>
+          </div>
+        </section>
 
-            {/* Online vs Offline quick clarity card */}
+        <main
+          style={{
+            position: 'relative',
+            zIndex: 2,
+            maxWidth: 1180,
+            margin: '0 auto',
+            padding: 'clamp(36px, 5vw, 56px) clamp(16px, 4vw, 32px) 64px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'clamp(40px, 6vw, 68px)',
+          }}
+        >
+          {/* ── Online vs Offline Access Strip (moved cleanly below the Hero) ── */}
+          <section aria-label={isBn ? 'অনলাইন ও অফলাইন সুবিধা' : 'Online vs Offline Access'}>
             <div
               className="champagne-panel"
               style={{
-                padding: '22px 20px',
+                padding: 'clamp(18px, 3vw, 24px)',
                 borderRadius: 24,
-                background: 'rgba(250, 244, 236, 0.92)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 14,
@@ -991,12 +975,13 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: 10,
+                  flexWrap: 'wrap',
                 }}
               >
                 <span
                   style={{
                     fontFamily: isBn ? "'Hind Siliguri', serif" : 'var(--font-serif)',
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: 700,
                     color: '#24130A',
                   }}
@@ -1019,95 +1004,89 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
 
               <div
                 style={{
-                  padding: '13px 14px',
-                  borderRadius: 16,
-                  background: 'rgba(255, 252, 248, 0.85)',
-                  border: '1px solid rgba(92, 58, 39, 0.14)',
-                  display: 'flex',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
                   gap: 12,
-                  alignItems: 'flex-start',
                 }}
               >
                 <div
                   style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 10,
-                    background: 'rgba(45, 106, 79, 0.14)',
-                    color: '#2D6A4F',
+                    padding: '14px 16px',
+                    borderRadius: 16,
+                    background: 'rgba(255, 252, 248, 0.85)',
+                    border: '1px solid rgba(92, 58, 39, 0.14)',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
+                    gap: 12,
+                    alignItems: 'flex-start',
                   }}
                 >
-                  <Wifi size={17} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#24130A' }}>
-                    {isBn ? 'অনলাইন (গুগল অ্যাকাউন্ট)' : 'Online (Google Sign-In)'}
+                  <div
+                    style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: 10,
+                      background: 'rgba(45, 106, 79, 0.14)',
+                      color: '#2D6A4F',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Wifi size={17} />
                   </div>
-                  <p style={{ margin: '4px 0 0', fontSize: 12.5, lineHeight: 1.5, color: '#5C3A27' }}>
-                    {isBn
-                      ? 'প্রোফাইল সিঙ্ক, ভিশন + RAG খাবার শনাক্তকরণ, চালডাল লাইভ দাম, এআই কোচ ও ২৪ ঘণ্টার রুম চ্যাট।'
-                      : 'Cloud profile sync, Vision + RAG plate recognition, live Chaldal prices, hosted AI Coach & 24h Room chat.'}
-                  </p>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#24130A' }}>
+                      {isBn ? 'অনলাইন (গুগল অ্যাকাউন্ট)' : 'Online (Google Sign-In)'}
+                    </div>
+                    <p style={{ margin: '4px 0 0', fontSize: 12.5, lineHeight: 1.55, color: '#5C3A27' }}>
+                      {isBn
+                        ? 'প্রোফাইল সিঙ্ক, ভিশন + RAG খাবার শনাক্তকরণ, চালডাল লাইভ দাম, এআই কোচ ও ২৪ ঘণ্টার রুম চ্যাট।'
+                        : 'Cloud profile sync, Vision + RAG plate recognition, live Chaldal prices, hosted AI Coach & 24h Room chat.'}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <div
-                style={{
-                  padding: '13px 14px',
-                  borderRadius: 16,
-                  background: 'rgba(255, 252, 248, 0.85)',
-                  border: '1px solid rgba(92, 58, 39, 0.14)',
-                  display: 'flex',
-                  gap: 12,
-                  alignItems: 'flex-start',
-                }}
-              >
                 <div
                   style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 10,
-                    background: 'rgba(200, 116, 40, 0.14)',
-                    color: '#9C4D11',
+                    padding: '14px 16px',
+                    borderRadius: 16,
+                    background: 'rgba(255, 252, 248, 0.85)',
+                    border: '1px solid rgba(92, 58, 39, 0.14)',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
+                    gap: 12,
+                    alignItems: 'flex-start',
                   }}
                 >
-                  <WifiOff size={17} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#24130A' }}>
-                    {isBn ? 'অফলাইন মোড (ইন্টারনেট ছাড়াই)' : 'Offline Mode (No Internet Needed)'}
+                  <div
+                    style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: 10,
+                      background: 'rgba(200, 116, 40, 0.14)',
+                      color: '#9C4D11',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <WifiOff size={17} />
                   </div>
-                  <p style={{ margin: '4px 0 0', fontSize: 12.5, lineHeight: 1.5, color: '#5C3A27' }}>
-                    {isBn
-                      ? 'ডিভাইসে প্রোফাইল ও বিএমআর/টিডিইই হিসাব, খাবার লগ, সতর্কতা নিয়ম এবং লোকাল Ollama, Whisper ও Piper ব্যবহার করুন।'
-                      : 'Keep your profile & BMR/TDEE targets on-device, log meals locally, check conflict rules, and run local Ollama, Whisper & Piper.'}
-                  </p>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#24130A' }}>
+                      {isBn ? 'অফলাইন মোড (ইন্টারনেট ছাড়াই)' : 'Offline Mode (No Internet Needed)'}
+                    </div>
+                    <p style={{ margin: '4px 0 0', fontSize: 12.5, lineHeight: 1.55, color: '#5C3A27' }}>
+                      {isBn
+                        ? 'ডিভাইসে প্রোফাইল ও বিএমআর/টিডিইই হিসাব, খাবার লগ, সতর্কতা নিয়ম এবং লোকাল Ollama, Whisper ও Piper ব্যবহার করুন।'
+                        : 'Keep your profile & BMR/TDEE targets on-device, log meals locally, check conflict rules, and run local Ollama, Whisper & Piper.'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-
-        <main
-          style={{
-            position: 'relative',
-            zIndex: 2,
-            maxWidth: 1180,
-            margin: '0 auto',
-            padding: 'clamp(36px, 5vw, 56px) clamp(16px, 4vw, 32px) 64px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'clamp(40px, 6vw, 68px)',
-          }}
-        >
+          </section>
 
           {/* ── 2. Step-by-Step Interactive User Guide (Steps 0–10) ─── */}
           <section
