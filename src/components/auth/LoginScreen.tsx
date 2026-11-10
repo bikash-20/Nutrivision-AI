@@ -1,18 +1,21 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import Lenis from 'lenis';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   AlertCircle,
   ArrowDown,
+  ArrowLeft,
   Check,
   ChevronLeft,
   ChevronRight,
+  Cpu,
   LogIn,
+  Mic,
   RefreshCw,
   ShieldCheck,
   Sparkles,
   Wifi,
   WifiOff,
-  X,
 } from 'lucide-react';
 import { continueOffline, loginWithGoogle } from '../../lib/auth';
 import { initGoogleAuth } from '../../lib/googleAuth';
@@ -32,17 +35,26 @@ const GOOGLE_CLIENT_ID: string = (
     : ''
 ).trim();
 
+type AuthView = 'landing' | 'login';
+
 export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
   const { language } = useLanguage();
   const isBn = language === 'bn';
   const reduceMotion = useReducedMotion();
 
-  const [loginOpen, setLoginOpen] = useState(false);
+  const [view, setView] = useState<AuthView>(() => {
+    if (typeof window !== 'undefined' && window.location.hash === '#login') {
+      return 'login';
+    }
+    return 'landing';
+  });
   const [activeIdx, setActiveIdx] = useState(0);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [online, setOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine);
+
   const googleBtnContainerRef = useRef<HTMLDivElement>(null);
+  const lenisRef = useRef<Lenis | null>(null);
 
   const activeStep = GUIDE_STEPS[activeIdx] ?? GUIDE_STEPS[0];
 
@@ -57,23 +69,75 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
     };
   }, []);
 
+  // Support browser back/forward between landing (#) and login (#login)
   useEffect(() => {
-    if (!loginOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setLoginOpen(false);
+    const handleHashChange = () => {
+      setView(window.location.hash === '#login' ? 'login' : 'landing');
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [loginOpen]);
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
-  // Initialize Google Identity Services when the Login modal is open and online.
+  const openLoginPage = useCallback(() => {
+    setView('login');
+    if (typeof window !== 'undefined') {
+      if (window.location.hash !== '#login') {
+        window.history.pushState(null, '', '#login');
+      }
+      window.scrollTo({ top: 0 });
+    }
+  }, []);
+
+  const backToLanding = useCallback(() => {
+    setView('landing');
+    if (typeof window !== 'undefined') {
+      if (window.location.hash === '#login') {
+        window.history.pushState(null, '', window.location.pathname + window.location.search);
+      }
+      window.scrollTo({ top: 0 });
+    }
+  }, []);
+
+  // Heavy Lenis smooth inertia scroll on the Landing Page
   useEffect(() => {
-    if (!loginOpen || !GOOGLE_CLIENT_ID || !online) return;
+    if (view !== 'landing' || reduceMotion) {
+      lenisRef.current?.destroy();
+      lenisRef.current = null;
+      return;
+    }
+
+    const lenis = new Lenis({
+      lerp: 0.042,
+      duration: 1.9,
+      smoothWheel: true,
+      wheelMultiplier: 0.8,
+      touchMultiplier: 1.35,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    });
+    lenisRef.current = lenis;
+
+    let rafId = 0;
+    const raf = (time: number) => {
+      lenis.raf(time);
+      rafId = window.requestAnimationFrame(raf);
+    };
+    rafId = window.requestAnimationFrame(raf);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      lenis.destroy();
+      lenisRef.current = null;
+    };
+  }, [view, reduceMotion]);
+
+  // Initialize Google Identity Services when on the dedicated Login view
+  useEffect(() => {
+    if (view !== 'login' || !GOOGLE_CLIENT_ID || !online) return;
 
     let mounted = true;
     const btnWidth =
       typeof window !== 'undefined'
-        ? Math.min(320, Math.max(250, window.innerWidth - 72))
+        ? Math.min(320, Math.max(260, window.innerWidth - 72))
         : 300;
 
     void initGoogleAuth({
@@ -81,7 +145,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
       buttonContainer: googleBtnContainerRef.current,
       buttonWidth: btnWidth,
       locale: isBn ? 'bn' : 'en',
-      promptOneTap: false,
+      promptOneTap: true,
       onSuccess: async (credential) => {
         if (!mounted) return;
         setGoogleLoading(true);
@@ -114,15 +178,543 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
     return () => {
       mounted = false;
     };
-  }, [isBn, online, onSignedIn, loginOpen]);
+  }, [isBn, online, onSignedIn, view]);
 
-  const scrollToStep = (idx: number) => {
-    setActiveIdx(idx);
-    if (typeof document !== 'undefined') {
-      document.getElementById('guide-viewer')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  const smoothScrollToId = (id: string) => {
+    if (typeof document === 'undefined') return;
+    const target = document.getElementById(id);
+    if (!target) return;
+    if (lenisRef.current) {
+      lenisRef.current.scrollTo(target, { offset: -76, duration: 1.5 });
+    } else {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
+  const scrollToStep = (idx: number) => {
+    setActiveIdx(idx);
+    smoothScrollToId('guide-viewer');
+  };
+
+  // ── Dedicated Previous Full-Screen Login Page (/nutrivision-ai.jpeg) ──
+  if (view === 'login') {
+    return (
+      <LocalizedContent>
+        <div
+          className="login-viewport-root"
+          style={{
+            position: 'relative',
+            minHeight: '100dvh',
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            overflowX: 'hidden',
+            overflowY: 'auto',
+            color: '#F9F2E4',
+            fontFamily: "'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+            letterSpacing: '-0.01em',
+          }}
+        >
+          {/* Full-viewport Culinary Background Photo (from public/nutrivision-ai.jpeg) */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 0,
+              backgroundImage: 'url("/nutrivision-ai.jpeg")',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center center',
+              backgroundRepeat: 'no-repeat',
+              transform: 'scale(1.02)',
+              filter: 'brightness(1.0) contrast(1.02) saturate(1.05)',
+              opacity: 1,
+            }}
+          />
+
+          {/* Minimal soft ambient vignette — food photo stays pin-sharp, bright, and vibrant */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 1,
+              background:
+                'linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.05) 30%, rgba(0, 0, 0, 0.05) 70%, rgba(0, 0, 0, 0.38) 100%)',
+              pointerEvents: 'none',
+            }}
+          />
+
+          {/* Top Header Bar */}
+          <header
+            style={{
+              position: 'relative',
+              zIndex: 10,
+              width: '100%',
+              maxWidth: 1200,
+              margin: '0 auto',
+              padding: 'calc(env(safe-area-inset-top, 0px) + 16px) clamp(16px, 4vw, 32px) 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              flexWrap: 'wrap',
+            }}
+          >
+            {/* Brand mark */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '7px 14px 7px 10px',
+                borderRadius: 999,
+                background: 'rgba(20, 14, 11, 0.90)',
+                border: '1px solid rgba(255, 255, 255, 0.24)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
+              }}
+            >
+              <img
+                src="/icon-96.png"
+                alt=""
+                aria-hidden="true"
+                width={26}
+                height={26}
+                style={{ borderRadius: 8, display: 'block' }}
+              />
+              <span
+                style={{
+                  fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: '#FFFFFF',
+                  letterSpacing: '-0.01em',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+                }}
+              >
+                {isBn ? 'নিউট্রিভিশন' : 'NutriVision'}
+              </span>
+              <span
+                style={{
+                  fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: '0.06em',
+                  padding: '3px 8px',
+                  borderRadius: 6,
+                  background: 'linear-gradient(135deg, #E8590C 0%, #C92A2A 100%)',
+                  color: '#FFFFFF',
+                  border: '1px solid rgba(255, 255, 255, 0.40)',
+                  boxShadow: '0 2px 8px rgba(201, 42, 42, 0.55)',
+                }}
+              >
+                {isBn ? 'এআই' : 'AI'}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                type="button"
+                onClick={backToLanding}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  height: 38,
+                  padding: '0 14px',
+                  borderRadius: 999,
+                  background: 'rgba(20, 14, 11, 0.85)',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  color: '#FAF4EC',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+                }}
+              >
+                <ArrowLeft size={14} />
+                <span>{isBn ? 'গাইড দেখুন' : 'Guide'}</span>
+              </button>
+              <div
+                style={{
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  borderRadius: 999,
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+                }}
+              >
+                <LanguageToggle />
+              </div>
+            </div>
+          </header>
+
+          {/* Center Responsive Glass Card */}
+          <main
+            style={{
+              position: 'relative',
+              zIndex: 10,
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px clamp(16px, 4vw, 32px)',
+              width: '100%',
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{
+                duration: 0.5,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              style={{
+                width: '100%',
+                maxWidth: 440,
+                background: 'rgba(24, 16, 12, 0.85)',
+                backdropFilter: 'blur(28px) saturate(190%)',
+                WebkitBackdropFilter: 'blur(28px) saturate(190%)',
+                border: '1px solid rgba(249, 242, 228, 0.18)',
+                borderRadius: 26,
+                boxShadow:
+                  '0 28px 65px -14px rgba(0, 0, 0, 0.80), 0 0 0 1px rgba(255, 255, 255, 0.08) inset',
+                padding: 'clamp(28px, 6vw, 40px) clamp(20px, 5vw, 32px)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                gap: 22,
+              }}
+            >
+              {/* Header Icon Emblem */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 20,
+                    background:
+                      'linear-gradient(135deg, rgba(217, 72, 15, 0.95) 0%, rgba(154, 43, 14, 0.95) 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 16,
+                    boxShadow:
+                      '0 12px 28px -6px rgba(217, 72, 15, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.25) inset',
+                  }}
+                >
+                  <LogIn size={30} color="#FFF8F0" strokeWidth={2.3} />
+                </div>
+
+                {/* Aesthetic Editorial Brand Title */}
+                <h1
+                  style={{
+                    fontFamily: isBn
+                      ? "'Hind Siliguri', 'Outfit', sans-serif"
+                      : "'Fraunces', 'Plus Jakarta Sans', Georgia, serif",
+                    fontSize: 'clamp(26px, 4vw, 32px)',
+                    fontWeight: 700,
+                    color: '#FFF8F0',
+                    margin: '0 0 10px',
+                    letterSpacing: '-0.025em',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 10,
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <span>{isBn ? 'নিউট্রিভিশন' : 'NutriVision'}</span>
+                  <span
+                    style={{
+                      fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                      fontSize: 'clamp(14px, 2.2vw, 17px)',
+                      fontWeight: 800,
+                      letterSpacing: '0.06em',
+                      padding: '3px 11px',
+                      borderRadius: 999,
+                      background: 'linear-gradient(135deg, #E8590C 0%, #C92A2A 100%)',
+                      color: '#FFFFFF',
+                      border: '1px solid rgba(255, 255, 255, 0.35)',
+                      boxShadow: '0 4px 14px rgba(201, 42, 42, 0.50)',
+                      verticalAlign: 'middle',
+                    }}
+                  >
+                    {isBn ? 'এআই' : 'AI'}
+                  </span>
+                </h1>
+
+                <p
+                  style={{
+                    fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                    fontSize: 'clamp(13px, 2vw, 14px)',
+                    color: 'rgba(249, 242, 228, 0.82)',
+                    margin: 0,
+                    lineHeight: 1.6,
+                    maxWidth: 340,
+                    fontWeight: 400,
+                  }}
+                >
+                  {isBn
+                    ? 'আপনার খাবারের ছবি তুলে তাৎক্ষণিক পুষ্টি বিশ্লেষণ, নিরাপত্তা সতর্কতা ও বাজারের তালিকা পেতে সাইন ইন করুন।'
+                    : 'Sign in with Google to access personalized nutrition intelligence, clinical safety alerts, and meal tracking.'}
+                </p>
+              </div>
+
+              {/* Google Sign-In Action Block */}
+              <div
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 14,
+                  padding: '20px 16px',
+                  borderRadius: 18,
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.10)',
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: 'rgba(249, 242, 228, 0.65)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.12em',
+                  }}
+                >
+                  {isBn ? 'গুগল অ্যাকাউন্ট দিয়ে সাইন ইন' : 'Sign in with Google'}
+                </div>
+
+                {!online ? (
+                  <div
+                    role="status"
+                    style={{
+                      color: 'rgba(249, 242, 228, 0.8)',
+                      fontSize: 12,
+                      lineHeight: 1.5,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {isBn
+                      ? 'গুগল সাইন-ইনের জন্য ইন্টারনেট প্রয়োজন। অফলাইনে চালিয়ে যেতে নিচের বোতাম ব্যবহার করুন।'
+                      : 'Google sign-in needs internet. Use the button below to continue offline.'}
+                  </div>
+                ) : GOOGLE_CLIENT_ID ? (
+                  <div
+                    ref={googleBtnContainerRef}
+                    style={{
+                      minHeight: 46,
+                      display: 'flex',
+                      justifyContent: 'center',
+                      width: '100%',
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      padding: '12px 16px',
+                      borderRadius: 12,
+                      background: 'rgba(217, 119, 6, 0.15)',
+                      border: '1px solid rgba(217, 119, 6, 0.35)',
+                      color: '#FCD34D',
+                      fontSize: 12,
+                      lineHeight: 1.45,
+                      textAlign: 'center',
+                      fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                    }}
+                  >
+                    {isBn
+                      ? 'গুগল ক্লায়েন্ট আইডি সেট করা নেই। দয়া করে VITE_GOOGLE_CLIENT_ID পরিবেশ ভেরিয়েবল সেট করুন।'
+                      : 'Google Client ID is not configured. Please set VITE_GOOGLE_CLIENT_ID in your environment variables.'}
+                  </div>
+                )}
+
+                <AnimatePresence>
+                  {googleLoading && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.2 }}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '12px 14px',
+                        borderRadius: 14,
+                        background: 'rgba(201, 98, 45, 0.15)',
+                        border: '1px solid rgba(201, 98, 45, 0.30)',
+                        width: '100%',
+                        textAlign: 'center',
+                        fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <RefreshCw
+                          size={15}
+                          color="#FFB899"
+                          className={reduceMotion ? '' : 'animate-spin'}
+                          style={{ animation: 'spin 1.5s linear infinite' }}
+                        />
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#F9F2E4' }}>
+                          {isBn ? 'সার্ভারের সাথে যাচাই করা হচ্ছে…' : 'Verifying with server…'}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 11.5,
+                          color: 'rgba(249, 242, 228, 0.75)',
+                          lineHeight: 1.4,
+                          maxWidth: 290,
+                        }}
+                      >
+                        {isBn
+                          ? 'সার্ভার কোল্ড স্টার্ট হলে প্রথমবার ৩০-৪৫ সেকেন্ড সময় লাগতে পারে।'
+                          : 'Render backend may take 30–45s to wake up on first visit.'}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                  {error && (
+                    <motion.div
+                      role="alert"
+                      aria-live="assertive"
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 10,
+                        padding: '12px 14px',
+                        borderRadius: 14,
+                        background: 'rgba(239, 68, 68, 0.18)',
+                        border: '1px solid rgba(239, 68, 68, 0.40)',
+                        width: '100%',
+                        textAlign: 'left',
+                        fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                      }}
+                    >
+                      <AlertCircle size={16} color="#F87171" style={{ flexShrink: 0, marginTop: 2 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 600, color: '#FCA5A5' }}>
+                          {isBn ? 'সাইন ইন ব্যর্থ হয়েছে' : 'Sign in failed'}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 11.5,
+                            color: '#FEE2E2',
+                            marginTop: 2,
+                            lineHeight: 1.4,
+                            wordBreak: 'break-word',
+                          }}
+                        >
+                          {error}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onSignedIn(continueOffline())}
+                style={{
+                  width: '100%',
+                  minHeight: 44,
+                  borderRadius: 12,
+                  border: '1px solid rgba(249, 242, 228, 0.3)',
+                  background: 'rgba(249, 242, 228, 0.12)',
+                  color: '#FFF8F0',
+                  font: '600 14px Inter, system-ui, sans-serif',
+                  cursor: 'pointer',
+                }}
+              >
+                {isBn ? 'অফলাইনে চালিয়ে যান' : 'Continue offline'}
+              </button>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  padding: '4px 8px',
+                  textAlign: 'center',
+                  fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                }}
+              >
+                <ShieldCheck size={14} color="rgba(249, 242, 228, 0.65)" />
+                <span style={{ fontSize: 11.5, color: 'rgba(249, 242, 228, 0.65)' }}>
+                  {isBn
+                    ? 'গুগল ওঅথ ২.০ এবং সুরক্ষিত ব্যাকএন্ড পারসিস্টেন্স'
+                    : 'Secured via Google OAuth 2.0 & encrypted JWT sessions'}
+                </span>
+              </div>
+            </motion.div>
+          </main>
+
+          {/* Bottom Attribution Footer */}
+          <footer
+            style={{
+              position: 'relative',
+              zIndex: 10,
+              width: '100%',
+              maxWidth: 1200,
+              margin: '0 auto',
+              padding: '12px clamp(16px, 4vw, 32px) calc(env(safe-area-inset-bottom, 0px) + 16px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11.5,
+                color: '#F9F2E4',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                padding: '6px 14px',
+                borderRadius: 999,
+                background: 'rgba(20, 14, 11, 0.65)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)',
+              }}
+            >
+              <Sparkles size={12} color="#FFB899" />
+              <span>
+                {isBn
+                  ? 'বাংলাদেশি খাদ্য উপাদান ডেটাবেজ ও ক্লিনিক্যাল এআই ইঞ্জিন'
+                  : 'Bangladeshi Food Composition & Clinical Dietary AI Engine'}
+              </span>
+            </div>
+          </footer>
+        </div>
+      </LocalizedContent>
+    );
+  }
+
+  // ── Landing Page (with Heavy Lenis Scroll + Step Guide + Local AI Settings) ──
   return (
     <LocalizedContent>
       <div
@@ -135,10 +727,9 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
           fontFamily: isBn ? "'Hind Siliguri', 'Inter', sans-serif" : "'Inter', system-ui, sans-serif",
         }}
       >
-        {/* Warm espresso & champagne ambient background matching the main app */}
         <div className="sage-bg" />
 
-        {/* Sticky Top Bar with Language Toggle & Instant Login Toggle */}
+        {/* Sticky Top Bar with Language Toggle & Login Page Redirect Toggle */}
         <header
           style={{
             position: 'sticky',
@@ -191,8 +782,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
               <LanguageToggle />
               <motion.button
                 type="button"
-                onClick={() => setLoginOpen((open) => !open)}
-                aria-expanded={loginOpen}
+                onClick={openLoginPage}
                 whileTap={{ scale: 0.96 }}
                 style={{
                   display: 'inline-flex',
@@ -202,8 +792,8 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                   padding: '0 16px',
                   borderRadius: 999,
                   border: '1px solid rgba(255, 255, 255, 0.65)',
-                  background: loginOpen ? '#24130A' : '#FAF4EC',
-                  color: loginOpen ? '#FFF7EE' : '#24130A',
+                  background: '#FAF4EC',
+                  color: '#24130A',
                   fontFamily: 'inherit',
                   fontSize: 13,
                   fontWeight: 700,
@@ -219,7 +809,6 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
           </div>
         </header>
 
-        {/* Main Landing Content */}
         <main
           style={{
             position: 'relative',
@@ -229,10 +818,10 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
             padding: 'clamp(28px, 5vw, 56px) clamp(16px, 4vw, 32px) 64px',
             display: 'flex',
             flexDirection: 'column',
-            gap: 'clamp(36px, 6vw, 60px)',
+            gap: 'clamp(40px, 6vw, 68px)',
           }}
         >
-          {/* ── 1. Hero Welcome & Concise Product Definition ─────────── */}
+          {/* ── 1. Welcome Hero & Online/Offline Access ────────────── */}
           <section
             style={{
               display: 'grid',
@@ -293,14 +882,14 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                 }}
               >
                 {isBn
-                  ? 'নিউট্রিভিশন আপনার প্লেটের ছবি থেকে RAG ও ভিশন মডেলের মাধ্যমে ক্যালরি বিশ্লেষণ করে, ডায়েট সতর্কতা দেখায়, চালডালের লাইভ বাজারদরসহ বাজার তালিকা তৈরি করে এবং লাইভ রুমে খাবার শেয়ার করার সুবিধা দেয়।'
-                  : 'NutriVision reads your meal photo with our culinary RAG and vision pipeline, flags dietary conflicts against your health profile, pulls live Chaldal grocery prices, and includes an AI nutrition coach plus 24h chat rooms.'}
+                  ? 'নিউট্রিভিশন আপনার প্লেটের ছবি থেকে RAG ও ভিশন মডেলের মাধ্যমে ক্যালরি বিশ্লেষণ করে, ডায়েট সতর্কতা দেখায়, চালডালের লাইভ বাজারদরসহ বাজার তালিকা তৈরি করে এবং লোকাল Ollama, Whisper ও Piper দিয়ে অফলাইনেও কাজ করে।'
+                  : 'NutriVision analyzes meal photos via our culinary RAG and vision pipeline, detects dietary conflicts, syncs live Chaldal market prices, supports 24h live chat rooms, and runs locally with Ollama, Whisper, and Piper.'}
               </p>
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, paddingTop: 4 }}>
                 <motion.button
                   type="button"
-                  onClick={() => setLoginOpen(true)}
+                  onClick={openLoginPage}
                   whileHover={reduceMotion ? {} : { y: -1 }}
                   whileTap={{ scale: 0.97 }}
                   style={{
@@ -320,11 +909,12 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                   }}
                 >
                   <LogIn size={16} />
-                  <span>{isBn ? 'গুগল লগইন / শুরু করুন' : 'Sign In & Start'}</span>
+                  <span>{isBn ? 'লগইন পেজে যান' : 'Go to Login Page'}</span>
                 </motion.button>
 
-                <a
-                  href="#guide-steps"
+                <button
+                  type="button"
+                  onClick={() => smoothScrollToId('guide-steps')}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -334,16 +924,17 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                     border: '1px solid rgba(255, 255, 255, 0.38)',
                     background: 'rgba(255, 245, 235, 0.14)',
                     color: '#FFF8F0',
+                    fontFamily: 'inherit',
                     fontSize: 14,
                     fontWeight: 600,
-                    textDecoration: 'none',
+                    cursor: 'pointer',
                     backdropFilter: 'blur(12px)',
                     WebkitBackdropFilter: 'blur(12px)',
                   }}
                 >
-                  <span>{isBn ? 'ধাপে ধাপে গাইড দেখুন' : 'Read Step-by-Step Guide'}</span>
+                  <span>{isBn ? 'ব্যবহার নির্দেশিকা দেখুন' : 'Explore User Guide'}</span>
                   <ArrowDown size={15} />
-                </a>
+                </button>
               </div>
             </div>
 
@@ -423,7 +1014,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                   </div>
                   <p style={{ margin: '4px 0 0', fontSize: 12.5, lineHeight: 1.5, color: '#5C3A27' }}>
                     {isBn
-                      ? 'প্রোফাইল ও খাবার ক্লাউডে সিঙ্ক, ভিশন + RAG খাবার শনাক্তকরণ, চালডাল লাইভ দাম, এআই কোচ ও ২৪ ঘণ্টার রুম চ্যাট।'
+                      ? 'প্রোফাইল সিঙ্ক, ভিশন + RAG খাবার শনাক্তকরণ, চালডাল লাইভ দাম, এআই কোচ ও ২৪ ঘণ্টার রুম চ্যাট।'
                       : 'Cloud profile sync, Vision + RAG plate recognition, live Chaldal prices, hosted AI Coach & 24h Room chat.'}
                   </p>
                 </div>
@@ -461,15 +1052,15 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                   </div>
                   <p style={{ margin: '4px 0 0', fontSize: 12.5, lineHeight: 1.5, color: '#5C3A27' }}>
                     {isBn
-                      ? 'ডিভাইসে প্রোফাইল ও বিএমআর/টিডিইই লক্ষ্য নির্ধারণ, খাবার লগ করা, খাদ্য-স্বাস্থ্য সতর্কতা ও সংরক্ষিত পুষ্টি ডেটা দেখা।'
-                      : 'Keep your profile & BMR/TDEE calorie targets on-device, log meals locally, run dietary conflict checks, and browse cached nutrition.'}
+                      ? 'ডিভাইসে প্রোফাইল ও বিএমআর/টিডিইই হিসাব, খাবার লগ, সতর্কতা নিয়ম এবং লোকাল Ollama, Whisper ও Piper ব্যবহার করুন।'
+                      : 'Keep your profile & BMR/TDEE targets on-device, log meals locally, check conflict rules, and run local Ollama, Whisper & Piper.'}
                   </p>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* ── 2. Step-by-Step Interactive User Guide (Step 0 – Step 8) ── */}
+          {/* ── 2. Step-by-Step Interactive User Guide (Steps 0–10) ─── */}
           <section
             id="guide-steps"
             style={{ display: 'flex', flexDirection: 'column', gap: 18 }}
@@ -507,8 +1098,8 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                   }}
                 >
                   {isBn
-                    ? 'সাইন ইন থেকে লাইভ রুম পর্যন্ত সম্পূর্ণ যাত্রা'
-                    : 'From sign-in to live room chat in 9 steps'}
+                    ? 'সাইন ইন থেকে লোকাল এআই সেটিংস — প্রতিটি ধাপ'
+                    : 'Every step from Google sign-in to local AI setup'}
                 </h2>
               </div>
 
@@ -622,7 +1213,6 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                     alignItems: 'center',
                   }}
                 >
-                  {/* Step Details */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <span
                       style={{
@@ -711,7 +1301,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                       <div style={{ paddingTop: 6 }}>
                         <button
                           type="button"
-                          onClick={() => setLoginOpen(true)}
+                          onClick={openLoginPage}
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -728,13 +1318,12 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                           }}
                         >
                           <LogIn size={14} />
-                          <span>{isBn ? 'এখনই সাইন ইন খুলুন' : 'Open Sign-In Now'}</span>
+                          <span>{isBn ? 'লগইন পেজে যান' : 'Go to Login Page'}</span>
                         </button>
                       </div>
                     )}
                   </div>
 
-                  {/* Framed Screenshot Preview */}
                   <div
                     style={{
                       display: 'flex',
@@ -763,11 +1352,11 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
               </AnimatePresence>
             </div>
 
-            {/* All 9 Steps Thumbnail Overview */}
+            {/* All Steps Visual Grid */}
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(215px, 1fr))',
                 gap: 12,
                 marginTop: 4,
               }}
@@ -803,7 +1392,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                     <div
                       style={{
                         width: '100%',
-                        height: 128,
+                        height: 124,
                         borderRadius: 11,
                         overflow: 'hidden',
                         background: '#24130A',
@@ -845,9 +1434,190 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
               })}
             </div>
           </section>
+
+          {/* ── 3. Dedicated Settings Feature Spotlight: Local Ollama, Whisper & Piper ── */}
+          <section
+            id="local-ai"
+            style={{ display: 'flex', flexDirection: 'column', gap: 18 }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: '#E8C49A',
+                  marginBottom: 4,
+                }}
+              >
+                {isBn ? 'সেটিংস ও প্রাইভেসি' : 'SETTINGS & ON-DEVICE AI'}
+              </div>
+              <h2
+                style={{
+                  margin: 0,
+                  fontFamily: isBn ? "'Hind Siliguri', serif" : 'var(--font-serif)',
+                  fontSize: 'clamp(24px, 3vw, 30px)',
+                  fontWeight: 700,
+                  color: '#FFF8F0',
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                {isBn
+                  ? 'লোকাল Ollama, Whisper ও Piper ভয়েস নিজের ডিভাইসে চালান'
+                  : 'Run local Ollama models, Whisper STT & Piper voice privately'}
+              </h2>
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                gap: 18,
+              }}
+            >
+              {/* Local Ollama Card (ollama-2.png) */}
+              <div
+                className="champagne-panel"
+                style={{
+                  padding: 18,
+                  borderRadius: 24,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 14,
+                  color: '#24130A',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 11,
+                      background: 'rgba(36, 19, 10, 0.1)',
+                      color: '#24130A',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Cpu size={18} />
+                  </div>
+                  <div>
+                    <h3
+                      style={{
+                        margin: 0,
+                        fontFamily: isBn ? "'Hind Siliguri', serif" : 'var(--font-serif)',
+                        fontSize: 17,
+                        fontWeight: 700,
+                        color: '#24130A',
+                      }}
+                    >
+                      {isBn ? 'লোকাল Ollama মডেল সংযোগ' : 'Local Ollama Models'}
+                    </h3>
+                    <div style={{ fontSize: 12, color: '#5C3A27', fontWeight: 600 }}>
+                      http://localhost:11434
+                    </div>
+                  </div>
+                </div>
+
+                <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, color: '#4A2E1F' }}>
+                  {isBn
+                    ? 'সেটিংস থেকে আপনার কম্পিউটারের Ollama সার্ভার যুক্ত করলে ইনস্টল করা চ্যাট ও ভিশন মডেল স্বয়ংক্রিয়ভাবে যুক্ত হয়—কোনো ডেটা বাইরে না পাঠিয়েই প্লেট ও প্রশ্ন বিশ্লেষণ করা যায়।'
+                    : 'Point Settings to your local Ollama server for automatic model discovery, custom system prompts, and private on-device meal photo & nutrition reasoning.'}
+                </p>
+
+                <div
+                  style={{
+                    borderRadius: 16,
+                    overflow: 'hidden',
+                    background: '#24130A',
+                    border: '1px solid rgba(36, 19, 10, 0.22)',
+                  }}
+                >
+                  <img
+                    src="/ollama-2.png"
+                    alt={isBn ? 'লোকাল Ollama মডেল সেটিংস' : 'Local Ollama model settings'}
+                    loading="lazy"
+                    style={{ width: '100%', height: 'auto', display: 'block' }}
+                  />
+                </div>
+              </div>
+
+              {/* Offline Whisper & Piper Card (ollama-1.png) */}
+              <div
+                className="champagne-panel"
+                style={{
+                  padding: 18,
+                  borderRadius: 24,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 14,
+                  color: '#24130A',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 11,
+                      background: 'rgba(45, 106, 79, 0.15)',
+                      color: '#2D6A4F',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Mic size={18} />
+                  </div>
+                  <div>
+                    <h3
+                      style={{
+                        margin: 0,
+                        fontFamily: isBn ? "'Hind Siliguri', serif" : 'var(--font-serif)',
+                        fontSize: 17,
+                        fontWeight: 700,
+                        color: '#24130A',
+                      }}
+                    >
+                      {isBn ? 'অফলাইন Whisper ও Piper ভয়েস' : 'Offline Whisper, Piper & Qwen3-TTS'}
+                    </h3>
+                    <div style={{ fontSize: 12, color: '#5C3A27', fontWeight: 600 }}>
+                      http://localhost:5005/transcribe · /speak
+                    </div>
+                  </div>
+                </div>
+
+                <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, color: '#4A2E1F' }}>
+                  {isBn
+                    ? 'ইন্টারনেট ছাড়াই কথা বলে প্রশ্ন করতে লোকাল Whisper এবং উত্তর শোনার জন্য Piper বা Qwen3-TTS ইঞ্জিন বেছে নিন। সেটিংসে এক ক্লিকেই ভয়েস সার্ভিস পরীক্ষা করা যায়।'
+                    : 'Transcribe voice questions privately with local Whisper and hear AI Coach responses through Piper or Qwen3-TTS weights, complete with a one-click service check.'}
+                </p>
+
+                <div
+                  style={{
+                    borderRadius: 16,
+                    overflow: 'hidden',
+                    background: '#24130A',
+                    border: '1px solid rgba(36, 19, 10, 0.22)',
+                  }}
+                >
+                  <img
+                    src="/ollama-1.png"
+                    alt={isBn ? 'অফলাইন Whisper ও Piper সেটিংস' : 'Offline Whisper and Piper voice settings'}
+                    loading="lazy"
+                    style={{ width: '100%', height: 'auto', display: 'block' }}
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
         </main>
 
-        {/* Bottom Attribution Footer */}
+        {/* Bottom Footer */}
         <footer
           style={{
             position: 'relative',
@@ -869,287 +1639,22 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
           </span>
           <button
             type="button"
-            onClick={() => setLoginOpen(true)}
+            onClick={openLoginPage}
             style={{
-              padding: '8px 16px',
+              padding: '9px 18px',
               borderRadius: 999,
               border: '1px solid rgba(255, 255, 255, 0.35)',
-              background: 'rgba(255, 245, 235, 0.16)',
-              color: '#FFF8F0',
+              background: '#FAF4EC',
+              color: '#24130A',
               fontFamily: 'inherit',
-              fontSize: 12.5,
+              fontSize: 13,
               fontWeight: 700,
               cursor: 'pointer',
             }}
           >
-            {isBn ? 'অ্যাপে প্রবেশ করুন →' : 'Launch App / Login →'}
+            {isBn ? 'লগইন পেজে প্রবেশ করুন →' : 'Proceed to Login →'}
           </button>
         </footer>
-
-        {/* ── Login Modal (Toggled from Top Bar or CTA) ──────────────── */}
-        <AnimatePresence>
-          {loginOpen && (
-            <motion.div
-              role="dialog"
-              aria-modal="true"
-              aria-label={isBn ? 'নিউট্রিভিশন লগইন' : 'Sign in to NutriVision'}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setLoginOpen(false)}
-              style={{
-                position: 'fixed',
-                inset: 0,
-                zIndex: 60,
-                background: 'rgba(18, 9, 5, 0.72)',
-                backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '20px 16px',
-              }}
-            >
-              <motion.div
-                initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 14, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.97 }}
-                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  position: 'relative',
-                  width: '100%',
-                  maxWidth: 430,
-                  background: 'rgba(30, 18, 12, 0.96)',
-                  border: '1px solid rgba(249, 242, 228, 0.22)',
-                  borderRadius: 26,
-                  boxShadow: '0 28px 70px rgba(0, 0, 0, 0.75)',
-                  padding: '28px 24px 24px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  textAlign: 'center',
-                  gap: 18,
-                  color: '#FFF8F0',
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => setLoginOpen(false)}
-                  aria-label={isBn ? 'বন্ধ করুন' : 'Close login'}
-                  style={{
-                    position: 'absolute',
-                    top: 14,
-                    right: 14,
-                    width: 34,
-                    height: 34,
-                    borderRadius: '50%',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    color: '#FFF8F0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <X size={16} />
-                </button>
-
-                <div
-                  style={{
-                    width: 54,
-                    height: 54,
-                    borderRadius: 16,
-                    background: 'linear-gradient(135deg, #C87428 0%, #8C4716 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 10px 24px rgba(200, 116, 40, 0.4)',
-                  }}
-                >
-                  <LogIn size={25} color="#FFF8F0" />
-                </div>
-
-                <div>
-                  <h2
-                    style={{
-                      margin: 0,
-                      fontFamily: isBn ? "'Hind Siliguri', serif" : 'var(--font-serif)',
-                      fontSize: 25,
-                      fontWeight: 700,
-                      color: '#FFF8F0',
-                    }}
-                  >
-                    {isBn ? 'নিউট্রিভিশনে প্রবেশ করুন' : 'Sign in to NutriVision'}
-                  </h2>
-                  <p
-                    style={{
-                      margin: '6px 0 0',
-                      fontSize: 13,
-                      lineHeight: 1.5,
-                      color: 'rgba(249, 242, 228, 0.78)',
-                      maxWidth: 330,
-                    }}
-                  >
-                    {isBn
-                      ? 'অনলাইনে RAG বিশ্লেষণ, চালডাল বাজারদর ও রুম পেতে গুগল দিয়ে প্রবেশ করুন; অথবা অফলাইন মোডে চালিয়ে যান।'
-                      : 'Sign in with Google for RAG food analysis, live prices & 24h rooms — or continue offline on this device.'}
-                  </p>
-                </div>
-
-                {/* Google Sign-In Box */}
-                <div
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '16px 14px',
-                    borderRadius: 18,
-                    background: 'rgba(255, 255, 255, 0.06)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: 'rgba(249, 242, 228, 0.68)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                    }}
-                  >
-                    {isBn ? 'গুগল অ্যাকাউন্ট দিয়ে সাইন ইন' : 'Online Access · Google OAuth'}
-                  </div>
-
-                  {!online ? (
-                    <div
-                      role="status"
-                      style={{
-                        color: 'rgba(249, 242, 228, 0.85)',
-                        fontSize: 12.5,
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      {isBn
-                        ? 'ইন্টারনেট সংযোগ নেই। নিচের অফলাইন বোতাম দিয়ে অ্যাপ ব্যবহার করুন।'
-                        : 'You are offline. Use the offline option below to continue on this device.'}
-                    </div>
-                  ) : GOOGLE_CLIENT_ID ? (
-                    <div
-                      ref={googleBtnContainerRef}
-                      style={{
-                        minHeight: 46,
-                        display: 'flex',
-                        justifyContent: 'center',
-                        width: '100%',
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        padding: '10px 14px',
-                        borderRadius: 12,
-                        background: 'rgba(217, 119, 6, 0.16)',
-                        border: '1px solid rgba(217, 119, 6, 0.35)',
-                        color: '#FCD34D',
-                        fontSize: 12,
-                        lineHeight: 1.45,
-                      }}
-                    >
-                      {isBn
-                        ? 'গুগল ক্লায়েন্ট আইডি সেট করা নেই। VITE_GOOGLE_CLIENT_ID কনফিগার করুন।'
-                        : 'Google Client ID is not configured (VITE_GOOGLE_CLIENT_ID).'}
-                    </div>
-                  )}
-
-                  {googleLoading && (
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '10px 12px',
-                        borderRadius: 12,
-                        background: 'rgba(200, 116, 40, 0.18)',
-                        width: '100%',
-                        justifyContent: 'center',
-                        fontSize: 12.5,
-                        fontWeight: 600,
-                      }}
-                    >
-                      <RefreshCw
-                        size={14}
-                        color="#FFB899"
-                        style={{ animation: reduceMotion ? undefined : 'spin 1.5s linear infinite' }}
-                      />
-                      <span>{isBn ? 'সার্ভারে যাচাই করা হচ্ছে…' : 'Verifying with server…'}</span>
-                    </div>
-                  )}
-
-                  {error && (
-                    <div
-                      role="alert"
-                      style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: 8,
-                        padding: '10px 12px',
-                        borderRadius: 12,
-                        background: 'rgba(239, 68, 68, 0.18)',
-                        border: '1px solid rgba(239, 68, 68, 0.4)',
-                        width: '100%',
-                        textAlign: 'left',
-                      }}
-                    >
-                      <AlertCircle size={15} color="#FCA5A5" style={{ flexShrink: 0, marginTop: 2 }} />
-                      <span style={{ fontSize: 12, color: '#FEE2E2', lineHeight: 1.4 }}>{error}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Offline Fallback Button */}
-                <button
-                  type="button"
-                  onClick={() => onSignedIn(continueOffline())}
-                  style={{
-                    width: '100%',
-                    minHeight: 44,
-                    borderRadius: 14,
-                    border: '1px solid rgba(249, 242, 228, 0.3)',
-                    background: 'rgba(249, 242, 228, 0.12)',
-                    color: '#FFF8F0',
-                    fontFamily: 'inherit',
-                    fontSize: 14,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {isBn ? 'অফলাইনে চালিয়ে যান' : 'Continue offline'}
-                </button>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    fontSize: 11.5,
-                    color: 'rgba(249, 242, 228, 0.65)',
-                  }}
-                >
-                  <ShieldCheck size={14} />
-                  <span>
-                    {isBn
-                      ? 'গুগল ওঅথ ২.০ এবং এনক্রিপ্টেড সেশন'
-                      : 'Secured via Google OAuth 2.0 & JWT'}
-                  </span>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </LocalizedContent>
   );

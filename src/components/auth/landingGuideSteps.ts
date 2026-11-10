@@ -202,4 +202,46 @@ export const GUIDE_STEPS: GuideStep[] = [
       'ম্যাক্রোসহ সম্পূর্ণ প্লেট বা একক ডিশ কার্ড শেয়ার করার সুবিধা',
     ],
   },
+  {
+    stepNumber: 9,
+    id: 'step-9',
+    image: '/ollama-2.png',
+    badgeEn: 'Step 9 · Local Ollama',
+    badgeBn: 'ধাপ ৯ · লোকাল Ollama',
+    titleEn: 'Connect local Ollama models in Settings',
+    titleBn: 'সেটিংস থেকে আপনার ডিভাইসের Ollama মডেল যুক্ত করুন',
+    summaryEn:
+      'Want 100% private on-device AI? Open Settings and point NutriVision to your local Ollama server (default http://localhost:11434). Installed chat and vision models are auto-discovered for meal photo analysis and AI coaching.',
+    summaryBn:
+      'সম্পূর্ণ ব্যক্তিগত ও অফলাইন এআই ব্যবহার করতে চাইলে সেটিংসে গিয়ে লোকাল Ollama সার্ভার (ডিফল্ট http://localhost:11434) যুক্ত করুন। ইনস্টল করা চ্যাট ও ভিশন মডেল স্বয়ংক্রিয়ভাবে শনাক্ত হয়ে যাবে।',
+    pointsEn: [
+      'Direct connection to Ollama with automatic model discovery',
+      'Custom optional system prompt & vision-model support for meal photos',
+    ],
+    pointsBn: [
+      'Ollama-র সাথে সরাসরি সংযোগ ও স্বয়ংক্রিয় মডেল শনাক্তকরণ',
+      'কাস্টম সিস্টেম প্রম্পট ও খাবারের ছবির জন্য ভিশন মডেল সমর্থন',
+    ],
+  },
+  {
+    stepNumber: 10,
+    id: 'step-10',
+    image: '/ollama-1.png',
+    badgeEn: 'Step 10 · Whisper & Piper',
+    badgeBn: 'ধাপ ১০ · Whisper ও Piper',
+    titleEn: 'Run offline speech with Whisper, Piper & Qwen3-TTS',
+    titleBn: 'Whisper ও Piper / Qwen3-TTS দিয়ে অফলাইনে ভয়েস চালান',
+    summaryEn:
+      'Configure local Whisper transcription (speech-to-text) and choose between Piper or Qwen3-TTS for spoken nutrition replies—all running locally on http://localhost:5005 with a built-in service health tester.',
+    summaryBn:
+      'লোকাল Whisper (স্পিচ-টু-টেক্সট) এবং Piper বা Qwen3-TTS ভয়েস মডেল সেট করুন। http://localhost:5005 এন্ডপয়েন্টে সবকিছু অফলাইনেই চলবে এবং এক ট্যাপে ভয়েস সার্ভিস পরীক্ষা করতে পারবেন।',
+    pointsEn: [
+      'Whisper endpoint for private voice-to-text nutrition questions',
+      'Choice of Piper (multi-language voice weights) or Qwen3-TTS output',
+    ],
+    pointsBn: [
+      'ব্যক্তিগত ভয়েস-টু-টেক্সট প্রশ্নের জন্য লোকাল Whisper এন্ডপয়েন্ট',
+      'Piper (বহুভাষিক ভয়েস) অথবা Qwen3-TTS স্পিচ ইঞ্জিন বেছে নেওয়ার সুবিধা',
+    ],
+  },
 ];
