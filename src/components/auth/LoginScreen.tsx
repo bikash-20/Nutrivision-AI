@@ -809,21 +809,51 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
           </div>
         </header>
 
-        <main
+        {/* ── 1. Full-Bleed Hero Section ONLY (uses /landing hero background.png) ── */}
+        <section
+          aria-label={isBn ? 'পরিচিতি' : 'Welcome'}
           style={{
             position: 'relative',
             zIndex: 2,
-            maxWidth: 1180,
-            margin: '0 auto',
-            padding: 'clamp(28px, 5vw, 56px) clamp(16px, 4vw, 32px) 64px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'clamp(40px, 6vw, 68px)',
+            overflow: 'hidden',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
           }}
         >
-          {/* ── 1. Welcome Hero & Online/Offline Access ────────────── */}
-          <section
+          {/* Hero-only culinary background image (scoped exclusively to this section) */}
+          <div
+            aria-hidden="true"
             style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 0,
+              backgroundImage: 'url("/landing%20hero%20background.png")',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center center',
+              backgroundRepeat: 'no-repeat',
+              transform: 'scale(1.02)',
+            }}
+          />
+
+          {/* Directional espresso contrast scrim + smooth bottom fade so every font is crisp */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 1,
+              background:
+                'linear-gradient(90deg, rgba(16, 8, 4, 0.88) 0%, rgba(22, 11, 5, 0.72) 50%, rgba(24, 12, 6, 0.44) 100%), linear-gradient(180deg, rgba(16, 8, 4, 0.36) 0%, rgba(16, 8, 4, 0.14) 58%, rgba(44, 24, 14, 0.92) 94%, rgba(56, 31, 19, 1) 100%)',
+              pointerEvents: 'none',
+            }}
+          />
+
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 2,
+              maxWidth: 1180,
+              margin: '0 auto',
+              padding: 'clamp(32px, 5.5vw, 68px) clamp(16px, 4vw, 32px) clamp(40px, 6.5vw, 72px)',
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
               gap: 'clamp(24px, 4vw, 44px)',
@@ -837,10 +867,12 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                   alignItems: 'center',
                   gap: 8,
                   alignSelf: 'flex-start',
-                  padding: '6px 12px',
+                  padding: '6px 13px',
                   borderRadius: 999,
-                  background: 'rgba(255, 245, 235, 0.16)',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  background: 'rgba(20, 10, 5, 0.72)',
+                  border: '1px solid rgba(255, 228, 196, 0.36)',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
                   color: '#FFE4C4',
                   fontSize: 11.5,
                   fontWeight: 700,
@@ -865,6 +897,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                   lineHeight: 1.14,
                   letterSpacing: '-0.025em',
                   color: '#FFF8F0',
+                  textShadow: '0 2px 16px rgba(10, 4, 2, 0.75)',
                 }}
               >
                 {isBn
@@ -877,8 +910,9 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                   margin: 0,
                   fontSize: 'clamp(15px, 2vw, 17px)',
                   lineHeight: 1.6,
-                  color: '#F3DFCA',
+                  color: '#FAF0E4',
                   maxWidth: 560,
+                  textShadow: '0 1px 10px rgba(10, 4, 2, 0.8)',
                 }}
               >
                 {isBn
@@ -905,7 +939,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                     fontSize: 14.5,
                     fontWeight: 700,
                     cursor: 'pointer',
-                    boxShadow: '0 12px 28px rgba(0, 0, 0, 0.35)',
+                    boxShadow: '0 12px 28px rgba(0, 0, 0, 0.42)',
                   }}
                 >
                   <LogIn size={16} />
@@ -921,8 +955,8 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                     gap: 8,
                     padding: '13px 20px',
                     borderRadius: 999,
-                    border: '1px solid rgba(255, 255, 255, 0.38)',
-                    background: 'rgba(255, 245, 235, 0.14)',
+                    border: '1px solid rgba(255, 255, 255, 0.44)',
+                    background: 'rgba(20, 10, 5, 0.62)',
                     color: '#FFF8F0',
                     fontFamily: 'inherit',
                     fontSize: 14,
@@ -944,6 +978,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
               style={{
                 padding: '22px 20px',
                 borderRadius: 24,
+                background: 'rgba(250, 244, 236, 0.92)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 14,
@@ -986,7 +1021,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                 style={{
                   padding: '13px 14px',
                   borderRadius: 16,
-                  background: 'rgba(255, 252, 248, 0.72)',
+                  background: 'rgba(255, 252, 248, 0.85)',
                   border: '1px solid rgba(92, 58, 39, 0.14)',
                   display: 'flex',
                   gap: 12,
@@ -1024,7 +1059,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                 style={{
                   padding: '13px 14px',
                   borderRadius: 16,
-                  background: 'rgba(255, 252, 248, 0.72)',
+                  background: 'rgba(255, 252, 248, 0.85)',
                   border: '1px solid rgba(92, 58, 39, 0.14)',
                   display: 'flex',
                   gap: 12,
@@ -1058,7 +1093,21 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                 </div>
               </div>
             </div>
-          </section>
+          </div>
+        </section>
+
+        <main
+          style={{
+            position: 'relative',
+            zIndex: 2,
+            maxWidth: 1180,
+            margin: '0 auto',
+            padding: 'clamp(36px, 5vw, 56px) clamp(16px, 4vw, 32px) 64px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'clamp(40px, 6vw, 68px)',
+          }}
+        >
 
           {/* ── 2. Step-by-Step Interactive User Guide (Steps 0–10) ─── */}
           <section
