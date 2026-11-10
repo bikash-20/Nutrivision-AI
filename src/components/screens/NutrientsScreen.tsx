@@ -995,9 +995,9 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
             marginBottom: 20,
             borderRadius: 20,
             padding: '16px 18px',
-            background: 'rgba(239, 68, 68, 0.08)',
-            border: '1.5px solid rgba(239, 68, 68, 0.35)',
-            boxShadow: '0 4px 16px rgba(239, 68, 68, 0.08)',
+            background: isDark ? 'rgba(239, 68, 68, 0.14)' : 'rgba(254, 242, 242, 0.92)',
+            border: isDark ? '1.5px solid rgba(239, 68, 68, 0.45)' : '1.5px solid rgba(220, 38, 38, 0.25)',
+            boxShadow: isDark ? '0 4px 16px rgba(239, 68, 68, 0.12)' : '0 4px 16px rgba(239, 68, 68, 0.08)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
@@ -1006,8 +1006,8 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
                 width: 30,
                 height: 30,
                 borderRadius: '50%',
-                background: 'rgba(239, 68, 68, 0.15)',
-                color: '#DC2626',
+                background: isDark ? 'rgba(252, 165, 165, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                color: isDark ? '#FCA5A5' : '#DC2626',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1022,13 +1022,13 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
                   fontFamily: 'Inter',
                   fontSize: 14,
                   fontWeight: 700,
-                  color: '#B91C1C',
+                  color: isDark ? '#FCA5A5' : '#7F1D1D',
                   margin: 0,
                 }}
               >
                 {language === 'bn' ? '⚠️ ক্লিনিক্যাল ও খাদ্যাভ্যাস নিরাপত্তা সতর্কতা' : '⚠️ Clinical & Dietary Safety Alert'}
               </h3>
-              <div style={{ fontSize: 11, color: T.inkSoft, marginTop: 2 }}>
+              <div style={{ fontSize: 11, color: isDark ? 'rgba(250, 244, 236, 0.7)' : '#57534E', marginTop: 2 }}>
                 {language === 'bn' ? 'আপনার প্রোফাইলের সাথে খাবারের দ্বন্দ্ব শনাক্ত হয়েছে' : 'Conflicts detected with your health profile'}
               </div>
             </div>
@@ -1039,14 +1039,14 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
               <div
                 key={c.id}
                 style={{
-                  background: 'rgba(255, 255, 255, 0.65)',
+                  background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.65)',
                   padding: '10px 14px',
                   borderRadius: 12,
-                  border: '1px solid rgba(239, 68, 68, 0.18)',
+                  border: isDark ? '1px solid rgba(252, 165, 165, 0.2)' : '1px solid rgba(239, 68, 68, 0.18)',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 700, color: '#991B1B' }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: isDark ? '#FCA5A5' : '#991B1B' }}>
                     {language === 'bn' ? c.title_bn : c.title_en}
                   </span>
                   <span
@@ -1055,18 +1055,22 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
                       fontWeight: 700,
                       padding: '2px 8px',
                       borderRadius: 999,
-                      background: c.severity === 'critical' ? '#FEE2E2' : '#FEF3C7',
-                      color: c.severity === 'critical' ? '#991B1B' : '#92400E',
+                      background: c.severity === 'critical'
+                        ? (isDark ? 'rgba(252, 165, 165, 0.2)' : '#FEE2E2')
+                        : (isDark ? 'rgba(253, 224, 71, 0.15)' : '#FEF3C7'),
+                      color: c.severity === 'critical'
+                        ? (isDark ? '#FCA5A5' : '#991B1B')
+                        : (isDark ? '#FDE047' : '#92400E'),
                     }}
                   >
                     {c.severity === 'critical' ? (language === 'bn' ? 'জরুরি বর্জনীয়' : 'Critical') : (language === 'bn' ? 'সতর্কতা' : 'Warning')}
                   </span>
                 </div>
-                <div style={{ fontSize: 12, color: T.ink, lineHeight: 1.45 }}>
+                <div style={{ fontSize: 12, color: isDark ? '#FAF4EC' : '#1C1917', lineHeight: 1.45 }}>
                   {language === 'bn' ? c.detail_bn : c.detail_en}
                 </div>
                 {c.recommendation_bn && (
-                  <div style={{ marginTop: 6, fontSize: 11.5, color: T.primary, fontWeight: 600 }}>
+                  <div style={{ marginTop: 6, fontSize: 11.5, color: isDark ? '#E8C49A' : '#92400E', fontWeight: 600 }}>
                     💡 {language === 'bn' ? c.recommendation_bn : c.recommendation_en}
                   </div>
                 )}
@@ -1078,10 +1082,10 @@ export default function NutrientsScreen({ detected = [], profile, onBack, onNavi
             style={{
               marginTop: 12,
               paddingTop: 8,
-              borderTop: '1px solid rgba(239, 68, 68, 0.2)',
+              borderTop: isDark ? '1px solid rgba(252, 165, 165, 0.2)' : '1px solid rgba(220, 38, 38, 0.15)',
               fontSize: 11,
               lineHeight: 1.45,
-              color: T.inkSoft,
+              color: isDark ? 'rgba(250, 244, 236, 0.7)' : '#44403C',
             }}
           >
             {language === 'bn' ? CLINICAL_DISCLAIMER_BN : CLINICAL_DISCLAIMER_EN}

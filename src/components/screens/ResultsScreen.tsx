@@ -628,22 +628,24 @@ export default function ResultsScreen({
             marginBottom: 14,
             padding: '14px 16px',
             borderRadius: 16,
-            background: 'rgba(239, 68, 68, 0.08)',
-            border: '1.5px solid rgba(239, 68, 68, 0.35)',
+            background: isDark ? 'rgba(239, 68, 68, 0.14)' : 'rgba(254, 242, 242, 0.92)',
+            border: isDark ? '1.5px solid rgba(239, 68, 68, 0.45)' : '1.5px solid rgba(220, 38, 38, 0.25)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <AlertTriangle size={17} color="#DC2626" />
-            <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#B91C1C' }}>
+            <AlertTriangle size={17} color={isDark ? '#FCA5A5' : '#DC2626'} />
+            <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: isDark ? '#FCA5A5' : '#7F1D1D' }}>
               {isBn ? '⚠️ খাদ্য নিরাপত্তা সতর্কতা' : '⚠️ Dietary Conflict Alert'}
             </h4>
           </div>
           {dietConflicts.map((c) => (
-            <div key={c.id} style={{ marginTop: 6, fontSize: 12, color: T.ink, lineHeight: 1.4 }}>
-              <span style={{ fontWeight: 700, color: '#991B1B' }}>{isBn ? c.title_bn : c.title_en}:</span>{' '}
+            <div key={c.id} style={{ marginTop: 6, fontSize: 12, color: isDark ? '#FAF4EC' : '#1C1917', lineHeight: 1.4 }}>
+              <span style={{ fontWeight: 700, color: isDark ? '#FCA5A5' : '#991B1B' }}>{isBn ? c.title_bn : c.title_en}:</span>{' '}
               {isBn ? c.detail_bn : c.detail_en}
               {c.recommendation_bn && (
-                <div style={{ marginTop: 4, color: T.primary, fontSize: 11.5, fontWeight: 600 }}>
+                <div style={{ marginTop: 4, color: isDark ? '#E8C49A' : '#92400E', fontSize: 11.5, fontWeight: 600 }}>
                   💡 {isBn ? c.recommendation_bn : c.recommendation_en}
                 </div>
               )}
@@ -653,9 +655,9 @@ export default function ResultsScreen({
             style={{
               marginTop: 10,
               paddingTop: 6,
-              borderTop: '1px solid rgba(239, 68, 68, 0.15)',
+              borderTop: isDark ? '1px solid rgba(252, 165, 165, 0.2)' : '1px solid rgba(220, 38, 38, 0.15)',
               fontSize: 10.5,
-              color: T.inkSoft,
+              color: isDark ? 'rgba(250, 244, 236, 0.7)' : '#44403C',
             }}
           >
             {isBn ? CLINICAL_DISCLAIMER_BN : CLINICAL_DISCLAIMER_EN}
