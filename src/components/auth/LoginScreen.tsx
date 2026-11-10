@@ -821,6 +821,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
           <div aria-hidden="true" className="landing-hero-scrim" />
 
           <div
+            className="landing-hero-inner"
             style={{
               position: 'relative',
               zIndex: 2,
@@ -830,7 +831,10 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
               padding: 'clamp(44px, 7vw, 88px) clamp(18px, 4.5vw, 36px) clamp(48px, 8vw, 88px)',
             }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18, maxWidth: 640 }}>
+            <div
+              className="landing-hero-copy"
+              style={{ display: 'flex', flexDirection: 'column', gap: 18, maxWidth: 640 }}
+            >
               <div
                 style={{
                   display: 'inline-flex',
@@ -859,6 +863,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
               </div>
 
               <h1
+                className="landing-hero-title"
                 style={{
                   margin: 0,
                   fontFamily: isBn ? "'Hind Siliguri', Georgia, serif" : 'var(--font-serif)',
@@ -876,6 +881,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
               </h1>
 
               <p
+                className="landing-hero-subtitle"
                 style={{
                   margin: 0,
                   fontSize: 'clamp(15.5px, 2vw, 18px)',
@@ -890,7 +896,10 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                   : 'NutriVision analyzes meal photos via our culinary RAG and vision pipeline, detects dietary conflicts, syncs live Chaldal market prices, supports 24h live chat rooms, and runs locally with Ollama, Whisper, and Piper.'}
               </p>
 
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, paddingTop: 6 }}>
+              <div
+                className="landing-hero-actions"
+                style={{ display: 'flex', flexWrap: 'wrap', gap: 12, paddingTop: 6 }}
+              >
                 <motion.button
                   type="button"
                   onClick={openLoginPage}
