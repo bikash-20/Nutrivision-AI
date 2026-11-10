@@ -170,3 +170,67 @@ def test_websocket_live_relay_text_and_dish_card(client: TestClient) -> None:
             assert received["type"] == "message"
             assert received["message"]["kind"] == "meal_card"
             assert received["message"]["dish_card"]["title"] == "Hilsa & Rice"
+
+
+def test_same_account_across_multiple_tabs_counts_as_one_active(
+    client: TestClient,
+    auth_headers: dict[str, str],
+) -> None:
+    # Account 1 creates room from Tab 1 with JWT auth
+    tab1 = client.post(
+        "/api/rooms",
+        headers=auth_headers,
+        json={"display_name": "Bikash Pubg", "client_id": "tab-1"},
+    ).json()
+    code = tab1["room_code"]
+    assert len(tab1["members"]) == 1
+    assert tab1["participant_id"].startswith("acct-")
+
+    # Same Account 1 joins same room from Tab 2 (or another device)
+    tab2 = client.post(
+        f"/api/rooms/{code}/join",
+        headers=auth_headers,
+        json={"display_name": "Bikash Pubg", "client_id": "tab-2"},
+    ).json()
+    assert tab2["participant_id"] == tab1["participant_id"]
+    assert len(tab2["members"]) == 1  # Still 1 online, NOT 2!
+
+    # A second distinct account joins -> now 2 online
+    other = client.post(
+        f"/api/rooms/{code}/join",
+        json={
+            "display_name": "Friend",
+            "account_id": "friend@nutrivision.ai",
+            "client_id": "friend-tab-1",
+        },
+    ).json()
+    assert other["participant_id"] != tab1["participant_id"]
+    assert len(other["members"]) == 2
+
+    # Tab 1 closes (force=False): Account 1 stays active because Tab 2 is open
+    leave_tab1 = client.post(
+        f"/api/rooms/{code}/leave",
+        headers=auth_headers,
+        json={"participant_id": tab1["participant_id"], "client_id": "tab-1", "force": False},
+    ).json()
+    assert leave_tab1["deleted"] is False
+    poll_after_tab1 = client.get(
+        f"/api/rooms/{code}/poll",
+        headers=auth_headers,
+        params={"participant_id": tab1["participant_id"], "client_id": "tab-2", "after_seq": 0},
+    ).json()
+    assert len(poll_after_tab1["members"]) == 2
+
+    # Tab 2 closes (force=False): now Account 1 leaves, leaving only Friend (1 online)
+    leave_tab2 = client.post(
+        f"/api/rooms/{code}/leave",
+        headers=auth_headers,
+        json={"participant_id": tab1["participant_id"], "client_id": "tab-2", "force": False},
+    ).json()
+    assert leave_tab2["deleted"] is False
+    poll_friend = client.get(
+        f"/api/rooms/{code}/poll",
+        params={"participant_id": other["participant_id"], "client_id": "friend-tab-1", "after_seq": 0},
+    ).json()
+    assert len(poll_friend["members"]) == 1
+    assert poll_friend["members"][0]["name"] == "Friend"

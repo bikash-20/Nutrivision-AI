@@ -680,15 +680,21 @@ class RoomMember(BaseModel):
 
 class RoomCreateRequest(BaseModel):
     display_name: str
+    account_id: str | None = None
+    client_id: str | None = None
 
 
 class RoomJoinRequest(BaseModel):
     display_name: str
     participant_id: str | None = None
+    account_id: str | None = None
+    client_id: str | None = None
 
 
 class RoomLeaveRequest(BaseModel):
     participant_id: str
+    client_id: str | None = None
+    force: bool = True
 
 
 class RoomSendMessageRequest(BaseModel):

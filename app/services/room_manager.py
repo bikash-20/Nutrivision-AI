@@ -1,14 +1,15 @@
 """Ephemeral in-memory room manager for NutriVision real-time chat.
 
 Rooms exist solely in RAM for live relay (WebSocket + HTTP polling fallback).
-No messages or rooms are persisted to disk or Postgres. Once all active
-participants leave a room (or expire due to inactivity), the room and any
-ephemeral delivery buffer are discarded immediately.
+No messages or rooms are persisted to disk or Postgres. Participants are keyed
+deterministically by authenticated user account so logging into the same room
+from multiple tabs or devices counts as ONE active account, not duplicates.
 """
 
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import secrets
 import time
 from collections import deque
@@ -40,9 +41,25 @@ def normalize_room_code(raw: str) -> str:
     return "".join(ch for ch in raw.strip().upper() if ch.isalnum())
 
 
+def resolve_account_participant_id(
+    auth_email: str | None = None,
+    account_id: str | None = None,
+    fallback_participant_id: str | None = None,
+) -> str:
+    """Resolve a deterministic per-account participant ID so the same account
+    is deduplicated across tabs/devices without exposing raw emails."""
+    canonical = (auth_email or account_id or "").strip().lower()
+    if canonical:
+        digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
+        return f"acct-{digest}"
+    if fallback_participant_id and fallback_participant_id.strip():
+        return fallback_participant_id.strip()[:40]
+    return uuid4().hex[:12]
+
+
 def _clean_display_name(raw: str) -> str:
     cleaned = " ".join(raw.strip().split())
-    return (cleaned[:32] if cleaned else "Guest")
+    return cleaned[:32] if cleaned else "Guest"
 
 
 def _utc_now_iso() -> str:
@@ -55,6 +72,7 @@ class _Participant:
     name: str
     last_seen: float
     ws_count: int = 0
+    clients: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
@@ -69,7 +87,7 @@ class _ActiveRoom:
 
 
 class RoomManager:
-    """Thread-safe / async-safe ephemeral room relay store."""
+    """Async-safe ephemeral room relay store keyed by account."""
 
     def __init__(self) -> None:
         self._rooms: dict[str, _ActiveRoom] = {}
@@ -78,11 +96,15 @@ class RoomManager:
         ts = now if now is not None else time.monotonic()
         expired_codes: list[str] = []
         for code, room in self._rooms.items():
-            stale_pids = [
-                pid
-                for pid, p in room.participants.items()
-                if p.ws_count <= 0 and (ts - p.last_seen) > MEMBER_STALE_SECONDS
-            ]
+            stale_pids: list[str] = []
+            for pid, p in room.participants.items():
+                stale_cids = [
+                    cid for cid, seen in p.clients.items() if (ts - seen) > MEMBER_STALE_SECONDS
+                ]
+                for cid in stale_cids:
+                    p.clients.pop(cid, None)
+                if p.ws_count <= 0 and not p.clients and (ts - p.last_seen) > MEMBER_STALE_SECONDS:
+                    stale_pids.append(pid)
             for pid in stale_pids:
                 room.participants.pop(pid, None)
             if not room.participants and not room.sockets and (ts - room.last_activity) > 60.0:
@@ -102,14 +124,21 @@ class RoomManager:
     def _members_list(self, room: _ActiveRoom) -> list[RoomMember]:
         return [RoomMember(id=p.id, name=p.name) for p in room.participants.values()]
 
-    def create_room(self, display_name: str) -> tuple[str, str, str, list[RoomMember], int]:
+    def create_room(
+        self,
+        display_name: str,
+        auth_email: str | None = None,
+        account_id: str | None = None,
+        client_id: str | None = None,
+    ) -> tuple[str, str, str, list[RoomMember], int]:
         now = time.monotonic()
         self._prune_stale(now)
         code = self._generate_code()
-        pid = uuid4().hex[:12]
+        pid = resolve_account_participant_id(auth_email=auth_email, account_id=account_id)
         name = _clean_display_name(display_name)
         room = _ActiveRoom(code=code, created_at=now, last_activity=now)
-        room.participants[pid] = _Participant(id=pid, name=name, last_seen=now)
+        clients = {client_id: now} if client_id else {}
+        room.participants[pid] = _Participant(id=pid, name=name, last_seen=now, clients=clients)
         self._rooms[code] = room
         return code, pid, name, self._members_list(room), room.seq
 
@@ -118,6 +147,9 @@ class RoomManager:
         raw_code: str,
         display_name: str,
         participant_id: str | None = None,
+        auth_email: str | None = None,
+        account_id: str | None = None,
+        client_id: str | None = None,
     ) -> tuple[str, str, str, list[RoomMember], int, RoomMessage | None]:
         now = time.monotonic()
         self._prune_stale(now)
@@ -126,15 +158,28 @@ class RoomManager:
         if room is None:
             raise KeyError(f"Room '{code}' not found or expired.")
 
-        name = _clean_display_name(display_name)
-        is_new = not participant_id or participant_id not in room.participants
-        pid = participant_id if (participant_id and not is_new) else uuid4().hex[:12]
-        room.participants[pid] = _Participant(
-            id=pid,
-            name=name,
-            last_seen=now,
-            ws_count=room.participants[pid].ws_count if not is_new else 0,
+        pid = resolve_account_participant_id(
+            auth_email=auth_email,
+            account_id=account_id,
+            fallback_participant_id=participant_id,
         )
+        name = _clean_display_name(display_name)
+        existing = room.participants.get(pid)
+        is_new = existing is None
+
+        if existing is not None:
+            existing.name = name
+            existing.last_seen = now
+            if client_id:
+                existing.clients[client_id] = now
+        else:
+            clients = {client_id: now} if client_id else {}
+            room.participants[pid] = _Participant(
+                id=pid,
+                name=name,
+                last_seen=now,
+                clients=clients,
+            )
         room.last_activity = now
 
         join_msg: RoomMessage | None = None
@@ -155,12 +200,26 @@ class RoomManager:
 
         return code, pid, name, self._members_list(room), room.seq, join_msg
 
-    def leave_room(self, raw_code: str, participant_id: str) -> tuple[bool, RoomMessage | None]:
+    def leave_room(
+        self,
+        raw_code: str,
+        participant_id: str,
+        client_id: str | None = None,
+        force: bool = True,
+    ) -> tuple[bool, RoomMessage | None]:
         now = time.monotonic()
         code = normalize_room_code(raw_code)
         room = self._rooms.get(code)
         if room is None:
             return False, None
+
+        existing = room.participants.get(participant_id)
+        if not force and existing is not None:
+            if client_id:
+                existing.clients.pop(client_id, None)
+            if existing.clients or existing.ws_count > 0:
+                room.last_activity = now
+                return False, None
 
         removed = room.participants.pop(participant_id, None)
         room.sockets.pop(participant_id, None)
@@ -255,6 +314,7 @@ class RoomManager:
         raw_code: str,
         participant_id: str | None,
         after_seq: int = 0,
+        client_id: str | None = None,
     ) -> tuple[str, list[RoomMember], list[RoomMessage], int]:
         now = time.monotonic()
         self._prune_stale(now)
@@ -264,13 +324,23 @@ class RoomManager:
             raise KeyError(f"Room '{code}' not found or expired.")
 
         if participant_id and participant_id in room.participants:
-            room.participants[participant_id].last_seen = now
+            participant = room.participants[participant_id]
+            participant.last_seen = now
+            if client_id:
+                participant.clients[client_id] = now
         room.last_activity = now
 
         new_messages = [m for m in room.buffer if m.seq > after_seq]
         return code, self._members_list(room), new_messages, room.seq
 
-    def register_ws(self, raw_code: str, participant_id: str, display_name: str, ws: WebSocket) -> list[RoomMember]:
+    def register_ws(
+        self,
+        raw_code: str,
+        participant_id: str,
+        display_name: str,
+        ws: WebSocket,
+        client_id: str | None = None,
+    ) -> list[RoomMember]:
         now = time.monotonic()
         code = normalize_room_code(raw_code)
         room = self._rooms.get(code)
@@ -280,17 +350,32 @@ class RoomManager:
         clean_name = _clean_display_name(display_name)
         participant = room.participants.get(participant_id)
         if participant is None:
-            participant = _Participant(id=participant_id, name=clean_name, last_seen=now, ws_count=1)
+            clients = {client_id: now} if client_id else {}
+            participant = _Participant(
+                id=participant_id,
+                name=clean_name,
+                last_seen=now,
+                ws_count=1,
+                clients=clients,
+            )
             room.participants[participant_id] = participant
         else:
             participant.name = clean_name
             participant.last_seen = now
             participant.ws_count += 1
+            if client_id:
+                participant.clients[client_id] = now
         room.sockets.setdefault(participant_id, set()).add(ws)
         room.last_activity = now
         return self._members_list(room)
 
-    def unregister_ws(self, raw_code: str, participant_id: str, ws: WebSocket) -> list[RoomMember]:
+    def unregister_ws(
+        self,
+        raw_code: str,
+        participant_id: str,
+        ws: WebSocket,
+        client_id: str | None = None,
+    ) -> list[RoomMember]:
         code = normalize_room_code(raw_code)
         room = self._rooms.get(code)
         if room is None:
@@ -304,6 +389,8 @@ class RoomManager:
         if participant is not None:
             participant.ws_count = max(0, participant.ws_count - 1)
             participant.last_seen = time.monotonic()
+            if client_id:
+                participant.clients.pop(client_id, None)
         room.last_activity = time.monotonic()
         return self._members_list(room)
 

@@ -862,10 +862,17 @@ export async function getStorageHealth(): Promise<StorageHealthInfo> {
 
 // ── Ephemeral Room Chat ─────────────────────────────────────────────────
 
-export async function createRoom(displayName: string): Promise<RoomJoinResponse> {
+export async function createRoom(
+  displayName: string,
+  options?: { accountId?: string | null; clientId?: string | null },
+): Promise<RoomJoinResponse> {
   return apiFetch<RoomJoinResponse>('/api/rooms', {
     method: 'POST',
-    body: JSON.stringify({ display_name: displayName }),
+    body: JSON.stringify({
+      display_name: displayName,
+      account_id: options?.accountId ?? null,
+      client_id: options?.clientId ?? null,
+    }),
   });
 }
 
@@ -873,6 +880,7 @@ export async function joinRoom(
   code: string,
   displayName: string,
   participantId?: string | null,
+  options?: { accountId?: string | null; clientId?: string | null },
 ): Promise<RoomJoinResponse> {
   const cleanCode = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   return apiFetch<RoomJoinResponse>(`/api/rooms/${encodeURIComponent(cleanCode)}/join`, {
@@ -880,16 +888,26 @@ export async function joinRoom(
     body: JSON.stringify({
       display_name: displayName,
       participant_id: participantId ?? null,
+      account_id: options?.accountId ?? null,
+      client_id: options?.clientId ?? null,
     }),
   });
 }
 
-export async function leaveRoom(code: string, participantId: string): Promise<void> {
+export async function leaveRoom(
+  code: string,
+  participantId: string,
+  options?: { clientId?: string | null; force?: boolean },
+): Promise<void> {
   const cleanCode = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   try {
     await apiFetch<{ ok: boolean }>(`/api/rooms/${encodeURIComponent(cleanCode)}/leave`, {
       method: 'POST',
-      body: JSON.stringify({ participant_id: participantId }),
+      body: JSON.stringify({
+        participant_id: participantId,
+        client_id: options?.clientId ?? null,
+        force: options?.force ?? true,
+      }),
     });
   } catch {
     // Best-effort leave notification.
@@ -922,12 +940,14 @@ export async function pollRoom(
   code: string,
   participantId: string,
   afterSeq: number,
+  clientId?: string | null,
 ): Promise<RoomPollResponse> {
   const cleanCode = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   const params = new URLSearchParams({
     participant_id: participantId,
     after_seq: String(Math.max(0, afterSeq)),
   });
+  if (clientId) params.set('client_id', clientId);
   return apiFetch<RoomPollResponse>(`/api/rooms/${encodeURIComponent(cleanCode)}/poll?${params.toString()}`);
 }
 
@@ -935,6 +955,7 @@ export function getRoomWsUrl(
   code: string,
   participantId: string,
   displayName: string,
+  options?: { accountId?: string | null; clientId?: string | null },
 ): string | null {
   const base = getApiBase();
   if (!base.startsWith('http://') && !base.startsWith('https://')) {
@@ -946,5 +967,9 @@ export function getRoomWsUrl(
     participant_id: participantId,
     display_name: displayName,
   });
+  const token = storage.load<AuthSession>('auth')?.token;
+  if (token) params.set('token', token);
+  if (options?.accountId) params.set('account_id', options.accountId);
+  if (options?.clientId) params.set('client_id', options.clientId);
   return `${wsBase}/api/rooms/ws/${encodeURIComponent(cleanCode)}?${params.toString()}`;
 }

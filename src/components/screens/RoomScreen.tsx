@@ -139,6 +139,17 @@ export default function RoomScreen({
   const wsRef = useRef<WebSocket | null>(null);
   const lastSeqRef = useRef<number>(lastSeq);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const tabClientIdRef = useRef<string>(
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `tab-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  );
+
+  useEffect(() => {
+    if (!roomCode && defaultDisplayName && displayName === 'Guest') {
+      setDisplayName(defaultDisplayName);
+    }
+  }, [defaultDisplayName, displayName, roomCode]);
 
   useEffect(() => {
     lastSeqRef.current = lastSeq;
@@ -169,9 +180,18 @@ export default function RoomScreen({
       if (roomCode && participantId && typeof navigator !== 'undefined' && navigator.sendBeacon) {
         const cleanCode = roomCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
         const url = `${getApiBase()}/api/rooms/${encodeURIComponent(cleanCode)}/leave`;
-        const blob = new Blob([JSON.stringify({ participant_id: participantId })], {
-          type: 'application/json',
-        });
+        const blob = new Blob(
+          [
+            JSON.stringify({
+              participant_id: participantId,
+              client_id: tabClientIdRef.current,
+              force: false,
+            }),
+          ],
+          {
+            type: 'application/json',
+          },
+        );
         navigator.sendBeacon(url, blob);
       }
     };
@@ -207,7 +227,10 @@ export default function RoomScreen({
   useEffect(() => {
     if (!roomCode || !participantId) return;
     let cancelled = false;
-    joinRoom(roomCode, displayName, participantId)
+    joinRoom(roomCode, displayName, participantId, {
+      accountId: sessionKey,
+      clientId: tabClientIdRef.current,
+    })
       .then((res) => {
         if (cancelled) return;
         setMembers(res.members);
@@ -233,7 +256,12 @@ export default function RoomScreen({
     const runPoll = async () => {
       if (!active) return;
       try {
-        const res = await pollRoom(roomCode, participantId, lastSeqRef.current);
+        const res = await pollRoom(
+          roomCode,
+          participantId,
+          lastSeqRef.current,
+          tabClientIdRef.current,
+        );
         if (!active) return;
         setMembers(res.members);
         if (res.messages.length > 0) {
@@ -259,7 +287,10 @@ export default function RoomScreen({
       }, 1800);
     };
 
-    const wsUrl = getRoomWsUrl(roomCode, participantId, displayName);
+    const wsUrl = getRoomWsUrl(roomCode, participantId, displayName, {
+      accountId: sessionKey,
+      clientId: tabClientIdRef.current,
+    });
     if (wsUrl && typeof WebSocket !== 'undefined') {
       try {
         ws = new WebSocket(wsUrl);
@@ -334,8 +365,11 @@ export default function RoomScreen({
     setError(null);
     setBusy(true);
     try {
-      const name = displayName.trim() || 'Guest';
-      const res = await createRoom(name);
+      const name = displayName.trim() || defaultDisplayName || 'Guest';
+      const res = await createRoom(name, {
+        accountId: sessionKey,
+        clientId: tabClientIdRef.current,
+      });
       setRoomCode(res.room_code);
       setParticipantId(res.participant_id);
       setDisplayName(res.display_name);
@@ -365,8 +399,11 @@ export default function RoomScreen({
     setError(null);
     setBusy(true);
     try {
-      const name = displayName.trim() || 'Guest';
-      const res = await joinRoom(cleaned, name);
+      const name = displayName.trim() || defaultDisplayName || 'Guest';
+      const res = await joinRoom(cleaned, name, null, {
+        accountId: sessionKey,
+        clientId: tabClientIdRef.current,
+      });
       setRoomCode(res.room_code);
       setParticipantId(res.participant_id);
       setDisplayName(res.display_name);
@@ -392,7 +429,10 @@ export default function RoomScreen({
     const pid = participantId;
     resetLocalRoom();
     if (code && pid) {
-      await leaveRoom(code, pid);
+      await leaveRoom(code, pid, {
+        clientId: tabClientIdRef.current,
+        force: true,
+      });
     }
   };
 

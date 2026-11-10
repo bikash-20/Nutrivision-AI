@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect, status
 
+from app.api.auth import get_current_user_optional, verify_jwt
 from app.models.schemas import (
+    AuthSession,
     RoomCreateRequest,
     RoomJoinRequest,
     RoomJoinResponse,
@@ -14,16 +16,39 @@ from app.models.schemas import (
     RoomSendMessageRequest,
     RoomSharedDish,
 )
-from app.services.room_manager import get_room_manager, normalize_room_code
+from app.services.room_manager import (
+    get_room_manager,
+    normalize_room_code,
+    resolve_account_participant_id,
+)
 
 router = APIRouter(prefix="/api/rooms", tags=["rooms"])
 
 
+def _auth_email_from_token(token: str | None) -> str | None:
+    if not token:
+        return None
+    payload = verify_jwt(token)
+    if not payload:
+        return None
+    email = str(payload.get("email") or "").strip().lower()
+    return email or None
+
+
 @router.post("", response_model=RoomJoinResponse)
-def create_room(req: RoomCreateRequest) -> RoomJoinResponse:
-    """Create a brand-new ephemeral chat room with an auto-generated room code."""
+def create_room(
+    req: RoomCreateRequest,
+    current_user: AuthSession | None = Depends(get_current_user_optional),
+) -> RoomJoinResponse:
+    """Create a brand-new ephemeral chat room keyed by the creator's account."""
     mgr = get_room_manager()
-    code, pid, name, members, latest_seq = mgr.create_room(req.display_name)
+    auth_email = current_user.email if current_user else None
+    code, pid, name, members, latest_seq = mgr.create_room(
+        req.display_name or (current_user.name if current_user else None) or "Guest",
+        auth_email=auth_email,
+        account_id=req.account_id,
+        client_id=req.client_id,
+    )
     return RoomJoinResponse(
         room_code=code,
         participant_id=pid,
@@ -34,14 +59,22 @@ def create_room(req: RoomCreateRequest) -> RoomJoinResponse:
 
 
 @router.post("/{code}/join", response_model=RoomJoinResponse)
-async def join_room(code: str, req: RoomJoinRequest) -> RoomJoinResponse:
-    """Join an existing ephemeral room using its room code."""
+async def join_room(
+    code: str,
+    req: RoomJoinRequest,
+    current_user: AuthSession | None = Depends(get_current_user_optional),
+) -> RoomJoinResponse:
+    """Join an existing ephemeral room using its room code (deduplicated per account)."""
     mgr = get_room_manager()
+    auth_email = current_user.email if current_user else None
     try:
         norm_code, pid, name, members, latest_seq, join_msg = mgr.join_room(
             code,
-            req.display_name,
-            req.participant_id,
+            req.display_name or (current_user.name if current_user else None) or "Guest",
+            participant_id=req.participant_id,
+            auth_email=auth_email,
+            account_id=req.account_id,
+            client_id=req.client_id,
         )
     except KeyError as exc:
         raise HTTPException(
@@ -58,6 +91,14 @@ async def join_room(code: str, req: RoomJoinRequest) -> RoomJoinResponse:
                 "members": [m.model_dump(mode="json") for m in members],
             },
         )
+    else:
+        await mgr.broadcast(
+            norm_code,
+            {
+                "type": "members",
+                "members": [m.model_dump(mode="json") for m in members],
+            },
+        )
     return RoomJoinResponse(
         room_code=norm_code,
         participant_id=pid,
@@ -68,11 +109,24 @@ async def join_room(code: str, req: RoomJoinRequest) -> RoomJoinResponse:
 
 
 @router.post("/{code}/leave")
-async def leave_room(code: str, req: RoomLeaveRequest) -> dict[str, bool]:
+async def leave_room(
+    code: str,
+    req: RoomLeaveRequest,
+    current_user: AuthSession | None = Depends(get_current_user_optional),
+) -> dict[str, bool]:
     """Leave an ephemeral room. Deletes the room from memory when empty."""
     mgr = get_room_manager()
     norm_code = normalize_room_code(code)
-    deleted, leave_msg = mgr.leave_room(norm_code, req.participant_id)
+    pid = resolve_account_participant_id(
+        auth_email=current_user.email if current_user else None,
+        fallback_participant_id=req.participant_id,
+    )
+    deleted, leave_msg = mgr.leave_room(
+        norm_code,
+        pid,
+        client_id=req.client_id,
+        force=req.force,
+    )
     if not deleted and leave_msg is not None:
         _, members, _, _ = mgr.poll_room(norm_code, None, after_seq=leave_msg.seq)
         await mgr.broadcast(
@@ -98,20 +152,28 @@ async def clear_room_history(code: str) -> dict[str, bool]:
 
 
 @router.post("/{code}/messages", response_model=RoomMessage)
-async def send_room_message(code: str, req: RoomSendMessageRequest) -> RoomMessage:
+async def send_room_message(
+    code: str,
+    req: RoomSendMessageRequest,
+    current_user: AuthSession | None = Depends(get_current_user_optional),
+) -> RoomMessage:
     """Broadcast a text message or shared meal/dish card to everyone in the room."""
     mgr = get_room_manager()
     norm_code = normalize_room_code(code)
+    pid = resolve_account_participant_id(
+        auth_email=current_user.email if current_user else None,
+        fallback_participant_id=req.participant_id,
+    )
     try:
         msg = mgr.add_message(
             norm_code,
-            participant_id=req.participant_id,
+            participant_id=pid,
             sender_name=req.sender_name,
             kind=req.kind,
             text=req.text,
             dish_card=req.dish_card,
         )
-        _, members, _, _ = mgr.poll_room(norm_code, req.participant_id, after_seq=msg.seq)
+        _, members, _, _ = mgr.poll_room(norm_code, pid, after_seq=msg.seq)
     except KeyError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -139,14 +201,21 @@ def poll_room(
     code: str,
     participant_id: str | None = Query(default=None),
     after_seq: int = Query(default=0, ge=0),
+    client_id: str | None = Query(default=None),
+    current_user: AuthSession | None = Depends(get_current_user_optional),
 ) -> RoomPollResponse:
     """HTTP polling endpoint for rooms (works reliably behind Vercel HTTP rewrites)."""
     mgr = get_room_manager()
+    pid = resolve_account_participant_id(
+        auth_email=current_user.email if current_user else None,
+        fallback_participant_id=participant_id,
+    )
     try:
         norm_code, members, messages, latest_seq = mgr.poll_room(
             code,
-            participant_id=participant_id,
+            participant_id=pid,
             after_seq=after_seq,
+            client_id=client_id,
         )
     except KeyError as exc:
         raise HTTPException(
@@ -168,12 +237,27 @@ async def room_websocket(
     code: str,
     participant_id: str = Query(...),
     display_name: str = Query(default="Guest"),
+    token: str | None = Query(default=None),
+    account_id: str | None = Query(default=None),
+    client_id: str | None = Query(default=None),
 ) -> None:
     """Live WebSocket relay for instant message & dish card broadcasting."""
     mgr = get_room_manager()
     norm_code = normalize_room_code(code)
+    auth_email = _auth_email_from_token(token)
+    effective_pid = resolve_account_participant_id(
+        auth_email=auth_email,
+        account_id=account_id,
+        fallback_participant_id=participant_id,
+    )
     try:
-        members = mgr.register_ws(norm_code, participant_id, display_name, websocket)
+        members = mgr.register_ws(
+            norm_code,
+            effective_pid,
+            display_name,
+            websocket,
+            client_id=client_id,
+        )
     except KeyError:
         await websocket.close(code=4404, reason="Room not found")
         return
@@ -201,13 +285,18 @@ async def room_websocket(
             dish_card = RoomSharedDish.model_validate(dish_raw) if dish_raw else None
             msg = mgr.add_message(
                 norm_code,
-                participant_id=participant_id,
+                participant_id=effective_pid,
                 sender_name=display_name,
                 kind=kind,
                 text=payload.get("text"),
                 dish_card=dish_card,
             )
-            _, latest_members, _, _ = mgr.poll_room(norm_code, participant_id, after_seq=msg.seq)
+            _, latest_members, _, _ = mgr.poll_room(
+                norm_code,
+                effective_pid,
+                after_seq=msg.seq,
+                client_id=client_id,
+            )
             await mgr.broadcast(
                 norm_code,
                 {
@@ -221,7 +310,12 @@ async def room_websocket(
     except Exception:
         pass
     finally:
-        remaining = mgr.unregister_ws(norm_code, participant_id, websocket)
+        remaining = mgr.unregister_ws(
+            norm_code,
+            effective_pid,
+            websocket,
+            client_id=client_id,
+        )
         if remaining:
             await mgr.broadcast(
                 norm_code,

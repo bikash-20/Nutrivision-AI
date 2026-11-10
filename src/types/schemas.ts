@@ -577,15 +577,21 @@ export interface RoomMember {
 
 export interface RoomCreateRequest {
   display_name: string;
+  account_id?: string | null;
+  client_id?: string | null;
 }
 
 export interface RoomJoinRequest {
   display_name: string;
   participant_id?: string | null;
+  account_id?: string | null;
+  client_id?: string | null;
 }
 
 export interface RoomLeaveRequest {
   participant_id: string;
+  client_id?: string | null;
+  force?: boolean;
 }
 
 export interface RoomSendMessageRequest {
