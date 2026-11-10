@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Leaf, Settings } from 'lucide-react';
+import { Leaf, Settings, Users } from 'lucide-react';
 import { T, TABS } from './data';
 import {
   getProfile,
@@ -21,7 +21,6 @@ import { useTokens } from './theme/useTokens';
 import type { AuthSession, DetectedItem, PipelineTrace, UserProfile } from './types/schemas';
 import PhoneFrame from './components/PhoneFrame';
 import BottomNav from './components/BottomNav';
-import StepDots from './components/StepDots';
 import CaptureScreen from './components/screens/CaptureScreen';
 import ResultsScreen from './components/screens/ResultsScreen';
 import NutrientsScreen from './components/screens/NutrientsScreen';
@@ -29,6 +28,12 @@ import ProfileScreen from './components/screens/ProfileScreen';
 import GroceryScreen from './components/screens/GroceryScreen';
 import CoachScreen from './components/screens/CoachScreen';
 import SettingsScreen from './components/screens/SettingsScreen';
+import RoomScreen from './components/screens/RoomScreen';
+import {
+  clearAllRoomSessionsFromStorage,
+  loadRoomSession,
+  wasPageReloaded,
+} from './lib/roomSession';
 import PwaInstallBanner from './components/PwaInstallBanner';
 import LoginScreen from './components/auth/LoginScreen';
 import AdminLayout from './components/admin/AdminLayout';
@@ -127,6 +132,14 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
   const { language, translate } = useLanguage();
   const [tab, setTab] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [roomOpen, setRoomOpen] = useState(false);
+  const [activeRoomCode, setActiveRoomCode] = useState<string | null>(() => {
+    if (wasPageReloaded()) {
+      clearAllRoomSessionsFromStorage();
+      return null;
+    }
+    return loadRoomSession(session.email)?.roomCode ?? null;
+  });
   const [direction, setDirection] = useState(1);
   const [captured, setCaptured] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -168,6 +181,7 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
   const goToTab = (next: number) => {
     clearResultsNavigationTimeout();
     setSettingsOpen(false);
+    setRoomOpen(false);
     if (next === tab) return;
     setDirection(next > tab ? 1 : -1);
     setTab(next);
@@ -315,10 +329,17 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
     setAnalysisResult(null);
   };
 
-  useEffect(() => () => {
-    if (resultsNavigationTimeout.current !== null) {
-      clearTimeout(resultsNavigationTimeout.current);
-    }
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      clearAllRoomSessionsFromStorage();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (resultsNavigationTimeout.current !== null) {
+        clearTimeout(resultsNavigationTimeout.current);
+      }
+    };
   }, []);
 
   const handleDetectedChange = (newItems: DetectedItem[]) => {
@@ -419,7 +440,10 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
             <LanguageToggle />
             <button
               type="button"
-              onClick={() => setSettingsOpen(true)}
+              onClick={() => {
+                setRoomOpen(false);
+                setSettingsOpen(true);
+              }}
               aria-label={translate('Settings')}
               title={translate('Settings')}
               style={{
@@ -443,7 +467,62 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
             >
               <Settings size={18} strokeWidth={2} />
             </button>
-            <StepDots active={tab} onChange={goToTab} />
+            <button
+              type="button"
+              onClick={() => {
+                setSettingsOpen(false);
+                setRoomOpen((open) => !open);
+              }}
+              aria-pressed={roomOpen}
+              aria-label={language === 'bn' ? 'রুম চ্যাট' : 'Room Chat'}
+              title={language === 'bn' ? 'রুম চ্যাট' : 'Room Chat'}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                height: 38,
+                padding: '0 12px',
+                borderRadius: 999,
+                border: roomOpen
+                  ? '1.2px solid rgba(255, 255, 255, 0.85)'
+                  : isDark
+                  ? '1.2px solid rgba(255, 255, 255, 0.2)'
+                  : '1.2px solid rgba(255, 255, 255, 0.55)',
+                background: roomOpen
+                  ? isDark
+                    ? '#FAF4EC'
+                    : '#24130A'
+                  : isDark
+                  ? 'rgba(255, 255, 255, 0.08)'
+                  : 'rgba(255, 245, 235, 0.25)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                boxShadow: isDark
+                  ? '0 4px 14px rgba(0, 0, 0, 0.4)'
+                  : '0 4px 14px rgba(0, 0, 0, 0.15), inset 0 1px 1.5px rgba(255, 255, 255, 0.6)',
+                color: roomOpen ? (isDark ? '#24130A' : '#FFF7EE') : isDark ? '#F9F2E4' : '#FFF7EE',
+                fontFamily: 'Inter',
+                fontSize: 12.5,
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'transform 160ms ease, background 160ms ease, color 160ms ease',
+              }}
+            >
+              <Users size={15} strokeWidth={2.2} />
+              <span>{activeRoomCode || (language === 'bn' ? 'রুম' : 'Room')}</span>
+              {activeRoomCode && (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    background: '#22C55E',
+                    boxShadow: '0 0 8px rgba(34, 197, 94, 0.8)',
+                  }}
+                />
+              )}
+            </button>
           </div>
         }
         footer={<BottomNav active={tab} onChange={goToTab} />}
@@ -451,6 +530,18 @@ function UserApp({ session, onSignOut }: { session: AuthSession; onSignOut: () =
         <LocalizedContent>
         {settingsOpen ? (
           <SettingsScreen onBack={() => setSettingsOpen(false)} />
+        ) : roomOpen ? (
+          <RoomScreen
+            sessionKey={session.email}
+            defaultDisplayName={
+              profile?.name || session.name || session.email.split('@')[0] || 'Guest'
+            }
+            detected={detected}
+            capturedImage={capturedImage}
+            onClose={() => setRoomOpen(false)}
+            onGoToCapture={() => goToTab(0)}
+            onActiveRoomChange={setActiveRoomCode}
+          />
         ) : <motion.div
           key={tab}
           custom={direction}

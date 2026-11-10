@@ -637,3 +637,78 @@ DENSITY_TABLE: list[DensityEntry] = [
     DensityEntry(category="produce", g_per_ml=0.95, item_hint="onion"),
     DensityEntry(category="other", g_per_ml=1.00, item_hint=None),
 ]
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# Ephemeral Room Chat (relay only, no DB persistence)
+# ─────────────────────────────────────────────────────────────────────────
+
+RoomMessageKind = Literal["text", "meal_card", "system"]
+RoomDishKind = Literal["meal", "dish"]
+
+
+class RoomDishItem(BaseModel):
+    name: str
+    name_bn: str | None = None
+    grams: float
+
+
+class RoomSharedDish(BaseModel):
+    title: str
+    kind: RoomDishKind
+    items: list[RoomDishItem]
+    totals: MealTotals
+    photo_url: str | None = None
+
+
+class RoomMessage(BaseModel):
+    id: str
+    seq: int
+    room_code: str
+    sender_id: str
+    sender_name: str
+    kind: RoomMessageKind
+    text: str
+    dish_card: RoomSharedDish | None = None
+    created_at: str
+
+
+class RoomMember(BaseModel):
+    id: str
+    name: str
+
+
+class RoomCreateRequest(BaseModel):
+    display_name: str
+
+
+class RoomJoinRequest(BaseModel):
+    display_name: str
+    participant_id: str | None = None
+
+
+class RoomLeaveRequest(BaseModel):
+    participant_id: str
+
+
+class RoomSendMessageRequest(BaseModel):
+    participant_id: str
+    sender_name: str
+    kind: RoomMessageKind
+    text: str | None = None
+    dish_card: RoomSharedDish | None = None
+
+
+class RoomJoinResponse(BaseModel):
+    room_code: str
+    participant_id: str
+    display_name: str
+    members: list[RoomMember]
+    latest_seq: int
+
+
+class RoomPollResponse(BaseModel):
+    room_code: str
+    members: list[RoomMember]
+    messages: list[RoomMessage]
+    latest_seq: int

@@ -277,6 +277,19 @@ MUST_MATCH = {
     "ReviewQueueAction",
     "ReviewQueueItem",
     "ReviewQueueUpdateRequest",
+    # Ephemeral Room Chat
+    "RoomMessageKind",
+    "RoomDishKind",
+    "RoomDishItem",
+    "RoomSharedDish",
+    "RoomMessage",
+    "RoomMember",
+    "RoomCreateRequest",
+    "RoomJoinRequest",
+    "RoomLeaveRequest",
+    "RoomSendMessageRequest",
+    "RoomJoinResponse",
+    "RoomPollResponse",
 }
 
 

@@ -26,6 +26,10 @@ import type {
   ResolvedItem,
   ReviewQueueItem,
   ReviewQueueUpdateRequest,
+  RoomJoinResponse,
+  RoomMessage,
+  RoomPollResponse,
+  RoomSendMessageRequest,
   TodaySummary,
   UserStats,
   UserProfile,
@@ -854,4 +858,93 @@ export async function getStorageHealth(): Promise<StorageHealthInfo> {
       error: err instanceof Error ? err.message : 'Storage check failed',
     };
   }
+}
+
+// ── Ephemeral Room Chat ─────────────────────────────────────────────────
+
+export async function createRoom(displayName: string): Promise<RoomJoinResponse> {
+  return apiFetch<RoomJoinResponse>('/api/rooms', {
+    method: 'POST',
+    body: JSON.stringify({ display_name: displayName }),
+  });
+}
+
+export async function joinRoom(
+  code: string,
+  displayName: string,
+  participantId?: string | null,
+): Promise<RoomJoinResponse> {
+  const cleanCode = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return apiFetch<RoomJoinResponse>(`/api/rooms/${encodeURIComponent(cleanCode)}/join`, {
+    method: 'POST',
+    body: JSON.stringify({
+      display_name: displayName,
+      participant_id: participantId ?? null,
+    }),
+  });
+}
+
+export async function leaveRoom(code: string, participantId: string): Promise<void> {
+  const cleanCode = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  try {
+    await apiFetch<{ ok: boolean }>(`/api/rooms/${encodeURIComponent(cleanCode)}/leave`, {
+      method: 'POST',
+      body: JSON.stringify({ participant_id: participantId }),
+    });
+  } catch {
+    // Best-effort leave notification.
+  }
+}
+
+export async function clearRoomHistoryRemote(code: string): Promise<void> {
+  const cleanCode = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  try {
+    await apiFetch<{ ok: boolean }>(`/api/rooms/${encodeURIComponent(cleanCode)}/clear`, {
+      method: 'POST',
+    });
+  } catch {
+    // Best-effort clear.
+  }
+}
+
+export async function sendRoomMessage(
+  code: string,
+  req: RoomSendMessageRequest,
+): Promise<RoomMessage> {
+  const cleanCode = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return apiFetch<RoomMessage>(`/api/rooms/${encodeURIComponent(cleanCode)}/messages`, {
+    method: 'POST',
+    body: JSON.stringify(req),
+  });
+}
+
+export async function pollRoom(
+  code: string,
+  participantId: string,
+  afterSeq: number,
+): Promise<RoomPollResponse> {
+  const cleanCode = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const params = new URLSearchParams({
+    participant_id: participantId,
+    after_seq: String(Math.max(0, afterSeq)),
+  });
+  return apiFetch<RoomPollResponse>(`/api/rooms/${encodeURIComponent(cleanCode)}/poll?${params.toString()}`);
+}
+
+export function getRoomWsUrl(
+  code: string,
+  participantId: string,
+  displayName: string,
+): string | null {
+  const base = getApiBase();
+  if (!base.startsWith('http://') && !base.startsWith('https://')) {
+    return null;
+  }
+  const wsBase = base.replace(/^http:/i, 'ws:').replace(/^https:/i, 'wss:');
+  const cleanCode = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const params = new URLSearchParams({
+    participant_id: participantId,
+    display_name: displayName,
+  });
+  return `${wsBase}/api/rooms/ws/${encodeURIComponent(cleanCode)}?${params.toString()}`;
 }

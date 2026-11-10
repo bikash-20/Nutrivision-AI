@@ -536,3 +536,77 @@ export interface UserStats {
   avgDailyKcal: number;
   streakDays: number;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+//  Ephemeral Room Chat (relay only, no DB persistence)
+// ─────────────────────────────────────────────────────────────────────────
+
+export type RoomMessageKind = 'text' | 'meal_card' | 'system';
+export type RoomDishKind = 'meal' | 'dish';
+
+export interface RoomDishItem {
+  name: string;
+  name_bn?: string | null;
+  grams: number;
+}
+
+export interface RoomSharedDish {
+  title: string;
+  kind: RoomDishKind;
+  items: RoomDishItem[];
+  totals: MealTotals;
+  photo_url?: string | null;
+}
+
+export interface RoomMessage {
+  id: string;
+  seq: number;
+  room_code: string;
+  sender_id: string;
+  sender_name: string;
+  kind: RoomMessageKind;
+  text: string;
+  dish_card?: RoomSharedDish | null;
+  created_at: string;
+}
+
+export interface RoomMember {
+  id: string;
+  name: string;
+}
+
+export interface RoomCreateRequest {
+  display_name: string;
+}
+
+export interface RoomJoinRequest {
+  display_name: string;
+  participant_id?: string | null;
+}
+
+export interface RoomLeaveRequest {
+  participant_id: string;
+}
+
+export interface RoomSendMessageRequest {
+  participant_id: string;
+  sender_name: string;
+  kind: RoomMessageKind;
+  text?: string | null;
+  dish_card?: RoomSharedDish | null;
+}
+
+export interface RoomJoinResponse {
+  room_code: string;
+  participant_id: string;
+  display_name: string;
+  members: RoomMember[];
+  latest_seq: number;
+}
+
+export interface RoomPollResponse {
+  room_code: string;
+  members: RoomMember[];
+  messages: RoomMessage[];
+  latest_seq: number;
+}

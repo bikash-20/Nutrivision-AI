@@ -22,7 +22,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import admin, auth, coach, grocery, market, meals, nutrition, profile, rag, vision
+from app.api import admin, auth, coach, grocery, market, meals, nutrition, profile, rag, rooms, vision
 from app.services.state import get_photo_upload_limit, get_state, init_state
 
 
@@ -163,6 +163,7 @@ def create_app() -> FastAPI:
     app.include_router(rag.router)
     app.include_router(coach.router)
     app.include_router(market.router)
+    app.include_router(rooms.router)
 
     @app.get("/", tags=["meta"])
     def root() -> dict[str, str]:
