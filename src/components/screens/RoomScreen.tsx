@@ -133,6 +133,7 @@ export default function RoomScreen({
   const [copied, setCopied] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
   const [sharePickerOpen, setSharePickerOpen] = useState(false);
+  const [showRoomInfoCard, setShowRoomInfoCard] = useState(true);
   const [recentMeals, setRecentMeals] = useState<MealEntry[]>([]);
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -579,19 +580,60 @@ export default function RoomScreen({
             <ArrowLeft size={14} /> {isBn ? 'ফিরে যান' : 'Back'}
           </motion.button>
 
-          <span
-            style={{
-              fontFamily: 'var(--font-serif)',
-              fontSize: 18,
-              fontWeight: 700,
-              color: isDark ? '#FAF4EC' : '#FFF7EE',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 7,
-            }}
-          >
-            <Users size={17} /> {isBn ? 'লাইভ রুম চ্যাট' : 'Live Room Chat'}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {roomCode && !showRoomInfoCard && (
+              <motion.button
+                type="button"
+                initial={{ opacity: 0, scale: 0.92 }}
+                animate={{ opacity: 1, scale: 1 }}
+                onClick={() => setShowRoomInfoCard(true)}
+                aria-label={isBn ? 'রুম তথ্য দেখান' : 'Show room details'}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 245, 235, 0.24)',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(255, 255, 255, 0.5)',
+                  borderRadius: 999,
+                  padding: '5px 10px',
+                  color: isDark ? '#FAF4EC' : '#FFF7EE',
+                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: wsConnected ? '#22C55E' : '#FBBF24',
+                  }}
+                />
+                <span>{roomCode}</span>
+                <span style={{ fontFamily: 'Inter', fontSize: 10.5, opacity: 0.85 }}>
+                  ({Math.max(1, members.length)})
+                </span>
+              </motion.button>
+            )}
+            <span
+              style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: 18,
+                fontWeight: 700,
+                color: isDark ? '#FAF4EC' : '#FFF7EE',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 7,
+              }}
+            >
+              <Users size={17} /> {isBn ? 'লাইভ রুম চ্যাট' : 'Live Room Chat'}
+            </span>
+          </div>
         </div>
 
         {/* ── Lobby (No Active Room) ── */}
@@ -796,163 +838,196 @@ export default function RoomScreen({
           </motion.div>
         ) : (
           /* ── Active Room View ── */
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {/* Room Info Header Card */}
-            <div
-              className="champagne-panel"
-              style={{
-                padding: '14px 16px',
-                borderRadius: 20,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 10,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div>
-                    <div
-                      style={{
-                        fontSize: 10.5,
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.06em',
-                        color: isDark ? '#D8C4B6' : '#684A37',
-                      }}
-                    >
-                      {isBn ? 'রুম কোড' : 'Room Code'}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* Collapsible / Dismissible Room Info Header Card */}
+            <AnimatePresence initial={false}>
+              {showRoomInfoCard && (
+                <motion.div
+                  key="room-info-card"
+                  initial={{ opacity: 0, height: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, height: 'auto', scale: 1 }}
+                  exit={{ opacity: 0, height: 0, scale: 0.98 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <div
+                    className="champagne-panel"
+                    style={{
+                      padding: '14px 16px',
+                      borderRadius: 20,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 10,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <div>
+                          <div
+                            style={{
+                              fontSize: 10.5,
+                              fontWeight: 700,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.06em',
+                              color: isDark ? '#D8C4B6' : '#684A37',
+                            }}
+                          >
+                            {isBn ? 'রুম কোড' : 'Room Code'}
+                          </div>
+                          <div
+                            style={{
+                              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                              fontSize: 22,
+                              fontWeight: 800,
+                              letterSpacing: '0.1em',
+                              color: isDark ? '#FAF4EC' : '#24130A',
+                            }}
+                          >
+                            {roomCode}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleCopyCode}
+                          aria-label={isBn ? 'কোড কপি করুন' : 'Copy room code'}
+                          className="champagne-pill"
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: 999,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            fontSize: 11.5,
+                            fontWeight: 700,
+                            color: isDark ? '#FAF4EC' : '#24130A',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {copied ? <Check size={13} color="#16A34A" /> : <Copy size={13} />}
+                          {copied ? (isBn ? 'কপি হয়েছে' : 'Copied') : (isBn ? 'কপি' : 'Copy')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleNativeShare}
+                          aria-label={isBn ? 'শেয়ার করুন' : 'Share room'}
+                          className="champagne-pill"
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: 999,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            fontSize: 11.5,
+                            fontWeight: 700,
+                            color: isDark ? '#FAF4EC' : '#24130A',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <Share2 size={13} />
+                        </button>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <button
+                          type="button"
+                          onClick={handleClearHistory}
+                          title={isBn ? 'ইতিহাস মুছুন' : 'Delete history'}
+                          aria-label={isBn ? 'ইতিহাস মুছুন' : 'Delete history'}
+                          className="champagne-pill"
+                          style={{
+                            padding: '7px 10px',
+                            borderRadius: 999,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            fontSize: 11.5,
+                            fontWeight: 700,
+                            color: isDark ? '#FCA5A5' : '#991B1B',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <Trash2 size={13} />
+                          <span>{isBn ? 'মুছুন' : 'Clear'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleLeaveRoom}
+                          title={isBn ? 'রুম ছাড়ুন' : 'Leave room'}
+                          aria-label={isBn ? 'রুম ছাড়ুন' : 'Leave room'}
+                          className="champagne-pill"
+                          style={{
+                            padding: '7px 10px',
+                            borderRadius: 999,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            fontSize: 11.5,
+                            fontWeight: 700,
+                            color: isDark ? '#FAF4EC' : '#24130A',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <LogOut size={13} />
+                          <span>{isBn ? 'বের হন' : 'Leave'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowRoomInfoCard(false)}
+                          title={isBn ? 'কার্ড লুকান' : 'Hide room card'}
+                          aria-label={isBn ? 'কার্ড লুকান' : 'Hide room card'}
+                          className="champagne-pill"
+                          style={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: '50%',
+                            padding: 0,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: isDark ? '#FAF4EC' : '#3D271D',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <X size={14} strokeWidth={2.4} />
+                        </button>
+                      </div>
                     </div>
-                    <div
-                      style={{
-                        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-                        fontSize: 22,
-                        fontWeight: 800,
-                        letterSpacing: '0.1em',
-                        color: isDark ? '#FAF4EC' : '#24130A',
-                      }}
-                    >
-                      {roomCode}
+
+                    {/* Online Members + Transport Status */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            fontSize: 11.5,
+                            fontWeight: 700,
+                            color: isDark ? '#86EFAC' : '#15803D',
+                          }}
+                        >
+                          <Wifi size={12} />
+                          {wsConnected
+                            ? isBn
+                              ? 'লাইভ'
+                              : 'Live WS'
+                            : isBn
+                            ? 'সিঙ্ক চালু'
+                            : 'Live Sync'}
+                        </span>
+                        <span style={{ color: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(92,58,39,0.25)' }}>•</span>
+                        <span style={{ fontSize: 11.5, fontWeight: 600, color: isDark ? '#D8C4B6' : '#5C3A27' }}>
+                          {isBn
+                            ? `${toBengaliDigits(Math.max(1, members.length))} জন অনলাইন:`
+                            : `${Math.max(1, members.length)} online:`}{' '}
+                          {members.map((m) => m.name).join(', ') || displayName}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleCopyCode}
-                    aria-label={isBn ? 'কোড কপি করুন' : 'Copy room code'}
-                    className="champagne-pill"
-                    style={{
-                      padding: '6px 10px',
-                      borderRadius: 999,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      fontSize: 11.5,
-                      fontWeight: 700,
-                      color: isDark ? '#FAF4EC' : '#24130A',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {copied ? <Check size={13} color="#16A34A" /> : <Copy size={13} />}
-                    {copied ? (isBn ? 'কপি হয়েছে' : 'Copied') : (isBn ? 'কপি' : 'Copy')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleNativeShare}
-                    aria-label={isBn ? 'শেয়ার করুন' : 'Share room'}
-                    className="champagne-pill"
-                    style={{
-                      padding: '6px 10px',
-                      borderRadius: 999,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      fontSize: 11.5,
-                      fontWeight: 700,
-                      color: isDark ? '#FAF4EC' : '#24130A',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Share2 size={13} />
-                  </button>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <button
-                    type="button"
-                    onClick={handleClearHistory}
-                    title={isBn ? 'ইতিহাস মুছুন' : 'Delete history'}
-                    aria-label={isBn ? 'ইতিহাস মুছুন' : 'Delete history'}
-                    className="champagne-pill"
-                    style={{
-                      padding: '7px 10px',
-                      borderRadius: 999,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      fontSize: 11.5,
-                      fontWeight: 700,
-                      color: isDark ? '#FCA5A5' : '#991B1B',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Trash2 size={13} />
-                    <span>{isBn ? 'মুছুন' : 'Clear'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleLeaveRoom}
-                    title={isBn ? 'রুম ছাড়ুন' : 'Leave room'}
-                    aria-label={isBn ? 'রুম ছাড়ুন' : 'Leave room'}
-                    className="champagne-pill"
-                    style={{
-                      padding: '7px 10px',
-                      borderRadius: 999,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      fontSize: 11.5,
-                      fontWeight: 700,
-                      color: isDark ? '#FAF4EC' : '#24130A',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <LogOut size={13} />
-                    <span>{isBn ? 'বের হন' : 'Leave'}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Online Members + Transport Status */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      fontSize: 11.5,
-                      fontWeight: 700,
-                      color: isDark ? '#86EFAC' : '#15803D',
-                    }}
-                  >
-                    <Wifi size={12} />
-                    {wsConnected
-                      ? isBn
-                        ? 'লাইভ'
-                        : 'Live WS'
-                      : isBn
-                      ? 'সিঙ্ক চালু'
-                      : 'Live Sync'}
-                  </span>
-                  <span style={{ color: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(92,58,39,0.25)' }}>•</span>
-                  <span style={{ fontSize: 11.5, fontWeight: 600, color: isDark ? '#D8C4B6' : '#5C3A27' }}>
-                    {isBn
-                      ? `${toBengaliDigits(Math.max(1, members.length))} জন অনলাইন:`
-                      : `${Math.max(1, members.length)} online:`}{' '}
-                    {members.map((m) => m.name).join(', ') || displayName}
-                  </span>
-                </div>
-              </div>
-            </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Chat Stream */}
             <div
@@ -960,8 +1035,8 @@ export default function RoomScreen({
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 10,
-                minHeight: 220,
-                maxHeight: '46vh',
+                minHeight: showRoomInfoCard ? 'calc(100dvh - 390px)' : 'calc(100dvh - 265px)',
+                maxHeight: showRoomInfoCard ? '48vh' : '64vh',
                 overflowY: 'auto',
                 padding: '4px 2px',
               }}
