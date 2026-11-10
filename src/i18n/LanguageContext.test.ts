@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveFoodDisplayName, translateBengali } from './LanguageContext';
+import { initialLanguage, resolveFoodDisplayName, translateBengali } from './LanguageContext';
 
 describe('translateBengali', () => {
   it('translates food names without depending on English capitalization', () => {
@@ -117,5 +117,9 @@ describe('translateBengali', () => {
   it('translates the nutrition explanation headings', () => {
     expect(translateBengali('This meal, explained')).toBe('এই খাবারের পুষ্টি বিশ্লেষণ');
     expect(translateBengali('Micronutrients')).toBe('অণুপুষ্টি');
+  });
+
+  it('defaults initialLanguage to Bengali (bn) when no saved preference exists', () => {
+    expect(initialLanguage()).toBe('bn');
   });
 });

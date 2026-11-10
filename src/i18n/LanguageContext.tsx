@@ -800,13 +800,13 @@ type LanguageContextValue = {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-function initialLanguage(): Language {
+export function initialLanguage(): Language {
   try {
     const saved = window.localStorage.getItem(LANGUAGE_KEY);
     if (saved === 'en' || saved === 'bn') return saved;
-    return navigator.language.toLowerCase().startsWith('bn') ? 'bn' : 'en';
+    return 'bn';
   } catch {
-    return 'en';
+    return 'bn';
   }
 }
 
