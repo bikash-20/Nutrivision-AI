@@ -934,6 +934,7 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
               style={{ display: 'flex', flexDirection: 'column', gap: 18, maxWidth: 640 }}
             >
               <div
+                className="landing-hero-eyebrow"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
