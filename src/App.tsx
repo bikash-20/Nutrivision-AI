@@ -10,6 +10,7 @@ import {
   resolveNutrition,
   reservePhotoUpload,
   getPhotoUploadHash,
+  logoutRoomsRemote,
   ApiError,
 } from './lib/api';
 import { analyzeImageLocally, LocalAIError } from './lib/localAI';
@@ -114,6 +115,7 @@ function AppShell() {
       key={session.email}
       session={session}
       onSignOut={() => {
+        void logoutRoomsRemote(session.email);
         logout();
         setSession(null);
       }}

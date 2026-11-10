@@ -864,7 +864,7 @@ export async function getStorageHealth(): Promise<StorageHealthInfo> {
 
 export async function createRoom(
   displayName: string,
-  options?: { accountId?: string | null; clientId?: string | null },
+  options?: { accountId?: string | null; clientId?: string | null; forceNew?: boolean },
 ): Promise<RoomJoinResponse> {
   return apiFetch<RoomJoinResponse>('/api/rooms', {
     method: 'POST',
@@ -872,8 +872,44 @@ export async function createRoom(
       display_name: displayName,
       account_id: options?.accountId ?? null,
       client_id: options?.clientId ?? null,
+      force_new: options?.forceNew ?? false,
     }),
   });
+}
+
+export async function getMyRoom(accountId?: string | null): Promise<RoomJoinResponse | null> {
+  try {
+    const params = new URLSearchParams();
+    if (accountId) params.set('account_id', accountId);
+    const q = params.toString() ? `?${params.toString()}` : '';
+    return await apiFetch<RoomJoinResponse | null>(`/api/rooms/mine${q}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function cancelRoom(code: string): Promise<void> {
+  const cleanCode = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  try {
+    await apiFetch<{ ok: boolean }>(`/api/rooms/${encodeURIComponent(cleanCode)}`, {
+      method: 'DELETE',
+    });
+  } catch {
+    // Best-effort room cancellation.
+  }
+}
+
+export async function logoutRoomsRemote(accountId?: string | null): Promise<void> {
+  try {
+    const params = new URLSearchParams();
+    if (accountId) params.set('account_id', accountId);
+    const q = params.toString() ? `?${params.toString()}` : '';
+    await apiFetch<{ revoked: number }>(`/api/rooms/logout${q}`, {
+      method: 'POST',
+    });
+  } catch {
+    // Best-effort room cleanup on logout.
+  }
 }
 
 export async function joinRoom(

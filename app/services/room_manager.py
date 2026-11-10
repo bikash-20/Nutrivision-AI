@@ -1,9 +1,13 @@
-"""Ephemeral in-memory room manager for NutriVision real-time chat.
+"""Ephemeral in-memory room relay + 24-hour room-code lifecycle for NutriVision.
 
-Rooms exist solely in RAM for live relay (WebSocket + HTTP polling fallback).
-No messages or rooms are persisted to disk or Postgres. Participants are keyed
-deterministically by authenticated user account so logging into the same room
-from multiple tabs or devices counts as ONE active account, not duplicates.
+Design separation:
+- **Chat messages & shared dish cards**: 100% ephemeral in RAM (relay buffer
+  only) and browser `sessionStorage`. ZERO chat messages are persisted to
+  disk or PostgreSQL.
+- **Room code metadata** (`room_code`, `owner_pid`, `expires_at`): stored for
+  24 hours via `State` (`nv_rooms` in Postgres / `rooms` in `state.json`) so
+  a room code survives Render restarts, idle periods, and tab refreshes until
+  the user logs out, explicitly cancels the room, or 24 hours elapse.
 """
 
 from __future__ import annotations
@@ -14,7 +18,7 @@ import secrets
 import time
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
@@ -26,12 +30,13 @@ from app.models.schemas import (
     RoomMessageKind,
     RoomSharedDish,
 )
+from app.services.state import get_state_optional
 
 ROOM_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 ROOM_CODE_LENGTH = 6
 MAX_BUFFER_MESSAGES = 60
 MEMBER_STALE_SECONDS = 45.0
-ROOM_IDLE_TTL_SECONDS = 1800.0
+ROOM_TTL_HOURS = 24
 MAX_TEXT_LENGTH = 1000
 MAX_PHOTO_DATA_URL_LENGTH = 300_000
 
@@ -62,8 +67,19 @@ def _clean_display_name(raw: str) -> str:
     return cleaned[:32] if cleaned else "Guest"
 
 
+def _utc_now() -> datetime:
+    return datetime.now(UTC)
+
+
 def _utc_now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return _utc_now().isoformat()
+
+
+def _parse_utc(iso: str) -> datetime:
+    dt = datetime.fromisoformat(iso)
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=UTC)
+    return dt
 
 
 @dataclass
@@ -78,6 +94,10 @@ class _Participant:
 @dataclass
 class _ActiveRoom:
     code: str
+    owner_pid: str
+    owner_name: str
+    created_at_iso: str
+    expires_at_iso: str
     created_at: float
     last_activity: float
     seq: int = 0
@@ -87,13 +107,14 @@ class _ActiveRoom:
 
 
 class RoomManager:
-    """Async-safe ephemeral room relay store keyed by account."""
+    """Async-safe ephemeral room relay backed by 24h State room-code registry."""
 
     def __init__(self) -> None:
         self._rooms: dict[str, _ActiveRoom] = {}
 
     def _prune_stale(self, now: float | None = None) -> None:
         ts = now if now is not None else time.monotonic()
+        now_dt = _utc_now()
         expired_codes: list[str] = []
         for code, room in self._rooms.items():
             stale_pids: list[str] = []
@@ -107,22 +128,96 @@ class RoomManager:
                     stale_pids.append(pid)
             for pid in stale_pids:
                 room.participants.pop(pid, None)
-            if not room.participants and not room.sockets and (ts - room.last_activity) > 60.0:
+            try:
+                if now_dt >= _parse_utc(room.expires_at_iso):
+                    expired_codes.append(code)
+            except Exception:
                 expired_codes.append(code)
-            elif (ts - room.last_activity) > ROOM_IDLE_TTL_SECONDS:
-                expired_codes.append(code)
+
+        state = get_state_optional()
         for code in expired_codes:
             self._rooms.pop(code, None)
+            if state is not None:
+                state.delete_room_record(code)
+
+    def _get_or_restore_room(self, raw_code: str) -> _ActiveRoom | None:
+        now = time.monotonic()
+        self._prune_stale(now)
+        code = normalize_room_code(raw_code)
+        room = self._rooms.get(code)
+        if room is not None:
+            return room
+
+        state = get_state_optional()
+        if state is None:
+            return None
+        rec = state.get_room_record(code)
+        if rec is None:
+            return None
+
+        try:
+            if _utc_now() >= _parse_utc(rec["expires_at"]):
+                state.delete_room_record(code)
+                return None
+        except Exception:
+            state.delete_room_record(code)
+            return None
+
+        restored = _ActiveRoom(
+            code=code,
+            owner_pid=rec["owner_pid"],
+            owner_name=rec.get("owner_name", "Guest"),
+            created_at_iso=rec["created_at"],
+            expires_at_iso=rec["expires_at"],
+            created_at=now,
+            last_activity=now,
+        )
+        self._rooms[code] = restored
+        return restored
 
     def _generate_code(self) -> str:
+        state = get_state_optional()
         for _ in range(32):
             code = "".join(secrets.choice(ROOM_CODE_ALPHABET) for _ in range(ROOM_CODE_LENGTH))
-            if code not in self._rooms:
+            if code not in self._rooms and (state is None or state.get_room_record(code) is None):
                 return code
         return uuid4().hex[:8].upper()
 
     def _members_list(self, room: _ActiveRoom) -> list[RoomMember]:
         return [RoomMember(id=p.id, name=p.name) for p in room.participants.values()]
+
+    def get_active_room_for_account(
+        self,
+        auth_email: str | None = None,
+        account_id: str | None = None,
+    ) -> dict[str, str] | None:
+        pid = resolve_account_participant_id(auth_email=auth_email, account_id=account_id)
+        if not pid.startswith("acct-"):
+            return None
+        now_dt = _utc_now()
+        self._prune_stale()
+
+        # Check RAM first
+        ram_matches = [r for r in self._rooms.values() if r.owner_pid == pid]
+        if ram_matches:
+            ram_matches.sort(key=lambda r: r.created_at_iso, reverse=True)
+            top = ram_matches[0]
+            try:
+                if _parse_utc(top.expires_at_iso) > now_dt:
+                    return {
+                        "room_code": top.code,
+                        "owner_pid": top.owner_pid,
+                        "owner_name": top.owner_name,
+                        "created_at": top.created_at_iso,
+                        "expires_at": top.expires_at_iso,
+                    }
+            except Exception:
+                pass
+
+        state = get_state_optional()
+        if state is not None:
+            return state.get_active_room_for_owner(pid)
+        return None
 
     def create_room(
         self,
@@ -130,17 +225,59 @@ class RoomManager:
         auth_email: str | None = None,
         account_id: str | None = None,
         client_id: str | None = None,
-    ) -> tuple[str, str, str, list[RoomMember], int]:
+        force_new: bool = False,
+    ) -> tuple[str, str, str, list[RoomMember], int, str]:
         now = time.monotonic()
         self._prune_stale(now)
-        code = self._generate_code()
         pid = resolve_account_participant_id(auth_email=auth_email, account_id=account_id)
         name = _clean_display_name(display_name)
-        room = _ActiveRoom(code=code, created_at=now, last_activity=now)
+        state = get_state_optional()
+
+        if pid.startswith("acct-"):
+            if not force_new:
+                existing_rec = self.get_active_room_for_account(auth_email=auth_email, account_id=account_id)
+                if existing_rec is not None:
+                    code, joined_pid, joined_name, members, seq, expires_at, _ = self.join_room(
+                        existing_rec["room_code"],
+                        name,
+                        participant_id=pid,
+                        auth_email=auth_email,
+                        account_id=account_id,
+                        client_id=client_id,
+                    )
+                    return code, joined_pid, joined_name, members, seq, expires_at
+            else:
+                # Replace previous 24h key for this account cleanly
+                self.revoke_owner_rooms(auth_email=auth_email, account_id=account_id)
+
+        code = self._generate_code()
+        now_dt = _utc_now()
+        created_iso = now_dt.isoformat()
+        expires_iso = (now_dt + timedelta(hours=ROOM_TTL_HOURS)).isoformat()
+
+        room = _ActiveRoom(
+            code=code,
+            owner_pid=pid,
+            owner_name=name,
+            created_at_iso=created_iso,
+            expires_at_iso=expires_iso,
+            created_at=now,
+            last_activity=now,
+        )
         clients = {client_id: now} if client_id else {}
         room.participants[pid] = _Participant(id=pid, name=name, last_seen=now, clients=clients)
         self._rooms[code] = room
-        return code, pid, name, self._members_list(room), room.seq
+
+        if state is not None and pid.startswith("acct-"):
+            state.upsert_room_record(
+                room_code=code,
+                owner_pid=pid,
+                owner_name=name,
+                created_at=created_iso,
+                expires_at=expires_iso,
+            )
+
+        return code, pid, name, self._members_list(room), room.seq, expires_iso
 
     def join_room(
         self,
@@ -150,11 +287,10 @@ class RoomManager:
         auth_email: str | None = None,
         account_id: str | None = None,
         client_id: str | None = None,
-    ) -> tuple[str, str, str, list[RoomMember], int, RoomMessage | None]:
+    ) -> tuple[str, str, str, list[RoomMember], int, str, RoomMessage | None]:
         now = time.monotonic()
-        self._prune_stale(now)
         code = normalize_room_code(raw_code)
-        room = self._rooms.get(code)
+        room = self._get_or_restore_room(code)
         if room is None:
             raise KeyError(f"Room '{code}' not found or expired.")
 
@@ -198,7 +334,7 @@ class RoomManager:
             )
             room.buffer.append(join_msg)
 
-        return code, pid, name, self._members_list(room), room.seq, join_msg
+        return code, pid, name, self._members_list(room), room.seq, room.expires_at_iso, join_msg
 
     def leave_room(
         self,
@@ -207,6 +343,7 @@ class RoomManager:
         client_id: str | None = None,
         force: bool = True,
     ) -> tuple[bool, RoomMessage | None]:
+        """Remove a participant from live online presence WITHOUT cancelling the 24h room code."""
         now = time.monotonic()
         code = normalize_room_code(raw_code)
         room = self._rooms.get(code)
@@ -225,12 +362,8 @@ class RoomManager:
         room.sockets.pop(participant_id, None)
         room.last_activity = now
 
-        if not room.participants and not room.sockets:
-            self._rooms.pop(code, None)
-            return True, None
-
         leave_msg: RoomMessage | None = None
-        if removed is not None:
+        if removed is not None and room.participants:
             room.seq += 1
             leave_msg = RoomMessage(
                 id=uuid4().hex[:12],
@@ -246,9 +379,37 @@ class RoomManager:
             room.buffer.append(leave_msg)
         return False, leave_msg
 
+    def cancel_room(self, raw_code: str) -> bool:
+        """Explicitly cancel/close a room so the code immediately stops working."""
+        code = normalize_room_code(raw_code)
+        existed = self._rooms.pop(code, None) is not None
+        state = get_state_optional()
+        if state is not None:
+            existed = state.delete_room_record(code) or existed
+        return existed
+
+    def revoke_owner_rooms(
+        self,
+        auth_email: str | None = None,
+        account_id: str | None = None,
+    ) -> list[str]:
+        """Cancel all 24h rooms owned by an account (called on logout or key regeneration)."""
+        pid = resolve_account_participant_id(auth_email=auth_email, account_id=account_id)
+        if not pid.startswith("acct-"):
+            return []
+        codes = [c for c, r in self._rooms.items() if r.owner_pid == pid]
+        for c in codes:
+            self._rooms.pop(c, None)
+        state = get_state_optional()
+        if state is not None:
+            for c in state.delete_rooms_for_owner(pid):
+                if c not in codes:
+                    codes.append(c)
+        return codes
+
     def clear_room_buffer(self, raw_code: str) -> bool:
         code = normalize_room_code(raw_code)
-        room = self._rooms.get(code)
+        room = self._get_or_restore_room(code)
         if room is None:
             return False
         room.buffer.clear()
@@ -266,7 +427,7 @@ class RoomManager:
     ) -> RoomMessage:
         now = time.monotonic()
         code = normalize_room_code(raw_code)
-        room = self._rooms.get(code)
+        room = self._get_or_restore_room(code)
         if room is None:
             raise KeyError(f"Room '{code}' not found or expired.")
 
@@ -317,9 +478,8 @@ class RoomManager:
         client_id: str | None = None,
     ) -> tuple[str, list[RoomMember], list[RoomMessage], int]:
         now = time.monotonic()
-        self._prune_stale(now)
         code = normalize_room_code(raw_code)
-        room = self._rooms.get(code)
+        room = self._get_or_restore_room(code)
         if room is None:
             raise KeyError(f"Room '{code}' not found or expired.")
 
@@ -343,7 +503,7 @@ class RoomManager:
     ) -> list[RoomMember]:
         now = time.monotonic()
         code = normalize_room_code(raw_code)
-        room = self._rooms.get(code)
+        room = self._get_or_restore_room(code)
         if room is None:
             raise KeyError(f"Room '{code}' not found or expired.")
 

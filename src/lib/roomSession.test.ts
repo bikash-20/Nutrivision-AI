@@ -1,8 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  clearAllDailyRoomKeys,
   clearAllRoomSessionsFromStorage,
+  clearDailyRoomKey,
   clearRoomSession,
+  loadDailyRoomKey,
   loadRoomSession,
+  saveDailyRoomKey,
   saveRoomSession,
   type StoredRoomSession,
 } from './roomSession';
@@ -35,6 +39,7 @@ function createMemoryStorage(): Storage {
 describe('roomSession (sessionStorage lifecycle & vanish on reload/delete)', () => {
   beforeEach(() => {
     vi.stubGlobal('sessionStorage', createMemoryStorage());
+    vi.stubGlobal('localStorage', createMemoryStorage());
   });
 
   afterEach(() => {
@@ -126,5 +131,23 @@ describe('roomSession (sessionStorage lifecycle & vanish on reload/delete)', () 
     const url = getRoomWsUrl('k8-m4 p2', 'pid-1', 'Alex');
     expect(url).toContain('ws://localhost:8000/api/rooms/ws/K8M4P2');
     expect(url).toContain('participant_id=pid-1');
+  });
+
+  it('persists 24h daily room key in localStorage and clears on cancel/expiry/logout', () => {
+    saveDailyRoomKey('bikash@example.com', '2c56yu');
+    const saved = loadDailyRoomKey('bikash@example.com');
+    expect(saved?.roomCode).toBe('2C56YU');
+
+    // Expired key returns null and self-cleans
+    saveDailyRoomKey('expired@example.com', 'OLD123', new Date(Date.now() - 1000).toISOString());
+    expect(loadDailyRoomKey('expired@example.com')).toBeNull();
+
+    // Explicit clear / logout wipes keys
+    clearDailyRoomKey('bikash@example.com');
+    expect(loadDailyRoomKey('bikash@example.com')).toBeNull();
+
+    saveDailyRoomKey('bikash@example.com', 'NEW789');
+    clearAllDailyRoomKeys();
+    expect(loadDailyRoomKey('bikash@example.com')).toBeNull();
   });
 });

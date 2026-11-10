@@ -4,8 +4,10 @@ import {
   ArrowLeft,
   Check,
   Copy,
+  KeyRound,
   LogOut,
   Plus,
+  RefreshCw,
   Send,
   Share2,
   Trash2,
@@ -15,9 +17,11 @@ import {
   X,
 } from 'lucide-react';
 import {
+  cancelRoom,
   clearRoomHistoryRemote,
   createRoom,
   getMealHistory,
+  getMyRoom,
   getRoomWsUrl,
   joinRoom,
   leaveRoom,
@@ -27,9 +31,13 @@ import {
 import { getApiBase } from '../../lib/config';
 import { getEffectiveNutrition, mealTotals } from '../../lib/personalize';
 import {
+  clearDailyRoomKey,
   clearRoomSession,
+  loadDailyRoomKey,
   loadRoomSession,
+  saveDailyRoomKey,
   saveRoomSession,
+  type SavedDailyRoomKey,
   type StoredRoomSession,
 } from '../../lib/roomSession';
 import { toBengaliDigits } from '../../lib/format';
@@ -135,6 +143,9 @@ export default function RoomScreen({
   const [sharePickerOpen, setSharePickerOpen] = useState(false);
   const [showRoomInfoCard, setShowRoomInfoCard] = useState(true);
   const [recentMeals, setRecentMeals] = useState<MealEntry[]>([]);
+  const [savedKey, setSavedKey] = useState<SavedDailyRoomKey | null>(() =>
+    loadDailyRoomKey(sessionKey),
+  );
 
   const wsRef = useRef<WebSocket | null>(null);
   const lastSeqRef = useRef<number>(lastSeq);
@@ -246,6 +257,25 @@ export default function RoomScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomCode, participantId]);
 
+  // Sync saved 24-hour room key from backend so user doesn't need to generate a new key after refresh.
+  useEffect(() => {
+    if (roomCode) return;
+    let cancelled = false;
+    getMyRoom(sessionKey).then((remote) => {
+      if (cancelled) return;
+      if (remote && remote.room_code) {
+        saveDailyRoomKey(sessionKey, remote.room_code, remote.expires_at);
+        setSavedKey({
+          roomCode: remote.room_code,
+          expiresAt: remote.expires_at || new Date(Date.now() + 86_400_000).toISOString(),
+        });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [roomCode, sessionKey]);
+
   // Real-time relay: direct WebSocket when backend URL supports WS + HTTP polling fallback.
   useEffect(() => {
     if (!roomCode || !participantId) return;
@@ -323,6 +353,11 @@ export default function RoomScreen({
               }
             } else if (data.type === 'cleared') {
               setMessages([]);
+            } else if (data.type === 'closed') {
+              clearDailyRoomKey(sessionKey);
+              setSavedKey(null);
+              resetLocalRoom();
+              setError(isBn ? 'রুমটি বাতিল বা বন্ধ করা হয়েছে।' : 'Room was closed.');
             }
           } catch {
             // Ignore malformed WS frame.
@@ -361,7 +396,28 @@ export default function RoomScreen({
     };
   }, [roomCode, participantId, displayName, isBn, resetLocalRoom]);
 
-  const handleCreateRoom = async () => {
+  const enterRoomFromResponse = (res: {
+    room_code: string;
+    participant_id: string;
+    display_name: string;
+    members: RoomMember[];
+    latest_seq: number;
+    expires_at?: string | null;
+  }) => {
+    saveDailyRoomKey(sessionKey, res.room_code, res.expires_at);
+    setSavedKey({
+      roomCode: res.room_code,
+      expiresAt: res.expires_at || new Date(Date.now() + 86_400_000).toISOString(),
+    });
+    setRoomCode(res.room_code);
+    setParticipantId(res.participant_id);
+    setDisplayName(res.display_name);
+    setMembers(res.members);
+    setMessages([]);
+    setLastSeq(res.latest_seq);
+  };
+
+  const handleCreateRoom = async (forceNew = false) => {
     setError(null);
     setBusy(true);
     try {
@@ -369,13 +425,9 @@ export default function RoomScreen({
       const res = await createRoom(name, {
         accountId: sessionKey,
         clientId: tabClientIdRef.current,
+        forceNew,
       });
-      setRoomCode(res.room_code);
-      setParticipantId(res.participant_id);
-      setDisplayName(res.display_name);
-      setMembers(res.members);
-      setMessages([]);
-      setLastSeq(res.latest_seq);
+      enterRoomFromResponse(res);
     } catch (err) {
       setError(
         err instanceof Error
@@ -389,9 +441,8 @@ export default function RoomScreen({
     }
   };
 
-  const handleJoinRoom = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    const cleaned = joinCodeInput.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const joinSpecificCode = async (rawCode: string) => {
+    const cleaned = rawCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (cleaned.length < 4) {
       setError(isBn ? 'সঠিক রুম কোড লিখুন।' : 'Enter a valid room code.');
       return;
@@ -404,24 +455,28 @@ export default function RoomScreen({
         accountId: sessionKey,
         clientId: tabClientIdRef.current,
       });
-      setRoomCode(res.room_code);
-      setParticipantId(res.participant_id);
-      setDisplayName(res.display_name);
-      setMembers(res.members);
-      setMessages([]);
-      setLastSeq(res.latest_seq);
+      enterRoomFromResponse(res);
       setJoinCodeInput('');
     } catch (err) {
+      if (savedKey && savedKey.roomCode === cleaned) {
+        clearDailyRoomKey(sessionKey);
+        setSavedKey(null);
+      }
       setError(
         err instanceof Error
           ? err.message
           : isBn
           ? 'রুম কোডটি পাওয়া যায়নি বা মেয়াদ শেষ হয়েছে।'
-          : 'Room not found or expired.',
+          : 'Room not found or cancelled.',
       );
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleJoinRoom = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    await joinSpecificCode(joinCodeInput);
   };
 
   const handleLeaveRoom = async () => {
@@ -433,6 +488,18 @@ export default function RoomScreen({
         clientId: tabClientIdRef.current,
         force: true,
       });
+    }
+  };
+
+  const handleCancelRoom = async (targetCode?: string | null) => {
+    const code = targetCode ?? roomCode;
+    clearDailyRoomKey(sessionKey);
+    setSavedKey(null);
+    if (code && code === roomCode) {
+      resetLocalRoom();
+    }
+    if (code) {
+      await cancelRoom(code);
     }
   };
 
@@ -751,40 +818,141 @@ export default function RoomScreen({
               />
             </div>
 
-            <motion.button
-              type="button"
-              disabled={busy}
-              onClick={handleCreateRoom}
-              whileTap={{ scale: 0.98 }}
-              style={{
-                width: '100%',
-                padding: '13px 16px',
-                borderRadius: 16,
-                border: 'none',
-                background: isDark
-                  ? '#E8C49A'
-                  : 'linear-gradient(145deg, #3D271D 0%, #24130A 100%)',
-                color: isDark ? '#24130A' : '#FFFFFF',
-                fontFamily: 'Inter',
-                fontSize: 14,
-                fontWeight: 700,
-                cursor: busy ? 'wait' : 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                boxShadow: '0 8px 20px rgba(36, 19, 10, 0.25)',
-              }}
-            >
-              <Plus size={16} />
-              {busy
-                ? isBn
-                  ? 'রুম তৈরি হচ্ছে…'
-                  : 'Creating room…'
-                : isBn
-                ? 'নতুন রুম তৈরি করুন (অটো কোড)'
-                : 'Create Room (Auto Code)'}
-            </motion.button>
+            {savedKey ? (
+              <div
+                style={{
+                  padding: '14px',
+                  borderRadius: 16,
+                  background: isDark ? 'rgba(232, 196, 154, 0.12)' : 'rgba(255, 250, 244, 0.85)',
+                  border: isDark ? '1px solid rgba(232, 196, 154, 0.35)' : '1px solid rgba(92, 58, 39, 0.2)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <KeyRound size={16} color={isDark ? '#E8C49A' : '#9C4D11'} />
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#E8C49A' : '#7C5A44' }}>
+                        {isBn ? 'আপনার ২৪ ঘণ্টার সক্রিয় রুম কোড' : 'Saved 24h Room Key'}
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                          fontSize: 20,
+                          fontWeight: 800,
+                          letterSpacing: '0.1em',
+                          color: isDark ? '#FAF4EC' : '#24130A',
+                        }}
+                      >
+                        {savedKey.roomCode}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCancelRoom(savedKey.roomCode)}
+                    title={isBn ? 'রুম কোড বাতিল করুন' : 'Cancel key'}
+                    aria-label={isBn ? 'রুম কোড বাতিল করুন' : 'Cancel key'}
+                    style={{
+                      background: isDark ? 'rgba(239, 68, 68, 0.16)' : 'rgba(254, 226, 226, 0.9)',
+                      border: 'none',
+                      borderRadius: 999,
+                      padding: '5px 10px',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: isDark ? '#FCA5A5' : '#991B1B',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {isBn ? 'বাতিল' : 'Cancel'}
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <motion.button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => joinSpecificCode(savedKey.roomCode)}
+                    whileTap={{ scale: 0.98 }}
+                    style={{
+                      flex: 1,
+                      padding: '11px 14px',
+                      borderRadius: 14,
+                      border: 'none',
+                      background: isDark
+                        ? '#E8C49A'
+                        : 'linear-gradient(145deg, #3D271D 0%, #24130A 100%)',
+                      color: isDark ? '#24130A' : '#FFFFFF',
+                      fontFamily: 'Inter',
+                      fontSize: 13.5,
+                      fontWeight: 700,
+                      cursor: busy ? 'wait' : 'pointer',
+                    }}
+                  >
+                    {isBn ? `পুনরায় যোগ দিন (${savedKey.roomCode})` : `Use Key (${savedKey.roomCode})`}
+                  </motion.button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => handleCreateRoom(true)}
+                    style={{
+                      padding: '11px 12px',
+                      borderRadius: 14,
+                      border: isDark ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(36,19,10,0.2)',
+                      background: isDark ? 'rgba(255,255,255,0.1)' : '#FFF8F0',
+                      color: isDark ? '#FAF4EC' : '#24130A',
+                      fontFamily: 'Inter',
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      cursor: busy ? 'wait' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                  >
+                    <RefreshCw size={13} />
+                    {isBn ? 'নতুন কোড' : 'New Key'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <motion.button
+                type="button"
+                disabled={busy}
+                onClick={() => handleCreateRoom(false)}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  width: '100%',
+                  padding: '13px 16px',
+                  borderRadius: 16,
+                  border: 'none',
+                  background: isDark
+                    ? '#E8C49A'
+                    : 'linear-gradient(145deg, #3D271D 0%, #24130A 100%)',
+                  color: isDark ? '#24130A' : '#FFFFFF',
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: busy ? 'wait' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  boxShadow: '0 8px 20px rgba(36, 19, 10, 0.25)',
+                }}
+              >
+                <Plus size={16} />
+                {busy
+                  ? isBn
+                    ? 'রুম তৈরি হচ্ছে…'
+                    : 'Creating room…'
+                  : isBn
+                  ? 'নতুন রুম তৈরি করুন (২৪ ঘণ্টার কোড)'
+                  : 'Create Room (24h Key)'}
+              </motion.button>
+            )}
 
             <div
               style={{
@@ -992,7 +1160,7 @@ export default function RoomScreen({
                         <button
                           type="button"
                           onClick={handleLeaveRoom}
-                          title={isBn ? 'রুম ছাড়ুন' : 'Leave room'}
+                          title={isBn ? 'চ্যাট থেকে বের হন (কোড থাকবে)' : 'Exit chat (keeps 24h key)'}
                           aria-label={isBn ? 'রুম ছাড়ুন' : 'Leave room'}
                           className="champagne-pill"
                           style={{
@@ -1009,6 +1177,26 @@ export default function RoomScreen({
                         >
                           <LogOut size={13} />
                           <span>{isBn ? 'বের হন' : 'Leave'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCancelRoom()}
+                          title={isBn ? 'রুম কোড স্থায়ীভাবে বাতিল করুন' : 'Cancel 24h room key'}
+                          aria-label={isBn ? 'রুম বাতিল করুন' : 'Cancel room'}
+                          className="champagne-pill"
+                          style={{
+                            padding: '7px 10px',
+                            borderRadius: 999,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            fontSize: 11.5,
+                            fontWeight: 700,
+                            color: isDark ? '#FCA5A5' : '#991B1B',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <span>{isBn ? 'বাতিল' : 'End'}</span>
                         </button>
                         <button
                           type="button"

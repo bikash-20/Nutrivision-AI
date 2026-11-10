@@ -104,7 +104,7 @@ def test_create_join_chat_dish_card_clear_and_auto_delete(client: TestClient) ->
     assert poll_after_clear.status_code == 200
     assert poll_after_clear.json()["messages"] == []
 
-    # 7. When all participants leave, the room is wiped from memory immediately
+    # 7. Leaving chat preserves the 24h room key until explicitly cancelled
     leave_a = client.post(
         f"/api/rooms/{code}/leave",
         json={"participant_id": alice["participant_id"]},
@@ -117,10 +117,72 @@ def test_create_join_chat_dish_card_clear_and_auto_delete(client: TestClient) ->
         json={"participant_id": bob["participant_id"]},
     )
     assert leave_b.status_code == 200
-    assert leave_b.json()["deleted"] is True
+    assert leave_b.json()["deleted"] is False
+
+    # Rejoining after everyone left still succeeds
+    rejoin_res = client.post(f"/api/rooms/{code}/join", json={"display_name": "Charlie"})
+    assert rejoin_res.status_code == 200
+
+    # Explicit DELETE / cancel wipes the room immediately
+    cancel_res = client.delete(f"/api/rooms/{code}")
+    assert cancel_res.status_code == 200
+    assert cancel_res.json()["deleted"] is True
 
     missing_res = client.post(f"/api/rooms/{code}/join", json={"display_name": "Charlie"})
     assert missing_res.status_code == 404
+
+
+def test_room_key_persists_24h_across_restart_and_revokes_on_logout_or_new_key(
+    client: TestClient,
+    auth_headers: dict[str, str],
+) -> None:
+    # Create room for authenticated user -> saved in State for 24h
+    first = client.post(
+        "/api/rooms",
+        headers=auth_headers,
+        json={"display_name": "Bikash", "client_id": "t1"},
+    ).json()
+    first_code = first["room_code"]
+    assert first["expires_at"]
+
+    # GET /api/rooms/mine returns the same 24h key
+    mine = client.get("/api/rooms/mine", headers=auth_headers).json()
+    assert mine is not None
+    assert mine["room_code"] == first_code
+
+    # Simulate server RAM restart (Render spin-down): State re-hydrates the room seamlessly
+    get_room_manager().reset()
+    rehydrated = client.post(
+        f"/api/rooms/{first_code}/join",
+        headers=auth_headers,
+        json={"display_name": "Bikash", "client_id": "t2"},
+    )
+    assert rehydrated.status_code == 200
+    assert rehydrated.json()["room_code"] == first_code
+
+    # Creating again without force_new reuses the existing 24h key
+    reused = client.post(
+        "/api/rooms",
+        headers=auth_headers,
+        json={"display_name": "Bikash", "force_new": False},
+    ).json()
+    assert reused["room_code"] == first_code
+
+    # Creating with force_new=True generates a new key and retires the old one
+    rotated = client.post(
+        "/api/rooms",
+        headers=auth_headers,
+        json={"display_name": "Bikash", "force_new": True},
+    ).json()
+    new_code = rotated["room_code"]
+    assert new_code != first_code
+    assert client.post(f"/api/rooms/{first_code}/join", json={"display_name": "X"}).status_code == 404
+
+    # Logout revokes active room keys owned by this user
+    logout_res = client.post("/api/rooms/logout", headers=auth_headers)
+    assert logout_res.status_code == 200
+    assert logout_res.json()["revoked"] >= 1
+    assert client.post(f"/api/rooms/{new_code}/join", json={"display_name": "X"}).status_code == 404
 
 
 def test_unknown_room_returns_404(client: TestClient) -> None:

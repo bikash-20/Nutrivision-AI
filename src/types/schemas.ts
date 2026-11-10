@@ -579,6 +579,7 @@ export interface RoomCreateRequest {
   display_name: string;
   account_id?: string | null;
   client_id?: string | null;
+  force_new?: boolean;
 }
 
 export interface RoomJoinRequest {
@@ -608,6 +609,7 @@ export interface RoomJoinResponse {
   display_name: string;
   members: RoomMember[];
   latest_seq: number;
+  expires_at?: string | null;
 }
 
 export interface RoomPollResponse {

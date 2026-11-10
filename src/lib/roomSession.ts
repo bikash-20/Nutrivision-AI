@@ -130,3 +130,87 @@ export function clearRoomSession(sessionKey: string): void {
     // Ignore storage removal errors.
   }
 }
+
+// ── 24-hour Saved Room Key (localStorage per account, cleared on logout/cancel) ──
+
+export interface SavedDailyRoomKey {
+  roomCode: string;
+  expiresAt: string;
+}
+
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+export function dailyRoomKeyStorageKey(sessionKey: string): string {
+  return `nv_room_key:${encodeURIComponent(sessionKey || 'guest')}`;
+}
+
+export function saveDailyRoomKey(
+  sessionKey: string,
+  roomCode: string,
+  expiresAt?: string | null,
+): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    const cleanCode = roomCode.trim().toUpperCase();
+    if (!cleanCode) return;
+    const expiryIso =
+      expiresAt && !Number.isNaN(Date.parse(expiresAt))
+        ? expiresAt
+        : new Date(Date.now() + ONE_DAY_MS).toISOString();
+    const payload: SavedDailyRoomKey = {
+      roomCode: cleanCode,
+      expiresAt: expiryIso,
+    };
+    localStorage.setItem(dailyRoomKeyStorageKey(sessionKey), JSON.stringify(payload));
+  } catch {
+    // Ignore storage quota errors.
+  }
+}
+
+export function loadDailyRoomKey(sessionKey: string): SavedDailyRoomKey | null {
+  if (typeof localStorage === 'undefined') return null;
+  const key = dailyRoomKeyStorageKey(sessionKey);
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<SavedDailyRoomKey> | null;
+    if (!parsed || typeof parsed.roomCode !== 'string' || typeof parsed.expiresAt !== 'string') {
+      localStorage.removeItem(key);
+      return null;
+    }
+    const expMs = Date.parse(parsed.expiresAt);
+    if (Number.isNaN(expMs) || expMs <= Date.now()) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return {
+      roomCode: parsed.roomCode,
+      expiresAt: parsed.expiresAt,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function clearDailyRoomKey(sessionKey: string): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.removeItem(dailyRoomKeyStorageKey(sessionKey));
+  } catch {
+    // Ignore.
+  }
+}
+
+export function clearAllDailyRoomKeys(): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('nv_room_key:')) keys.push(k);
+    }
+    keys.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    // Ignore.
+  }
+}

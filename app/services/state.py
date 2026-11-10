@@ -350,6 +350,18 @@ class PostgresStore:
                 cur.execute("CREATE INDEX IF NOT EXISTS idx_nv_meals_date ON nv_meals(date);")
                 cur.execute("CREATE INDEX IF NOT EXISTS idx_nv_grocery_user ON nv_grocery(user_email);")
 
+                # 6. Ephemeral 24h room-code registry (no chat messages stored)
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS nv_rooms (
+                        room_code TEXT PRIMARY KEY,
+                        owner_pid TEXT NOT NULL,
+                        owner_name TEXT NOT NULL DEFAULT 'Guest',
+                        created_at TIMESTAMPTZ NOT NULL,
+                        expires_at TIMESTAMPTZ NOT NULL
+                    );
+                """)
+                cur.execute("CREATE INDEX IF NOT EXISTS idx_nv_rooms_owner ON nv_rooms(owner_pid);")
+
                 # Tracked one-time migration: purge_legacy_seeded_accounts_v1
                 cur.execute("SELECT 1 FROM nv_migrations WHERE id = %s;", ("purge_legacy_seeded_accounts_v1",))
                 if not cur.fetchone():
@@ -394,6 +406,7 @@ class State:
         self.grocery = Bucket[GroceryItem]()
         self.users: dict[str, UserData] = {}
         self.photo_uploads: list[dict[str, str]] = []
+        self.rooms: dict[str, dict[str, str]] = {}
         self.applied_migrations: set[str] = set()
 
         self.postgres_store: PostgresStore | None = None
@@ -636,6 +649,23 @@ class State:
                 if isinstance(item, dict) and item.get("email") and item.get("upload_id") and item.get("created_at")
             ]
 
+        raw_rooms = raw.get("rooms", {})
+        if isinstance(raw_rooms, dict):
+            self.rooms = {
+                str(code): {
+                    "room_code": str(item.get("room_code", code)),
+                    "owner_pid": str(item["owner_pid"]),
+                    "owner_name": str(item.get("owner_name", "Guest")),
+                    "created_at": str(item["created_at"]),
+                    "expires_at": str(item["expires_at"]),
+                }
+                for code, item in raw_rooms.items()
+                if isinstance(item, dict)
+                and item.get("owner_pid")
+                and item.get("created_at")
+                and item.get("expires_at")
+            }
+
         try:
             self.profile = UserProfile.model_validate(raw.get("profile", {}))
             if is_legacy_seeded_email(self.profile.name, admin_emails):
@@ -694,6 +724,7 @@ class State:
             "grocery": [g.model_dump(mode="json", by_alias=True) for g in self.grocery.items],
             "migrations": sorted(list(self.applied_migrations)),
             "photo_uploads": self.photo_uploads,
+            "rooms": self.rooms,
             "users": {
                 email: {
                     "email": u.email,
@@ -1588,6 +1619,155 @@ class State:
 
     def clear_grocery(self) -> None:
         self._mutate(lambda: self.grocery.items.clear())
+
+    # ── 24h Room-Code Registry (metadata only, zero messages persisted) ──
+
+    def _prune_expired_rooms_unlocked(self, now: datetime | None = None) -> None:
+        ts = now or datetime.now(UTC)
+        expired = []
+        for code, rec in self.rooms.items():
+            try:
+                exp = datetime.fromisoformat(rec["expires_at"])
+                if exp.tzinfo is None:
+                    exp = exp.replace(tzinfo=UTC)
+                if exp <= ts:
+                    expired.append(code)
+            except Exception:
+                expired.append(code)
+        for code in expired:
+            self.rooms.pop(code, None)
+
+    def upsert_room_record(
+        self,
+        room_code: str,
+        owner_pid: str,
+        owner_name: str,
+        created_at: str,
+        expires_at: str,
+    ) -> None:
+        with self._lock:
+            self._prune_expired_rooms_unlocked()
+            rec = {
+                "room_code": room_code,
+                "owner_pid": owner_pid,
+                "owner_name": owner_name,
+                "created_at": created_at,
+                "expires_at": expires_at,
+            }
+            self.rooms[room_code] = rec
+            if self.storage_type == "postgres" and self.postgres_store and self.is_healthy:
+                with self.postgres_store._get_conn() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            """
+                            INSERT INTO nv_rooms (room_code, owner_pid, owner_name, created_at, expires_at)
+                            VALUES (%s, %s, %s, %s, %s)
+                            ON CONFLICT (room_code) DO UPDATE SET
+                                owner_pid = EXCLUDED.owner_pid,
+                                owner_name = EXCLUDED.owner_name,
+                                created_at = EXCLUDED.created_at,
+                                expires_at = EXCLUDED.expires_at
+                            """,
+                            (room_code, owner_pid, owner_name, created_at, expires_at),
+                        )
+            else:
+                self._save_file_unlocked()
+
+    def get_room_record(self, room_code: str) -> dict[str, str] | None:
+        now = datetime.now(UTC)
+        with self._lock:
+            self._prune_expired_rooms_unlocked(now)
+            rec = self.rooms.get(room_code)
+            if rec is not None:
+                return dict(rec)
+            if self.storage_type == "postgres" and self.postgres_store and self.is_healthy:
+                with self.postgres_store._get_conn() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            """
+                            SELECT room_code, owner_pid, owner_name, created_at, expires_at
+                            FROM nv_rooms
+                            WHERE room_code = %s AND expires_at > %s
+                            """,
+                            (room_code, now),
+                        )
+                        row = cur.fetchone()
+                        if row:
+                            rec = {
+                                "room_code": str(row[0]),
+                                "owner_pid": str(row[1]),
+                                "owner_name": str(row[2]),
+                                "created_at": row[3].isoformat() if hasattr(row[3], "isoformat") else str(row[3]),
+                                "expires_at": row[4].isoformat() if hasattr(row[4], "isoformat") else str(row[4]),
+                            }
+                            self.rooms[room_code] = rec
+                            return dict(rec)
+            return None
+
+    def get_active_room_for_owner(self, owner_pid: str) -> dict[str, str] | None:
+        now = datetime.now(UTC)
+        with self._lock:
+            self._prune_expired_rooms_unlocked(now)
+            matches = [r for r in self.rooms.values() if r["owner_pid"] == owner_pid]
+            if matches:
+                matches.sort(key=lambda r: r["created_at"], reverse=True)
+                return dict(matches[0])
+            if self.storage_type == "postgres" and self.postgres_store and self.is_healthy:
+                with self.postgres_store._get_conn() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            """
+                            SELECT room_code, owner_pid, owner_name, created_at, expires_at
+                            FROM nv_rooms
+                            WHERE owner_pid = %s AND expires_at > %s
+                            ORDER BY created_at DESC
+                            LIMIT 1
+                            """,
+                            (owner_pid, now),
+                        )
+                        row = cur.fetchone()
+                        if row:
+                            rec = {
+                                "room_code": str(row[0]),
+                                "owner_pid": str(row[1]),
+                                "owner_name": str(row[2]),
+                                "created_at": row[3].isoformat() if hasattr(row[3], "isoformat") else str(row[3]),
+                                "expires_at": row[4].isoformat() if hasattr(row[4], "isoformat") else str(row[4]),
+                            }
+                            self.rooms[rec["room_code"]] = rec
+                            return dict(rec)
+            return None
+
+    def delete_room_record(self, room_code: str) -> bool:
+        with self._lock:
+            existed = self.rooms.pop(room_code, None) is not None
+            if self.storage_type == "postgres" and self.postgres_store and self.is_healthy:
+                with self.postgres_store._get_conn() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("DELETE FROM nv_rooms WHERE room_code = %s", (room_code,))
+                        existed = existed or cur.rowcount > 0
+            elif existed:
+                self._save_file_unlocked()
+            return existed
+
+    def delete_rooms_for_owner(self, owner_pid: str) -> list[str]:
+        with self._lock:
+            codes = [c for c, r in self.rooms.items() if r["owner_pid"] == owner_pid]
+            for c in codes:
+                self.rooms.pop(c, None)
+            if self.storage_type == "postgres" and self.postgres_store and self.is_healthy:
+                with self.postgres_store._get_conn() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "DELETE FROM nv_rooms WHERE owner_pid = %s RETURNING room_code",
+                            (owner_pid,),
+                        )
+                        for (rc,) in cur.fetchall():
+                            if str(rc) not in codes:
+                                codes.append(str(rc))
+            elif codes:
+                self._save_file_unlocked()
+            return codes
 
 
 # ── Process-wide singleton ──────────────────────────────────────────────

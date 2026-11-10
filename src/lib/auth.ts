@@ -10,6 +10,10 @@
 import type { AuthSession, GoogleAuthResponse } from '../types/schemas';
 import * as storage from './storage';
 import { getApiBase } from './config';
+import {
+  clearAllDailyRoomKeys,
+  clearAllRoomSessionsFromStorage,
+} from './roomSession';
 
 const SESSION_KEY = 'auth';
 const OFFLINE_EMAIL = 'offline@local.nutrivision';
@@ -99,6 +103,8 @@ export async function loginWithGoogle(idToken: string): Promise<AuthSession> {
 /** Clear the persisted session and trigger logout events. */
 export function logout(): void {
   storage.remove(SESSION_KEY);
+  clearAllRoomSessionsFromStorage();
+  clearAllDailyRoomKeys();
   if (typeof window !== 'undefined') {
     if (window.google?.accounts?.id?.disableAutoSelect) {
       try {

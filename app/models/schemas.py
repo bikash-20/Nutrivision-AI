@@ -682,6 +682,7 @@ class RoomCreateRequest(BaseModel):
     display_name: str
     account_id: str | None = None
     client_id: str | None = None
+    force_new: bool = False
 
 
 class RoomJoinRequest(BaseModel):
@@ -711,6 +712,7 @@ class RoomJoinResponse(BaseModel):
     display_name: str
     members: list[RoomMember]
     latest_seq: int
+    expires_at: str | None = None
 
 
 class RoomPollResponse(BaseModel):
