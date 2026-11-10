@@ -22,6 +22,7 @@ import { initGoogleAuth } from '../../lib/googleAuth';
 import type { AuthSession } from '../../types/schemas';
 import LanguageToggle from '../../i18n/LanguageToggle';
 import { LocalizedContent, useLanguage } from '../../i18n/LanguageContext';
+import { useTokens } from '../../theme/useTokens';
 import { GUIDE_STEPS } from './landingGuideSteps';
 
 interface LoginScreenProps {
@@ -42,9 +43,61 @@ const GOOGLE_CLIENT_ID: string = (
 type AuthView = 'landing' | 'login';
 
 export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnToApp }: LoginScreenProps) {
+  const { theme } = useTokens();
+  const isDark = theme === 'dark';
   const { language } = useLanguage();
   const isBn = language === 'bn';
   const reduceMotion = useReducedMotion();
+
+  const lp = isDark
+    ? {
+        headerBg: 'rgba(22, 16, 13, 0.84)',
+        panelInk: '#F9F2E4',
+        panelBody: 'rgba(249, 242, 228, 0.84)',
+        panelMuted: '#E8C49A',
+        subCardBg: 'rgba(255, 255, 255, 0.05)',
+        subCardBorder: 'rgba(255, 255, 255, 0.12)',
+        onlineChipBg: 'rgba(184, 198, 138, 0.18)',
+        onlineChipFg: '#B8C68A',
+        offlineChipBg: 'rgba(240, 183, 154, 0.18)',
+        offlineChipFg: '#F0B79A',
+        stepBadgeBg: '#D0AE92',
+        stepBadgeFg: '#1F1815',
+        stepCtaBg: '#FAF4EC',
+        stepCtaFg: '#24130A',
+        gridBg: 'rgba(42, 32, 27, 0.90)',
+        gridSelectedBg: 'rgba(61, 47, 40, 0.98)',
+        gridBorder: 'rgba(255, 255, 255, 0.14)',
+        gridSelectedBorder: '#D0AE92',
+        gridStepTag: '#E8C49A',
+        ollamaIconBg: 'rgba(208, 174, 146, 0.16)',
+        ollamaIconFg: '#E8C49A',
+        imgFrameBorder: 'rgba(255, 255, 255, 0.14)',
+      }
+    : {
+        headerBg: 'rgba(36, 19, 10, 0.72)',
+        panelInk: '#24130A',
+        panelBody: '#4A2E1F',
+        panelMuted: '#5C3A27',
+        subCardBg: 'rgba(255, 252, 248, 0.85)',
+        subCardBorder: 'rgba(92, 58, 39, 0.14)',
+        onlineChipBg: 'rgba(45, 106, 79, 0.14)',
+        onlineChipFg: '#2D6A4F',
+        offlineChipBg: 'rgba(200, 116, 40, 0.14)',
+        offlineChipFg: '#9C4D11',
+        stepBadgeBg: '#24130A',
+        stepBadgeFg: '#FAF4EC',
+        stepCtaBg: '#24130A',
+        stepCtaFg: '#FAF4EC',
+        gridBg: 'rgba(255, 248, 240, 0.85)',
+        gridSelectedBg: 'rgba(250, 244, 236, 0.96)',
+        gridBorder: 'rgba(255, 255, 255, 0.22)',
+        gridSelectedBorder: '#FAF4EC',
+        gridStepTag: '#9C4D11',
+        ollamaIconBg: 'rgba(36, 19, 10, 0.1)',
+        ollamaIconFg: '#24130A',
+        imgFrameBorder: 'rgba(36, 19, 10, 0.22)',
+      };
 
   const [view, setView] = useState<AuthView>(() => {
     if (!isSignedIn && typeof window !== 'undefined' && window.location.hash === '#login') {
@@ -760,7 +813,7 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
             top: 0,
             zIndex: 30,
             width: '100%',
-            background: 'rgba(36, 19, 10, 0.72)',
+            background: lp.headerBg,
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
             borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
@@ -1028,7 +1081,7 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 14,
-                color: '#24130A',
+                color: lp.panelInk,
               }}
             >
               <div
@@ -1045,7 +1098,7 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                     fontFamily: isBn ? "'Hind Siliguri', serif" : 'var(--font-serif)',
                     fontSize: 20,
                     fontWeight: 700,
-                    color: '#24130A',
+                    color: lp.panelInk,
                   }}
                 >
                   {isBn ? 'অনলাইন ও অফলাইন সুবিধা' : 'Online vs Offline Access'}
@@ -1056,8 +1109,8 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                     fontWeight: 700,
                     padding: '4px 10px',
                     borderRadius: 999,
-                    background: 'rgba(45, 106, 79, 0.14)',
-                    color: '#2D6A4F',
+                    background: lp.onlineChipBg,
+                    color: lp.onlineChipFg,
                   }}
                 >
                   {isBn ? 'দুভাবেই ব্যবহারযোগ্য' : 'Dual-Mode'}
@@ -1075,8 +1128,8 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                   style={{
                     padding: '14px 16px',
                     borderRadius: 16,
-                    background: 'rgba(255, 252, 248, 0.85)',
-                    border: '1px solid rgba(92, 58, 39, 0.14)',
+                    background: lp.subCardBg,
+                    border: `1px solid ${lp.subCardBorder}`,
                     display: 'flex',
                     gap: 12,
                     alignItems: 'flex-start',
@@ -1087,8 +1140,8 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                       width: 34,
                       height: 34,
                       borderRadius: 10,
-                      background: 'rgba(45, 106, 79, 0.14)',
-                      color: '#2D6A4F',
+                      background: lp.onlineChipBg,
+                      color: lp.onlineChipFg,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1098,10 +1151,10 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                     <Wifi size={17} />
                   </div>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#24130A' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: lp.panelInk }}>
                       {isBn ? 'অনলাইন (গুগল অ্যাকাউন্ট)' : 'Online (Google Sign-In)'}
                     </div>
-                    <p style={{ margin: '4px 0 0', fontSize: 12.5, lineHeight: 1.55, color: '#5C3A27' }}>
+                    <p style={{ margin: '4px 0 0', fontSize: 12.5, lineHeight: 1.55, color: lp.panelBody }}>
                       {isBn
                         ? 'প্রোফাইল সিঙ্ক, ভিশন + RAG খাবার শনাক্তকরণ, চালডাল লাইভ দাম, এআই কোচ ও ২৪ ঘণ্টার রুম চ্যাট।'
                         : 'Cloud profile sync, Vision + RAG plate recognition, live Chaldal prices, hosted AI Coach & 24h Room chat.'}
@@ -1113,8 +1166,8 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                   style={{
                     padding: '14px 16px',
                     borderRadius: 16,
-                    background: 'rgba(255, 252, 248, 0.85)',
-                    border: '1px solid rgba(92, 58, 39, 0.14)',
+                    background: lp.subCardBg,
+                    border: `1px solid ${lp.subCardBorder}`,
                     display: 'flex',
                     gap: 12,
                     alignItems: 'flex-start',
@@ -1125,8 +1178,8 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                       width: 34,
                       height: 34,
                       borderRadius: 10,
-                      background: 'rgba(200, 116, 40, 0.14)',
-                      color: '#9C4D11',
+                      background: lp.offlineChipBg,
+                      color: lp.offlineChipFg,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1136,10 +1189,10 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                     <WifiOff size={17} />
                   </div>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#24130A' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: lp.panelInk }}>
                       {isBn ? 'অফলাইন মোড (ইন্টারনেট ছাড়াই)' : 'Offline Mode (No Internet Needed)'}
                     </div>
-                    <p style={{ margin: '4px 0 0', fontSize: 12.5, lineHeight: 1.55, color: '#5C3A27' }}>
+                    <p style={{ margin: '4px 0 0', fontSize: 12.5, lineHeight: 1.55, color: lp.panelBody }}>
                       {isBn
                         ? 'ডিভাইসে প্রোফাইল ও বিএমআর/টিডিইই হিসাব, খাবার লগ, সতর্কতা নিয়ম এবং লোকাল Ollama, Whisper ও Piper ব্যবহার করুন।'
                         : 'Keep your profile & BMR/TDEE targets on-device, log meals locally, check conflict rules, and run local Ollama, Whisper & Piper.'}
@@ -1286,7 +1339,7 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
               style={{
                 padding: 'clamp(18px, 3vw, 28px)',
                 borderRadius: 26,
-                color: '#24130A',
+                color: lp.panelInk,
               }}
             >
               <AnimatePresence mode="wait">
@@ -1309,8 +1362,8 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                         alignSelf: 'flex-start',
                         padding: '4px 12px',
                         borderRadius: 999,
-                        background: '#24130A',
-                        color: '#FAF4EC',
+                        background: lp.stepBadgeBg,
+                        color: lp.stepBadgeFg,
                         fontSize: 11.5,
                         fontWeight: 700,
                         letterSpacing: '0.04em',
@@ -1325,7 +1378,7 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                         fontFamily: isBn ? "'Hind Siliguri', serif" : 'var(--font-serif)',
                         fontSize: 'clamp(22px, 3vw, 28px)',
                         fontWeight: 700,
-                        color: '#24130A',
+                        color: lp.panelInk,
                         lineHeight: 1.25,
                       }}
                     >
@@ -1337,7 +1390,7 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                         margin: 0,
                         fontSize: 14.5,
                         lineHeight: 1.65,
-                        color: '#4A2E1F',
+                        color: lp.panelBody,
                       }}
                     >
                       {isBn ? activeStep.summaryBn : activeStep.summaryEn}
@@ -1362,7 +1415,7 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                             gap: 8,
                             fontSize: 13.5,
                             fontWeight: 600,
-                            color: '#24130A',
+                            color: lp.panelInk,
                             lineHeight: 1.45,
                           }}
                         >
@@ -1371,8 +1424,8 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                               width: 20,
                               height: 20,
                               borderRadius: '50%',
-                              background: 'rgba(45, 106, 79, 0.16)',
-                              color: '#2D6A4F',
+                              background: lp.onlineChipBg,
+                              color: lp.onlineChipFg,
                               display: 'inline-flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -1391,7 +1444,7 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                       <div style={{ paddingTop: 6 }}>
                         <button
                           type="button"
-                          onClick={openLoginPage}
+                          onClick={handlePrimaryAction}
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -1399,8 +1452,8 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                             padding: '10px 18px',
                             borderRadius: 999,
                             border: 'none',
-                            background: '#24130A',
-                            color: '#FAF4EC',
+                            background: lp.stepCtaBg,
+                            color: lp.stepCtaFg,
                             fontFamily: 'inherit',
                             fontSize: 13,
                             fontWeight: 700,
@@ -1408,7 +1461,15 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                           }}
                         >
                           <LogIn size={14} />
-                          <span>{isBn ? 'লগইন পেজে যান' : 'Go to Login Page'}</span>
+                          <span>
+                            {isSignedIn
+                              ? isBn
+                                ? 'অ্যাপে ফিরুন'
+                                : 'Open App'
+                              : isBn
+                              ? 'লগইন পেজে যান'
+                              : 'Go to Login Page'}
+                          </span>
                         </button>
                       </div>
                     )}
@@ -1422,7 +1483,7 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                       background: 'linear-gradient(145deg, #2B170E 0%, #1B0E08 100%)',
                       borderRadius: 20,
                       padding: 12,
-                      border: '1px solid rgba(36, 19, 10, 0.25)',
+                      border: `1px solid ${lp.imgFrameBorder}`,
                       boxShadow: '0 16px 36px rgba(36, 18, 10, 0.28)',
                     }}
                   >
@@ -1463,12 +1524,10 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                       padding: 10,
                       borderRadius: 18,
                       border: selected
-                        ? '2px solid #FAF4EC'
-                        : '1px solid rgba(255, 255, 255, 0.22)',
-                      background: selected
-                        ? 'rgba(250, 244, 236, 0.96)'
-                        : 'rgba(255, 248, 240, 0.85)',
-                      color: '#24130A',
+                        ? `2px solid ${lp.gridSelectedBorder}`
+                        : `1px solid ${lp.gridBorder}`,
+                      background: selected ? lp.gridSelectedBg : lp.gridBg,
+                      color: lp.panelInk,
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
@@ -1504,14 +1563,14 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                       />
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, fontWeight: 800, color: '#9C4D11' }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: lp.gridStepTag }}>
                         {isBn ? step.badgeBn : step.badgeEn}
                       </div>
                       <div
                         style={{
                           fontSize: 13,
                           fontWeight: 700,
-                          color: '#24130A',
+                          color: lp.panelInk,
                           lineHeight: 1.3,
                           marginTop: 2,
                         }}
@@ -1575,7 +1634,7 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 14,
-                  color: '#24130A',
+                  color: lp.panelInk,
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1584,8 +1643,8 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                       width: 36,
                       height: 36,
                       borderRadius: 11,
-                      background: 'rgba(36, 19, 10, 0.1)',
-                      color: '#24130A',
+                      background: lp.ollamaIconBg,
+                      color: lp.ollamaIconFg,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1601,18 +1660,18 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                         fontFamily: isBn ? "'Hind Siliguri', serif" : 'var(--font-serif)',
                         fontSize: 17,
                         fontWeight: 700,
-                        color: '#24130A',
+                        color: lp.panelInk,
                       }}
                     >
                       {isBn ? 'লোকাল Ollama মডেল সংযোগ' : 'Local Ollama Models'}
                     </h3>
-                    <div style={{ fontSize: 12, color: '#5C3A27', fontWeight: 600 }}>
+                    <div style={{ fontSize: 12, color: lp.panelMuted, fontWeight: 600 }}>
                       http://localhost:11434
                     </div>
                   </div>
                 </div>
 
-                <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, color: '#4A2E1F' }}>
+                <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, color: lp.panelBody }}>
                   {isBn
                     ? 'সেটিংস থেকে আপনার কম্পিউটারের Ollama সার্ভার যুক্ত করলে ইনস্টল করা চ্যাট ও ভিশন মডেল স্বয়ংক্রিয়ভাবে যুক্ত হয়—কোনো ডেটা বাইরে না পাঠিয়েই প্লেট ও প্রশ্ন বিশ্লেষণ করা যায়।'
                     : 'Point Settings to your local Ollama server for automatic model discovery, custom system prompts, and private on-device meal photo & nutrition reasoning.'}
@@ -1623,7 +1682,7 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                     borderRadius: 16,
                     overflow: 'hidden',
                     background: '#24130A',
-                    border: '1px solid rgba(36, 19, 10, 0.22)',
+                    border: `1px solid ${lp.imgFrameBorder}`,
                   }}
                 >
                   <img
@@ -1644,7 +1703,7 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 14,
-                  color: '#24130A',
+                  color: lp.panelInk,
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1653,8 +1712,8 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                       width: 36,
                       height: 36,
                       borderRadius: 11,
-                      background: 'rgba(45, 106, 79, 0.15)',
-                      color: '#2D6A4F',
+                      background: lp.onlineChipBg,
+                      color: lp.onlineChipFg,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1670,18 +1729,18 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                         fontFamily: isBn ? "'Hind Siliguri', serif" : 'var(--font-serif)',
                         fontSize: 17,
                         fontWeight: 700,
-                        color: '#24130A',
+                        color: lp.panelInk,
                       }}
                     >
                       {isBn ? 'অফলাইন Whisper ও Piper ভয়েস' : 'Offline Whisper, Piper & Qwen3-TTS'}
                     </h3>
-                    <div style={{ fontSize: 12, color: '#5C3A27', fontWeight: 600 }}>
+                    <div style={{ fontSize: 12, color: lp.panelMuted, fontWeight: 600 }}>
                       http://localhost:5005/transcribe · /speak
                     </div>
                   </div>
                 </div>
 
-                <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, color: '#4A2E1F' }}>
+                <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, color: lp.panelBody }}>
                   {isBn
                     ? 'ইন্টারনেট ছাড়াই কথা বলে প্রশ্ন করতে লোকাল Whisper এবং উত্তর শোনার জন্য Piper বা Qwen3-TTS ইঞ্জিন বেছে নিন। সেটিংসে এক ক্লিকেই ভয়েস সার্ভিস পরীক্ষা করা যায়।'
                     : 'Transcribe voice questions privately with local Whisper and hear AI Coach responses through Piper or Qwen3-TTS weights, complete with a one-click service check.'}
@@ -1692,7 +1751,7 @@ export default function LoginScreen({ onSignedIn, isSignedIn = false, onReturnTo
                     borderRadius: 16,
                     overflow: 'hidden',
                     background: '#24130A',
-                    border: '1px solid rgba(36, 19, 10, 0.22)',
+                    border: `1px solid ${lp.imgFrameBorder}`,
                   }}
                 >
                   <img
