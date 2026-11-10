@@ -1164,3 +1164,13 @@ p { margin: 0; }
 .theme-toggle-btn:hover {
   filter: brightness(1.15);
 }
+
+.coach-chat-input::placeholder {
+  color: rgba(44, 26, 17, 0.72);
+  opacity: 1;
+}
+
+[data-theme="dark"] .coach-chat-input::placeholder {
+  color: rgba(249, 242, 228, 0.65);
+  opacity: 1;
+}

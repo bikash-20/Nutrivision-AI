@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
-import { T } from '../../data';
 import { useTokens } from '../../theme/useTokens';
 import { sendCoachRemote } from '../../lib/api';
 import { chatWithLocalModel, getLocalAISettings, LocalAIError, synthesizeLocally, transcribeLocally } from '../../lib/localAI';
@@ -650,14 +649,14 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                   fontFamily: 'var(--font-serif)',
                   fontSize: 22,
                   fontWeight: 700,
-                  color: isDark ? '#F9F2E4' : '#2C1A11',
+                  color: isDark ? '#FAF4EC' : '#FFF7EE',
                   margin: 0,
                   letterSpacing: '-0.02em',
                 }}
               >
                 {isBn ? 'পুষ্টি এআই সহায়ক' : 'Nutrition AI assistant'}
               </h2>
-              <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: isDark ? 'rgba(249, 242, 228, 0.72)' : '#7C5A44' }}>
+              <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: isDark ? '#E5D3C3' : '#FFF0E2', fontWeight: 500 }}>
                 {isBn
                   ? 'স্থানীয় AI ব্যবহার করুন; অনলাইনে থাকলে প্রয়োজনে হোস্টেড AI বিকল্প'
                   : 'Local model first; hosted AI is used only as an online fallback'}
@@ -840,7 +839,7 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                   style={{
                     fontSize: 'var(--text-xs)',
                     fontWeight: 600,
-                    color: isDark ? 'rgba(249, 242, 228, 0.72)' : '#7C5A44',
+                    color: isDark ? 'rgba(249, 242, 228, 0.85)' : '#FFF0E2',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 6,
@@ -852,23 +851,23 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                     <span>{profile.name || (isBn ? 'আপনি' : 'You')}</span>
                   ) : agentType === 'scientist' ? (
                     <>
-                      <span style={{ fontWeight: 600, color: isDark ? '#E8C49A' : '#7C5A44' }}>
+                      <span style={{ fontWeight: 600, color: isDark ? '#E8C49A' : '#FFE4C4' }}>
                         {isBn
                           ? `🔬 ${scientistName} · পুষ্টি বিজ্ঞানী`
                           : `🔬 ${scientistName} · Nutrition Scientist`}
                       </span>
-                      <span style={{ opacity: 0.7 }}>• {scientistName}</span>
+                      <span style={{ opacity: 0.85 }}>• {scientistName}</span>
                     </>
                   ) : (
                     <>
-                      <span style={{ fontWeight: 600, color: isDark ? '#86EFAC' : '#2E6333' }}>
+                      <span style={{ fontWeight: 600, color: isDark ? '#86EFAC' : '#A7F3D0' }}>
                         🧠 {isBn ? 'অভ্যাস সহায়ক' : 'Habit coach'}
                       </span>
-                      <span style={{ opacity: 0.7 }}>• Habit guidance</span>
+                      <span style={{ opacity: 0.85 }}>• Habit guidance</span>
                     </>
                   )}
                   {!isUser && m.runtime_label && (
-                    <span style={{ fontSize: 10, color: isDark ? '#B8C68A' : '#4E6828' }}>{m.runtime_label}</span>
+                    <span style={{ fontSize: 10, color: isDark ? '#B8C68A' : '#D9F99D' }}>{m.runtime_label}</span>
                   )}
                 </div>
 
@@ -1062,7 +1061,7 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
         {/* Domain Citation Badges */}
         {citations.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 'var(--text-xs)', color: isDark ? 'rgba(249, 242, 228, 0.78)' : '#7C5A44', fontWeight: 600 }}>
+            <span style={{ fontSize: 'var(--text-xs)', color: isDark ? '#E5D3C3' : '#FFF0E2', fontWeight: 600 }}>
               {isBn ? 'স্বীকৃত তথ্যসূত্র:' : 'Official Citations:'}
             </span>
             {citations.map((c, i) => (
@@ -1093,7 +1092,7 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
               style={{
                 fontSize: 'var(--text-xs)',
                 fontWeight: 600,
-                color: isDark ? 'rgba(249, 242, 228, 0.78)' : '#7C5A44',
+                color: isDark ? '#FAF4EC' : '#FFF0E2',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 4,
@@ -1166,7 +1165,7 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                   border: 'none',
                   cursor: 'pointer',
                   padding: 4,
-                  color: isDark ? 'rgba(249, 242, 228, 0.78)' : '#7C5A44',
+                  color: isDark ? '#FAF4EC' : '#5C3A27',
                 }}
               >
                 <X size={14} />
@@ -1204,7 +1203,7 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              color: isDark ? 'rgba(249, 242, 228, 0.78)' : '#7C5A44',
+              color: isDark ? 'rgba(249, 242, 228, 0.88)' : '#3D271D',
               padding: 6,
               borderRadius: '50%',
               display: 'flex',
@@ -1227,7 +1226,7 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                 : 'transparent',
               border: 'none',
               cursor: 'pointer',
-              color: isListening ? (isDark ? '#F0B79A' : '#C87428') : (isDark ? 'rgba(249, 242, 228, 0.78)' : '#7C5A44'),
+              color: isListening ? (isDark ? '#F0B79A' : '#C87428') : (isDark ? 'rgba(249, 242, 228, 0.88)' : '#3D271D'),
               padding: 6,
               borderRadius: '50%',
               display: 'flex',
@@ -1274,6 +1273,7 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
 
           <input
             type="text"
+            className="coach-chat-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -1336,8 +1336,40 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
             <Send size={15} />
           </motion.button>
         </div>
-        {chatError && <div role="alert" style={{ color: T.accentWarn, fontSize: 12, lineHeight: 1.5 }}>{chatError}</div>}
-        {voiceError && <div role="alert" style={{ color: T.accentWarn, fontSize: 12, lineHeight: 1.5 }}>{voiceError}</div>}
+        {chatError && (
+          <div
+            role="alert"
+            style={{
+              padding: '10px 14px',
+              borderRadius: 12,
+              background: isDark ? 'rgba(239, 68, 68, 0.16)' : 'rgba(254, 242, 242, 0.92)',
+              border: isDark ? '1px solid rgba(252, 165, 165, 0.35)' : '1px solid rgba(220, 38, 38, 0.25)',
+              color: isDark ? '#FCA5A5' : '#991B1B',
+              fontSize: 12,
+              fontWeight: 600,
+              lineHeight: 1.5,
+            }}
+          >
+            {chatError}
+          </div>
+        )}
+        {voiceError && (
+          <div
+            role="alert"
+            style={{
+              padding: '10px 14px',
+              borderRadius: 12,
+              background: isDark ? 'rgba(239, 68, 68, 0.16)' : 'rgba(254, 242, 242, 0.92)',
+              border: isDark ? '1px solid rgba(252, 165, 165, 0.35)' : '1px solid rgba(220, 38, 38, 0.25)',
+              color: isDark ? '#FCA5A5' : '#991B1B',
+              fontSize: 12,
+              fontWeight: 600,
+              lineHeight: 1.5,
+            }}
+          >
+            {voiceError}
+          </div>
+        )}
       </div>
     </LocalizedContent>
   );

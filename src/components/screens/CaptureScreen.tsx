@@ -421,11 +421,13 @@ export default function CaptureScreen({
           style={{
             margin: '0 0 16px',
             padding: '12px 14px',
-            borderRadius: 12,
-            background: 'rgba(177, 69, 48, 0.08)',
-            color: T.ink,
+            borderRadius: 14,
+            background: isDark ? 'rgba(239, 68, 68, 0.16)' : 'rgba(254, 242, 242, 0.94)',
+            border: isDark ? '1px solid rgba(252, 165, 165, 0.4)' : '1px solid rgba(220, 38, 38, 0.28)',
+            color: isDark ? '#FAF4EC' : '#7F1D1D',
             fontFamily: 'Inter',
-            fontSize: 14,
+            fontSize: 13.5,
+            fontWeight: 600,
             lineHeight: 1.5,
           }}
         >
@@ -757,11 +759,17 @@ export default function CaptureScreen({
               style={{
                 position: 'absolute',
                 bottom: 16,
-                left: 18,
-                color: 'rgba(249, 242, 228, 0.92)',
+                left: 16,
+                padding: '4px 10px',
+                borderRadius: 999,
+                background: 'rgba(24, 14, 10, 0.62)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 255, 255, 0.18)',
+                color: '#FAF4EC',
                 fontFamily: "'Inter', sans-serif",
                 fontSize: 12,
-                fontWeight: 500,
+                fontWeight: 600,
                 zIndex: 2,
               }}
             >
@@ -779,6 +787,10 @@ export default function CaptureScreen({
                 right: 16,
                 width: 56,
                 height: 56,
+                borderRadius: '50%',
+                background: 'rgba(24, 14, 10, 0.5)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
                 zIndex: 2,
               }}
             >
@@ -832,10 +844,12 @@ export default function CaptureScreen({
                 position: 'absolute',
                 top: 16,
                 left: 16,
-                width: 32,
-                height: 32,
+                width: 34,
+                height: 34,
                 borderRadius: '50%',
-                background: 'rgba(249, 242, 228, 0.18)',
+                background: 'rgba(24, 14, 10, 0.55)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
                 border: '1px solid rgba(249, 242, 228, 0.35)',
                 display: 'flex',
                 alignItems: 'center',
@@ -845,7 +859,7 @@ export default function CaptureScreen({
                 zIndex: 2,
               }}
             >
-              <X size={16} color={T.earth6} strokeWidth={2} />
+              <X size={16} color="#FAF4EC" strokeWidth={2} />
             </motion.button>
           </>
         )}
@@ -869,7 +883,7 @@ export default function CaptureScreen({
               gap: 10,
               fontFamily: 'Inter',
               fontSize: 13,
-              color: T.ink,
+              color: isDark ? '#FAF4EC' : '#FFF0E2',
               fontWeight: 600,
             }}
           >
@@ -880,7 +894,7 @@ export default function CaptureScreen({
               }
               style={{ display: 'inline-flex' }}
             >
-              <Sparkles size={14} color={T.primary} />
+              <Sparkles size={14} color={isDark ? '#E8C49A' : '#FFD29D'} />
             </motion.span>
             <span style={{ flex: 1 }}>{isBn ? 'আপনার খাবার বিশ্লেষণ করা হচ্ছে…' : 'Analyzing your plate…'}</span>
             <motion.button
@@ -894,10 +908,11 @@ export default function CaptureScreen({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 4,
-                background: 'none',
-                border: 'none',
-                padding: '4px 6px',
-                color: T.primary,
+                background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 245, 235, 0.16)',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.16)' : '1px solid rgba(255, 255, 255, 0.35)',
+                borderRadius: 999,
+                padding: '5px 10px',
+                color: isDark ? '#FAF4EC' : '#FFF7EE',
                 fontFamily: 'Inter',
                 fontSize: 12,
                 fontWeight: 600,
