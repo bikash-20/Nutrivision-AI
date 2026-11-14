@@ -6,8 +6,6 @@ import {
   Image as ImageIcon,
   X,
   Sparkles,
-  ShieldAlert,
-  Compass,
   CheckCircle,
   Mic,
   MicOff,
@@ -269,7 +267,6 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
   const [conversationImage, setConversationImage] = useState<string | null>(imageContext);
   const [chatError, setChatError] = useState<string | null>(null);
   const [voiceError, setVoiceError] = useState<string | null>(null);
-  const [suggestedPrompts, setSuggestedPrompts] = useState<string[]>([]);
   const [citations, setCitations] = useState<string[]>([]);
 
   // Voice Assistant Audio state
@@ -419,19 +416,6 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
           : `Welcome! I am ${scientistName}, your nutrition assistant.`,
       };
       restoreMessages(welcome);
-      setSuggestedPrompts(
-        isBn
-          ? [
-              'এই খাবারের গ্লাইসেমিক লোড কীভাবে কমাব?',
-              'রান্নায় তেল শোষণ কমানোর বৈজ্ঞানিক পদ্ধতি কী?',
-              'প্যান্ট্রির খাবার দিয়ে বাজেট ফ্রেন্ডলি প্রোটিন ডায়েট কী হতে পারে?',
-            ]
-          : [
-              'How do I lower the glycemic load of this meal?',
-              'How to reduce cooking oil absorption?',
-              'What budget-friendly protein meals can I make from my pantry?',
-            ]
-      );
       setCitations([]);
       setChatError(null);
       setVoiceError(null);
@@ -449,19 +433,6 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
           : 'Hello! I am your habit coach. Let us build sustainable nutrition habits together.',
       };
       restoreMessages(welcome);
-      setSuggestedPrompts(
-        isBn
-          ? [
-              'দাওয়াতে অতিরিক্ত খাওয়ার পর কী করব?',
-              'রাতের মিষ্টি বা চায়ের আড্ডার লোভ কীভাবে সামলাব?',
-              'ব্যস্ত দিনে হেলদি ডায়েট ধরে রাখার সহজ রুটিন কী?',
-            ]
-          : [
-              'How to bounce back after a heavy family feast?',
-              'How to manage evening sweet cravings?',
-              'Easy routines for healthy habits on busy days?',
-            ]
-      );
       setCitations([]);
       setChatError(null);
       setVoiceError(null);
@@ -626,7 +597,6 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
 
       setMessages((prev) => [...prev, assistantMsg]);
 
-      setSuggestedPrompts(res.suggested_prompts ?? []);
       setCitations(res.citations ?? []);
 
     } catch (error) {
@@ -662,7 +632,15 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                   : 'Local model first; hosted AI is used only as an online fallback'}
               </p>
             </div>
-            <div
+            <button
+              type="button"
+              onClick={() => setAgentType((prev) => (prev === 'scientist' ? 'coach' : 'scientist'))}
+              title={
+                agentType === 'scientist'
+                  ? (isBn ? 'কোচ পরিবর্তন করুন (ফারহান)' : 'Switch to Coach (Farhan)')
+                  : (isBn ? 'কোচ পরিবর্তন করুন (ড. সুস্মিত)' : 'Switch to Scientist (Dr. Susmit)')
+              }
+              aria-label={isBn ? 'কোচ পরিবর্তন করুন' : 'Switch coach'}
               style={{
                 width: 40,
                 height: 40,
@@ -676,132 +654,13 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
                 color: agentType === 'scientist' ? (isDark ? '#E8C49A' : '#7C5A44') : (isDark ? '#86EFAC' : '#2E6333'),
                 border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.8)',
                 boxShadow: 'inset 0 1px 2px rgba(255, 255, 255, 0.8), 0 4px 12px rgba(44, 26, 17, 0.08)',
+                cursor: 'pointer',
+                padding: 0,
               }}
             >
               <Bot size={20} />
-            </div>
+            </button>
           </div>
-
-          {/* AI privacy and fallback disclosure */}
-          <div
-            className="champagne-panel"
-            style={{
-              padding: '8px 12px',
-              borderRadius: 14,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              fontSize: 'var(--text-xs)',
-              color: isDark ? '#B8C68A' : '#3E5C26',
-              fontWeight: 600,
-            }}
-          >
-            <Sparkles size={13} style={{ flexShrink: 0 }} />
-            <span>
-              {isBn
-                ? 'স্থানীয় মডেল থাকলে ছবি ও বার্তা এই ডিভাইসেই প্রক্রিয়াকৃত হয়। অফলাইনে ব্যর্থ হলে কোনো নমুনা AI উত্তর দেখানো হয় না।'
-                : 'When a local model is available, photos and messages stay on this device. Offline failures never show sample AI answers.'}
-            </span>
-          </div>
-
-          {/* Dual-Agent Selector Toggle */}
-          <div
-            className="champagne-panel"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 6,
-              padding: 4,
-              borderRadius: 18,
-            }}
-          >
-            <motion.button
-              type="button"
-              onClick={() => setAgentType('scientist')}
-              whileTap={{ scale: 0.98 }}
-              style={{
-                padding: '9px 12px',
-                borderRadius: 14,
-                border: 'none',
-                background: agentType === 'scientist'
-                  ? (isDark ? 'linear-gradient(145deg, #D0AE92, #A88265)' : 'linear-gradient(145deg, #3D271D 0%, #24140D 100%)')
-                  : 'transparent',
-                color: agentType === 'scientist' ? '#FFFFFF' : (isDark ? 'rgba(249, 242, 228, 0.72)' : '#7C5A44'),
-                fontSize: 'var(--text-sm)',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                boxShadow: agentType === 'scientist'
-                  ? (isDark ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 14px rgba(44, 26, 17, 0.28), inset 0 1px 1px rgba(255,255,255,0.25)')
-                  : 'none',
-                transition: 'background 200ms ease, color 200ms ease, box-shadow 200ms ease',
-              }}
-            >
-              <span>🔬</span>
-              <span>
-                {isBn
-                  ? `${scientistName} (পুষ্টি বিজ্ঞানী)`
-                  : `${scientistName} (Nutrition Scientist)`}
-              </span>
-            </motion.button>
-
-            <motion.button
-              type="button"
-              onClick={() => setAgentType('coach')}
-              whileTap={{ scale: 0.98 }}
-              style={{
-                padding: '9px 12px',
-                borderRadius: 14,
-                border: 'none',
-                background: agentType !== 'scientist'
-                  ? (isDark ? 'linear-gradient(145deg, #4ADE80, #22C55E)' : 'linear-gradient(145deg, #1C4A2E 0%, #0D2E1C 100%)')
-                  : 'transparent',
-                color: agentType !== 'scientist' ? '#FFFFFF' : (isDark ? 'rgba(249, 242, 228, 0.72)' : '#7C5A44'),
-                fontSize: 'var(--text-sm)',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                boxShadow: agentType !== 'scientist'
-                  ? (isDark ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 14px rgba(28, 74, 46, 0.28), inset 0 1px 1px rgba(255,255,255,0.25)')
-                  : 'none',
-                transition: 'background 200ms ease, color 200ms ease, box-shadow 200ms ease',
-              }}
-            >
-              <span>🧠</span>
-              <span>{isBn ? 'ফারহান (আচরণ কোচ)' : 'Farhan (Habit Coach)'}</span>
-            </motion.button>
-          </div>
-        </div>
-
-        {/* Clinical Disclaimer Banner */}
-        <div
-          style={{
-            padding: '9px 14px',
-            borderRadius: 14,
-            background: isDark ? 'rgba(240, 183, 154, 0.12)' : 'rgba(255, 245, 238, 0.75)',
-            border: isDark ? '1px solid rgba(240, 183, 154, 0.28)' : '1px solid rgba(200, 116, 40, 0.22)',
-            boxShadow: isDark ? 'none' : 'inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 2px 8px rgba(44, 26, 17, 0.03)',
-            backdropFilter: 'blur(16px)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            fontSize: 'var(--text-xs)',
-            color: isDark ? '#F0B79A' : '#9E4324',
-            lineHeight: 1.45,
-          }}
-        >
-          <ShieldAlert size={14} style={{ flexShrink: 0 }} />
-          <span>
-            {isBn
-              ? '⚠️ এআই কোচের পরামর্শ তথ্যমূলক ও শিক্ষামূলক, কোনো চিকিৎসাগত প্রেসক্রিপশন বা বিকল্প নয়।'
-              : '⚠️ AI Coach guidance is educational; consult a physician for clinical diagnoses.'}
-          </span>
         </div>
 
         {/* Chat Thread Messages */}
@@ -810,8 +669,8 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
             display: 'flex',
             flexDirection: 'column',
             gap: 14,
-            minHeight: 320,
-            maxHeight: 460,
+            minHeight: 360,
+            maxHeight: 'clamp(380px, 64vh, 680px)',
             overflowY: 'auto',
             padding: '8px 4px',
           }}
@@ -1085,49 +944,6 @@ export default function CoachScreen({ profile, sessionKey, imageContext = null, 
           </div>
         )}
 
-        {/* Contextual Suggested Prompt Chips */}
-        {suggestedPrompts.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div
-              style={{
-                fontSize: 'var(--text-xs)',
-                fontWeight: 600,
-                color: isDark ? '#FAF4EC' : '#FFF0E2',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-              }}
-            >
-              <Compass size={12} />
-              <span>{isBn ? 'সংশ্লিষ্ট জিজ্ঞাসা (ট্যাপ করে প্রশ্ন করুন):' : 'Suggested Prompts (Tap to ask):'}</span>
-            </div>
-            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-              {suggestedPrompts.map((p, idx) => (
-                <motion.button
-                  key={idx}
-                  type="button"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => handleSendMessage(p)}
-                  className="champagne-pill"
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: 999,
-                    color: isDark ? '#F9F2E4' : '#2C1A11',
-                    fontSize: 'var(--text-sm)',
-                    fontWeight: 500,
-                    lineHeight: 1.4,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0,
-                  }}
-                >
-                  {p}
-                </motion.button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Image Attachment Preview */}
         <AnimatePresence>
