@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
+
 Sitemap: https://cloud-camp-hackathon.vercel.app/sitemap.xml
