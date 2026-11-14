@@ -8,4 +8,14 @@ export default defineConfig({
     port: 5173,
     strictPort: false,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-katex': ['katex'],
+          'vendor-motion': ['framer-motion'],
+        },
+      },
+    },
+  },
 });

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Leaf, Settings, Users } from 'lucide-react';
 import { T, TABS } from './data';
@@ -27,9 +27,10 @@ import ResultsScreen from './components/screens/ResultsScreen';
 import NutrientsScreen from './components/screens/NutrientsScreen';
 import ProfileScreen from './components/screens/ProfileScreen';
 import GroceryScreen from './components/screens/GroceryScreen';
-import CoachScreen from './components/screens/CoachScreen';
 import SettingsScreen from './components/screens/SettingsScreen';
-import RoomScreen from './components/screens/RoomScreen';
+
+const CoachScreen = lazy(() => import('./components/screens/CoachScreen'));
+const RoomScreen = lazy(() => import('./components/screens/RoomScreen'));
 import {
   clearAllRoomSessionsFromStorage,
   loadRoomSession,
@@ -37,8 +38,8 @@ import {
 } from './lib/roomSession';
 import PwaInstallBanner from './components/PwaInstallBanner';
 import LoginScreen from './components/auth/LoginScreen';
-import AdminLayout from './components/admin/AdminLayout';
-import AdminOverview from './components/admin/AdminOverview';
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout'));
+const AdminOverview = lazy(() => import('./components/admin/AdminOverview'));
 import LanguageToggle from './i18n/LanguageToggle';
 import { LanguageProvider, LocalizedContent, useLanguage } from './i18n/LanguageContext';
 
@@ -124,12 +125,24 @@ function AppShell() {
 
   if (session.role === 'admin') {
     return (
-      <>
+      <Suspense
+        fallback={
+          <div
+            style={{
+              minHeight: '100vh',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: T.cardBg,
+            }}
+          />
+        }
+      >
         <PwaInstallBanner />
         <AdminLayout session={session} onLogoClick={goToLanding}>
           <AdminOverview session={session} />
         </AdminLayout>
-      </>
+      </Suspense>
     );
   }
 
@@ -567,17 +580,19 @@ function UserApp({
         {settingsOpen ? (
           <SettingsScreen onBack={() => setSettingsOpen(false)} />
         ) : roomOpen ? (
-          <RoomScreen
-            sessionKey={session.email}
-            defaultDisplayName={
-              profile?.name || session.name || session.email.split('@')[0] || 'Guest'
-            }
-            detected={detected}
-            capturedImage={capturedImage}
-            onClose={() => setRoomOpen(false)}
-            onGoToCapture={() => goToTab(0)}
-            onActiveRoomChange={setActiveRoomCode}
-          />
+          <Suspense fallback={<div style={{ minHeight: '60vh' }} />}>
+            <RoomScreen
+              sessionKey={session.email}
+              defaultDisplayName={
+                profile?.name || session.name || session.email.split('@')[0] || 'Guest'
+              }
+              detected={detected}
+              capturedImage={capturedImage}
+              onClose={() => setRoomOpen(false)}
+              onGoToCapture={() => goToTab(0)}
+              onActiveRoomChange={setActiveRoomCode}
+            />
+          </Suspense>
         ) : <motion.div
           key={tab}
           custom={direction}
@@ -641,12 +656,14 @@ function UserApp({
           )}
           {tab === 4 && <GroceryScreen profile={profile} />}
           {tab === 5 && (
-            <CoachScreen
-              profile={profile}
-              sessionKey={session.email}
-              imageContext={capturedImage}
-              localOnly={session.localOnly}
-            />
+            <Suspense fallback={<div style={{ minHeight: '60vh' }} />}>
+              <CoachScreen
+                profile={profile}
+                sessionKey={session.email}
+                imageContext={capturedImage}
+                localOnly={session.localOnly}
+              />
+            </Suspense>
           )}
         </motion.div>
         }

@@ -1,0 +1,557 @@
+import type { RefObject } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  AlertCircle,
+  ArrowLeft,
+  LogIn,
+  RefreshCw,
+  ShieldCheck,
+  Sparkles,
+} from 'lucide-react';
+import LanguageToggle from '../../i18n/LanguageToggle';
+import { LocalizedContent } from '../../i18n/LanguageContext';
+import { continueOffline } from '../../lib/auth';
+import type { AuthSession } from '../../types/schemas';
+
+interface LoginViewProps {
+  isBn: boolean;
+  reduceMotion: boolean | null;
+  online: boolean;
+  googleLoading: boolean;
+  error: string | null;
+  googleClientId: string;
+  googleBtnContainerRef: RefObject<HTMLDivElement>;
+  onSignedIn: (session: AuthSession) => void;
+  backToLanding: () => void;
+}
+
+export default function LoginView({
+  isBn,
+  reduceMotion,
+  online,
+  googleLoading,
+  error,
+  googleClientId,
+  googleBtnContainerRef,
+  onSignedIn,
+  backToLanding,
+}: LoginViewProps) {
+  return (
+    <LocalizedContent>
+      <div
+        className="login-viewport-root"
+        style={{
+          position: 'relative',
+          minHeight: '100dvh',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          overflowX: 'hidden',
+          overflowY: 'auto',
+          color: '#F9F2E4',
+          fontFamily: "'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+          letterSpacing: '-0.01em',
+        }}
+      >
+        {/* Full-viewport Culinary Background Photo */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 0,
+            backgroundImage: 'url("/nutrivision-ai.jpeg")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat',
+            transform: 'scale(1.02)',
+            filter: 'brightness(1.0) contrast(1.02) saturate(1.05)',
+            opacity: 1,
+          }}
+        />
+
+        {/* Minimal soft ambient vignette */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1,
+            background:
+              'linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.05) 30%, rgba(0, 0, 0, 0.05) 70%, rgba(0, 0, 0, 0.38) 100%)',
+            pointerEvents: 'none',
+          }}
+        />
+
+        {/* Top Header Bar */}
+        <header
+          style={{
+            position: 'relative',
+            zIndex: 10,
+            width: '100%',
+            maxWidth: 1200,
+            margin: '0 auto',
+            padding: 'calc(env(safe-area-inset-top, 0px) + 16px) clamp(16px, 4vw, 32px) 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          {/* Brand mark — redirects to landing page */}
+          <button
+            type="button"
+            onClick={backToLanding}
+            aria-label={isBn ? 'হোম পেজে যান' : 'Go to landing page'}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '7px 14px 7px 10px',
+              borderRadius: 999,
+              background: 'rgba(20, 14, 11, 0.90)',
+              border: '1px solid rgba(255, 255, 255, 0.24)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
+              cursor: 'pointer',
+            }}
+          >
+            <img
+              src="/icon-96.png"
+              alt=""
+              aria-hidden="true"
+              width={26}
+              height={26}
+              style={{ borderRadius: 8, display: 'block' }}
+            />
+            <span
+              style={{
+                fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                fontSize: 16,
+                fontWeight: 700,
+                color: '#FFFFFF',
+                letterSpacing: '-0.01em',
+                textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+              }}
+            >
+              {isBn ? 'নিউট্রিভিশন' : 'NutriVision'}
+            </span>
+            <span
+              style={{
+                fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: '0.06em',
+                padding: '3px 8px',
+                borderRadius: 6,
+                background: 'linear-gradient(135deg, #E8590C 0%, #C92A2A 100%)',
+                color: '#FFFFFF',
+                border: '1px solid rgba(255, 255, 255, 0.40)',
+                boxShadow: '0 2px 8px rgba(201, 42, 42, 0.55)',
+              }}
+            >
+              {isBn ? 'এআই' : 'AI'}
+            </span>
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              type="button"
+              onClick={backToLanding}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                height: 38,
+                padding: '0 14px',
+                borderRadius: 999,
+                background: 'rgba(20, 14, 11, 0.85)',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                color: '#FAF4EC',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+              }}
+            >
+              <ArrowLeft size={14} />
+              <span>{isBn ? 'গাইড দেখুন' : 'Guide'}</span>
+            </button>
+            <div
+              style={{
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                borderRadius: 999,
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+              }}
+            >
+              <LanguageToggle />
+            </div>
+          </div>
+        </header>
+
+        {/* Center Responsive Glass Card */}
+        <main
+          style={{
+            position: 'relative',
+            zIndex: 10,
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px clamp(16px, 4vw, 32px)',
+            width: '100%',
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{
+              duration: 0.5,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            style={{
+              width: '100%',
+              maxWidth: 440,
+              background: 'rgba(24, 16, 12, 0.85)',
+              backdropFilter: 'blur(28px) saturate(190%)',
+              WebkitBackdropFilter: 'blur(28px) saturate(190%)',
+              border: '1px solid rgba(249, 242, 228, 0.18)',
+              borderRadius: 26,
+              boxShadow:
+                '0 28px 65px -14px rgba(0, 0, 0, 0.80), 0 0 0 1px rgba(255, 255, 255, 0.08) inset',
+              padding: 'clamp(28px, 6vw, 40px) clamp(20px, 5vw, 32px)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              gap: 22,
+            }}
+          >
+            {/* Header Icon Emblem */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 20,
+                  background:
+                    'linear-gradient(135deg, rgba(217, 72, 15, 0.95) 0%, rgba(154, 43, 14, 0.95) 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 16,
+                  boxShadow:
+                    '0 12px 28px -6px rgba(217, 72, 15, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.25) inset',
+                }}
+              >
+                <LogIn size={30} color="#FFF8F0" strokeWidth={2.3} />
+              </div>
+
+              {/* Aesthetic Editorial Brand Title */}
+              <h1
+                style={{
+                  fontFamily: isBn
+                    ? "'Hind Siliguri', 'Outfit', sans-serif"
+                    : "'Fraunces', 'Plus Jakarta Sans', Georgia, serif",
+                  fontSize: 'clamp(26px, 4vw, 32px)',
+                  fontWeight: 700,
+                  color: '#FFF8F0',
+                  margin: '0 0 10px',
+                  letterSpacing: '-0.025em',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <span>{isBn ? 'নিউট্রিভিশন' : 'NutriVision'}</span>
+                <span
+                  style={{
+                    fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                    fontSize: 'clamp(14px, 2.2vw, 17px)',
+                    fontWeight: 800,
+                    letterSpacing: '0.06em',
+                    padding: '3px 11px',
+                    borderRadius: 999,
+                    background: 'linear-gradient(135deg, #E8590C 0%, #C92A2A 100%)',
+                    color: '#FFFFFF',
+                    border: '1px solid rgba(255, 255, 255, 0.35)',
+                    boxShadow: '0 4px 14px rgba(201, 42, 42, 0.50)',
+                    verticalAlign: 'middle',
+                  }}
+                >
+                  {isBn ? 'এআই' : 'AI'}
+                </span>
+              </h1>
+
+              <p
+                style={{
+                  fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                  fontSize: 'clamp(13px, 2vw, 14px)',
+                  color: 'rgba(249, 242, 228, 0.82)',
+                  margin: 0,
+                  lineHeight: 1.6,
+                  maxWidth: 340,
+                  fontWeight: 400,
+                }}
+              >
+                {isBn
+                  ? 'আপনার খাবারের ছবি তুলে তাৎক্ষণিক পুষ্টি বিশ্লেষণ, নিরাপত্তা সতর্কতা ও বাজারের তালিকা পেতে সাইন ইন করুন।'
+                  : 'Sign in with Google to access personalized nutrition intelligence, clinical safety alerts, and meal tracking.'}
+              </p>
+            </div>
+
+            {/* Google Sign-In Action Block */}
+            <div
+              style={{
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 14,
+                padding: '20px 16px',
+                borderRadius: 18,
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.10)',
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: 'rgba(249, 242, 228, 0.65)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.12em',
+                }}
+              >
+                {isBn ? 'গুগল অ্যাকাউন্ট দিয়ে সাইন ইন' : 'Sign in with Google'}
+              </div>
+
+              {!online ? (
+                <div
+                  role="status"
+                  style={{
+                    color: 'rgba(249, 242, 228, 0.8)',
+                    fontSize: 12,
+                    lineHeight: 1.5,
+                    textAlign: 'center',
+                  }}
+                >
+                  {isBn
+                    ? 'গুগল সাইন-ইনের জন্য ইন্টারনেট প্রয়োজন। অফলাইনে চালিয়ে যেতে নিচের বোতাম ব্যবহার করুন।'
+                    : 'Google sign-in needs internet. Use the button below to continue offline.'}
+                </div>
+              ) : googleClientId ? (
+                <div
+                  ref={googleBtnContainerRef}
+                  style={{
+                    minHeight: 46,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    width: '100%',
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    background: 'rgba(217, 119, 6, 0.15)',
+                    border: '1px solid rgba(217, 119, 6, 0.35)',
+                    color: '#FCD34D',
+                    fontSize: 12,
+                    lineHeight: 1.45,
+                    textAlign: 'center',
+                    fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                  }}
+                >
+                  {isBn
+                    ? 'গুগল ক্লায়েন্ট আইডি সেট করা নেই। দয়া করে VITE_GOOGLE_CLIENT_ID পরিবেশ ভেরিয়েবল সেট করুন।'
+                    : 'Google Client ID is not configured. Please set VITE_GOOGLE_CLIENT_ID in your environment variables.'}
+                </div>
+              )}
+
+              <AnimatePresence>
+                {googleLoading && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.2 }}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '12px 14px',
+                      borderRadius: 14,
+                      background: 'rgba(201, 98, 45, 0.15)',
+                      border: '1px solid rgba(201, 98, 45, 0.30)',
+                      width: '100%',
+                      textAlign: 'center',
+                      fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <RefreshCw
+                        size={15}
+                        color="#FFB899"
+                        className={reduceMotion ? '' : 'animate-spin'}
+                        style={{ animation: 'spin 1.5s linear infinite' }}
+                      />
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#F9F2E4' }}>
+                        {isBn ? 'সার্ভারের সাথে যাচাই করা হচ্ছে…' : 'Verifying with server…'}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11.5,
+                        color: 'rgba(249, 242, 228, 0.75)',
+                        lineHeight: 1.4,
+                        maxWidth: 290,
+                      }}
+                    >
+                      {isBn
+                        ? 'সার্ভার কোল্ড স্টার্ট হলে প্রথমবার ৩০-৪৫ সেকেন্ড সময় লাগতে পারে।'
+                        : 'Render backend may take 30–45s to wake up on first visit.'}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    role="alert"
+                    aria-live="assertive"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 10,
+                      padding: '12px 14px',
+                      borderRadius: 14,
+                      background: 'rgba(239, 68, 68, 0.18)',
+                      border: '1px solid rgba(239, 68, 68, 0.40)',
+                      width: '100%',
+                      textAlign: 'left',
+                      fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+                    }}
+                  >
+                    <AlertCircle size={16} color="#F87171" style={{ flexShrink: 0, marginTop: 2 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 600, color: '#FCA5A5' }}>
+                        {isBn ? 'সাইন ইন ব্যর্থ হয়েছে' : 'Sign in failed'}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 11.5,
+                          color: '#FEE2E2',
+                          marginTop: 2,
+                          lineHeight: 1.4,
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {error}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => onSignedIn(continueOffline())}
+              style={{
+                width: '100%',
+                minHeight: 44,
+                borderRadius: 12,
+                border: '1px solid rgba(249, 242, 228, 0.3)',
+                background: 'rgba(249, 242, 228, 0.12)',
+                color: '#FFF8F0',
+                font: '600 14px Inter, system-ui, sans-serif',
+                cursor: 'pointer',
+              }}
+            >
+              {isBn ? 'অফলাইনে চালিয়ে যান' : 'Continue offline'}
+            </button>
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: '4px 8px',
+                textAlign: 'center',
+                fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+              }}
+            >
+              <ShieldCheck size={14} color="rgba(249, 242, 228, 0.65)" />
+              <span style={{ fontSize: 11.5, color: 'rgba(249, 242, 228, 0.65)' }}>
+                {isBn
+                  ? 'গুগল ওঅথ ২.০ এবং সুরক্ষিত ব্যাকএন্ড পারসিস্টেন্স'
+                  : 'Secured via Google OAuth 2.0 & encrypted JWT sessions'}
+              </span>
+            </div>
+          </motion.div>
+        </main>
+
+        {/* Bottom Attribution Footer */}
+        <footer
+          style={{
+            position: 'relative',
+            zIndex: 10,
+            width: '100%',
+            maxWidth: 1200,
+            margin: '0 auto',
+            padding: '12px clamp(16px, 4vw, 32px) calc(env(safe-area-inset-bottom, 0px) + 16px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 11.5,
+              color: '#F9F2E4',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              padding: '6px 14px',
+              borderRadius: 999,
+              background: 'rgba(20, 14, 11, 0.65)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)',
+            }}
+          >
+            <Sparkles size={12} color="#FFB899" />
+            <span>
+              {isBn
+                ? 'বাংলাদেশি খাদ্য উপাদান ডেটাবেজ ও ক্লিনিক্যাল এআই ইঞ্জিন'
+                : 'Bangladeshi Food Composition & Clinical Dietary AI Engine'}
+            </span>
+          </div>
+        </footer>
+      </div>
+    </LocalizedContent>
+  );
+}
