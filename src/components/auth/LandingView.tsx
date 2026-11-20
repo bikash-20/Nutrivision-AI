@@ -146,6 +146,32 @@ export default function LandingView({
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <LanguageToggle />
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.hash = '#docs';
+                  window.dispatchEvent(new Event('hashchange'));
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  height: 38,
+                  padding: '0 14px',
+                  borderRadius: 999,
+                  border: '1px solid rgba(232, 196, 154, 0.4)',
+                  background: 'rgba(232, 196, 154, 0.12)',
+                  color: '#FAF4EC',
+                  fontFamily: 'inherit',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(8px)',
+                }}
+              >
+                <span>📑</span>
+                <span>/docs</span>
+              </button>
               <motion.button
                 type="button"
                 onClick={handlePrimaryAction}

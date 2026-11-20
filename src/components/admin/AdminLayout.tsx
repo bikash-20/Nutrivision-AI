@@ -145,6 +145,30 @@ export default function AdminLayout({ session, onLogoClick }: AdminLayoutProps) 
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.hash = '#docs';
+                  window.dispatchEvent(new Event('hashchange'));
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  height: 32,
+                  padding: '0 10px',
+                  borderRadius: 8,
+                  border: '1px solid rgba(232, 196, 154, 0.3)',
+                  background: 'rgba(232, 196, 154, 0.15)',
+                  color: '#E8C49A',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                <span>📑</span>
+                <span>Live /docs</span>
+              </button>
               <ThemeToggle />
               <LanguageToggle />
               <motion.button

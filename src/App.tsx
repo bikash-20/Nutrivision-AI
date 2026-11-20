@@ -31,6 +31,7 @@ import SettingsScreen from './components/screens/SettingsScreen';
 
 const CoachScreen = lazy(() => import('./components/screens/CoachScreen'));
 const RoomScreen = lazy(() => import('./components/screens/RoomScreen'));
+const DocsModule = lazy(() => import('./components/docs/DocsModule'));
 import {
   clearAllRoomSessionsFromStorage,
   loadRoomSession,
@@ -61,9 +62,25 @@ function AppShell() {
   useTokens();
   const [session, setSession] = useState<AuthSession | null>(null);
   const [showLanding, setShowLanding] = useState(false);
+  const [showDocs, setShowDocs] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.location.pathname === '/docs' || window.location.hash === '#docs';
+  });
   // Tracks whether we've finished reading localStorage so we don't flash
   // the login screen on every page reload while restoring a session.
   const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    const handleRouteCheck = () => {
+      setShowDocs(window.location.pathname === '/docs' || window.location.hash === '#docs');
+    };
+    window.addEventListener('popstate', handleRouteCheck);
+    window.addEventListener('hashchange', handleRouteCheck);
+    return () => {
+      window.removeEventListener('popstate', handleRouteCheck);
+      window.removeEventListener('hashchange', handleRouteCheck);
+    };
+  }, []);
 
   useEffect(() => {
     setSession(getSession());
@@ -107,6 +124,41 @@ function AppShell() {
           fontFamily: 'Inter',
         }}
       />
+    );
+  }
+
+  if (showDocs) {
+    return (
+      <Suspense
+        fallback={
+          <div
+            style={{
+              minHeight: '100vh',
+              background: '#1A1412',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#FAF4EC',
+              fontFamily: 'Inter, sans-serif',
+            }}
+          >
+            Loading Documentation &amp; Pitch Deck...
+          </div>
+        }
+      >
+        <DocsModule
+          onReturnToApp={() => {
+            setShowDocs(false);
+            if (typeof window !== 'undefined') {
+              if (window.location.pathname === '/docs') {
+                window.history.pushState(null, '', '/');
+              } else if (window.location.hash === '#docs') {
+                window.history.pushState(null, '', window.location.pathname + window.location.search);
+              }
+            }
+          }}
+        />
+      </Suspense>
     );
   }
 
