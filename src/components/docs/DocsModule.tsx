@@ -250,6 +250,54 @@ ${config.teamMembers.map(m => `- **${m.name}** (${m.role}): ${m.email}`).join('\
             </div>
           </div>
 
+          {/* Judge & Evaluator Direct Access Key Card */}
+          <div style={{
+            background: 'rgba(232, 196, 154, 0.12)',
+            border: '1px dashed #E8C49A',
+            borderRadius: '10px',
+            padding: '14px 16px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            textAlign: 'left',
+          }}>
+            <div>
+              <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#E8C49A' }}>
+                Judge &amp; Evaluator Preview Access
+              </div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: '#FAF4EC', marginTop: '2px', fontFamily: 'monospace', letterSpacing: '1px' }}>
+                Passcode: <span style={{ color: '#80ED99', background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: '4px' }}>{config.accessPasscode}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setPasscodeAttempt(config.accessPasscode);
+                setPasscodeUnlocked(true);
+                setAccess(evaluateDocsAccess(config, isAdmin));
+                showToast('Passcode auto-filled & access unlocked!');
+              }}
+              style={{
+                background: '#E8C49A',
+                color: '#1A1412',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '8px 14px',
+                fontSize: '12px',
+                fontWeight: 800,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+              }}
+            >
+              <Key size={14} /> 1-Click Unlock
+            </button>
+          </div>
+
           {/* Passcode Unlock Form for Judges / Evaluators */}
           <form onSubmit={handlePasscodeSubmit} style={{ marginBottom: '20px' }}>
             <div style={{ textAlign: 'left', marginBottom: '8px' }}>
